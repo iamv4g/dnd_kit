@@ -1,7 +1,9 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
+import 'measuring.dart';
 import 'scope.dart';
 
 /// Registers a child as a droppable target in the nearest drag-and-drop scope.
@@ -32,9 +34,11 @@ class DndDroppable extends StatefulWidget {
 }
 
 class _DndDroppableState extends State<DndDroppable> {
+  final GlobalKey _measureKey = GlobalKey();
   DndController? _controller;
   DndController? _registeredController;
   DndDroppableRegistration? _registration;
+  bool _measureScheduled = false;
 
   @override
   void didChangeDependencies() {
@@ -89,14 +93,69 @@ class _DndDroppableState extends State<DndDroppable> {
     final registration = _registration;
     if (controller != null && registration != null) {
       controller.registry.unregisterDroppable(registration.id);
+      controller.measuring.removeDroppableRect(registration.id);
     }
 
     _registeredController = null;
     _registration = null;
   }
 
+  void _scheduleMeasure(BuildContext measureContext) {
+    if (_measureScheduled) {
+      return;
+    }
+
+    _measureScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureScheduled = false;
+      if (!mounted) {
+        return;
+      }
+
+      final controller = _registeredController;
+      final registration = _registration;
+      final currentMeasureContext = _measureKey.currentContext ?? measureContext;
+      final rect = measureDndRect(currentMeasureContext);
+      if (controller == null || registration == null || rect == null) {
+        return;
+      }
+
+      controller.measuring.updateDroppableRect(registration.id, rect);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    _scheduleMeasure(context);
+    return _DndMeasuredBox(
+      key: _measureKey,
+      child: widget.child,
+    );
+  }
+}
+
+class _DndMeasuredBox extends SingleChildRenderObjectWidget {
+  const _DndMeasuredBox({
+    super.key,
+    required super.child,
+  });
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderDndMeasuredBox();
+  }
+}
+
+class _RenderDndMeasuredBox extends RenderProxyBox {
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+
+    child.layout(constraints, parentUsesSize: true);
+    size = constraints.constrain(child.size);
   }
 }

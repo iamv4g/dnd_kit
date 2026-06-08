@@ -1,18 +1,41 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:flutter/foundation.dart';
 
+import 'measuring.dart';
+
 /// Coordinates Flutter adapter drag state while keeping user data external.
 class DndController extends ChangeNotifier {
   /// Creates a drag controller.
-  DndController({DndState initialState = const DndIdle()}) : _state = initialState;
+  DndController({
+    DndState initialState = const DndIdle(),
+    DndCollisionDetector? collisionDetector,
+  })  : _state = initialState,
+        collisionDetector = collisionDetector ??
+            DndCollisionDetectors.compose(
+              const <DndCollisionDetector>[
+                DndCollisionDetectors.pointerWithin,
+                DndCollisionDetectors.rectIntersection,
+              ],
+            );
 
   DndState _state;
+  DndRect? _activeRect;
+  DndId? _overId;
 
   /// Registered draggable and droppable metadata for this controller.
   final DndRegistry registry = DndRegistry();
 
+  /// Measured Flutter adapter rectangles for registered drag-and-drop widgets.
+  final DndMeasuringRegistry measuring = DndMeasuringRegistry();
+
+  /// The detector used to rank measured droppable collision candidates.
+  final DndCollisionDetector collisionDetector;
+
   /// The current drag lifecycle state.
   DndState get state => _state;
+
+  /// The droppable currently under the active drag, when one exists.
+  DndId? get overId => _overId;
 
   /// Whether no drag is active or pending.
   bool get isIdle => _state is DndIdle;
@@ -39,7 +62,9 @@ class DndController extends ChangeNotifier {
   }
 
   /// Starts pending activation for [event].
-  void beginDrag(DndSensorActivationEvent event) {
+  void beginDrag(DndSensorActivationEvent event, {DndRect? activeRect}) {
+    _activeRect = activeRect ?? measuring.draggableRect(event.activeId);
+    _overId = null;
     _setState(
       DndPending(
         activeId: event.activeId,
@@ -72,6 +97,7 @@ class DndController extends ChangeNotifier {
 
     final next = DndDragging(session: current.session.moveTo(position));
     _replaceState(next);
+    _updateCollision(next.session);
     return DndDragMoveEvent(session: next.session);
   }
 
@@ -85,7 +111,7 @@ class DndController extends ChangeNotifier {
 
     final next = DndDropping(session: current.session);
     _setState(next);
-    return DndDragEndEvent(session: next.session, overId: overId);
+    return DndDragEndEvent(session: next.session, overId: overId ?? _overId);
   }
 
   /// Cancels a pending or active drag.
@@ -125,7 +151,50 @@ class DndController extends ChangeNotifier {
       return;
     }
 
+    _activeRect = null;
+    _overId = null;
     _setState(const DndIdle());
+  }
+
+  void _updateCollision(DndDragSession session) {
+    final activeRect = _activeRect;
+    if (activeRect == null) {
+      _setOverId(null);
+      return;
+    }
+
+    final droppableRects = <DndId, DndRect>{};
+    for (final entry in measuring.droppableRects.entries) {
+      final registration = registry.droppable(entry.key);
+      if (registration == null || registration.disabled) {
+        continue;
+      }
+
+      droppableRects[entry.key] = entry.value;
+    }
+
+    if (droppableRects.isEmpty) {
+      _setOverId(null);
+      return;
+    }
+
+    final result = collisionDetector(
+      DndCollisionInput(
+        activeRect: activeRect.translate(session.delta),
+        droppableRects: droppableRects,
+        pointer: session.currentPointer,
+      ),
+    );
+    _setOverId(result.firstOrNull?.id);
+  }
+
+  void _setOverId(DndId? next) {
+    if (_overId == next) {
+      return;
+    }
+
+    _overId = next;
+    notifyListeners();
   }
 
   void _setState(DndState next) {

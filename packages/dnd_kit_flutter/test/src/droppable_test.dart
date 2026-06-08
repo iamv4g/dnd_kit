@@ -126,5 +126,44 @@ void main() {
         isTrue,
       );
     });
+
+    testWidgets('measures global droppable bounds while mounted', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              Positioned(
+                left: 10,
+                top: 20,
+                child: DndDroppable(
+                  id: DndId('column-1'),
+                  child: SizedBox(width: 80, height: 60),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        controller.measuring.droppableRect(const DndId('column-1')),
+        const DndRect(left: 10, top: 20, width: 80, height: 60),
+      );
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const SizedBox(),
+        ),
+      );
+
+      expect(controller.measuring.droppableRect(const DndId('column-1')), isNull);
+    });
   });
 }

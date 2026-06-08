@@ -214,5 +214,101 @@ void main() {
 
       await gesture.cancel();
     });
+
+    testWidgets('updates overId while dragging over measured droppables', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      final moveEvents = <DndDragMoveEvent>[];
+      DndDragEndEvent? endEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              const Positioned(
+                left: 100,
+                top: 0,
+                child: DndDroppable(
+                  id: DndId('column-1'),
+                  child: SizedBox(width: 80, height: 80),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                child: DndDraggable(
+                  id: const DndId('task-1'),
+                  onDragMove: moveEvents.add,
+                  onDragEnd: (event) {
+                    endEvent = event;
+                  },
+                  child: const SizedBox(width: 40, height: 40),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final gesture = await tester.startGesture(const Offset(20, 20));
+      await tester.pump();
+      await gesture.moveBy(const Offset(100, 0));
+      await tester.pump();
+
+      expect(moveEvents, isNotEmpty);
+      expect(controller.measuring.draggableRect(const DndId('task-1')), isNotNull);
+      expect(controller.overId, const DndId('column-1'));
+
+      await gesture.up();
+      await tester.pump();
+
+      expect(endEvent?.overId, const DndId('column-1'));
+    });
+
+    testWidgets('ignores disabled droppables during collision detection', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragEndEvent? endEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              const Positioned(
+                left: 100,
+                top: 0,
+                child: DndDroppable(
+                  id: DndId('column-1'),
+                  disabled: true,
+                  child: SizedBox(width: 80, height: 80),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                child: DndDraggable(
+                  id: const DndId('task-1'),
+                  onDragEnd: (event) {
+                    endEvent = event;
+                  },
+                  child: const SizedBox(width: 40, height: 40),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.dragFrom(const Offset(20, 20), const Offset(100, 0));
+      await tester.pump();
+
+      expect(endEvent?.overId, isNull);
+    });
   });
 }

@@ -2,6 +2,7 @@ import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
+import 'measuring.dart';
 import 'scope.dart';
 
 /// Called when a draggable starts a drag session.
@@ -64,6 +65,7 @@ class DndDraggable extends StatefulWidget {
 }
 
 class _DndDraggableState extends State<DndDraggable> {
+  final GlobalKey _measureKey = GlobalKey();
   DndController? _controller;
   DndController? _registeredController;
   DndDraggableRegistration? _registration;
@@ -131,6 +133,7 @@ class _DndDraggableState extends State<DndDraggable> {
     final registration = _registration;
     if (controller != null && registration != null) {
       controller.registry.unregisterDraggable(registration.id);
+      controller.measuring.removeDraggableRect(registration.id);
     }
 
     _registeredController = null;
@@ -148,12 +151,19 @@ class _DndDraggableState extends State<DndDraggable> {
       return;
     }
 
+    final activeRect =
+        _measureKey.currentContext == null ? null : measureDndRect(_measureKey.currentContext!);
+    if (activeRect != null) {
+      controller.measuring.updateDraggableRect(widget.id, activeRect);
+    }
+
     controller.beginDrag(
       DndSensorActivationEvent(
         activeId: widget.id,
         position: _pointFromOffset(details.globalPosition),
         inputKind: DndInputKind.pointer,
       ),
+      activeRect: activeRect,
     );
 
     final event = controller.startDrag();
@@ -228,6 +238,7 @@ class _DndDraggableState extends State<DndDraggable> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: _measureKey,
       behavior: widget.hitTestBehavior ?? HitTestBehavior.opaque,
       onPanStart: widget.disabled ? null : _handlePanStart,
       onPanUpdate: widget.disabled ? null : _handlePanUpdate,
