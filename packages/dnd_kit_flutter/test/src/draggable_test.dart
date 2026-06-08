@@ -173,6 +173,156 @@ void main() {
       expect(controller.state, const DndIdle());
     });
 
+    testWidgets('waits for pointer distance before starting a drag', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+      final moveEvents = <DndDragMoveEvent>[];
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: DndDraggable(
+            id: const DndId('task-1'),
+            activationConstraint: const DndSensorActivationConstraint(distance: 50),
+            onDragStart: (event) {
+              startEvent = event;
+            },
+            onDragMove: moveEvents.add,
+            child: const SizedBox(width: 120, height: 120),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(20, 20));
+      await gesture.moveBy(const Offset(20, 0));
+      await tester.pump();
+
+      expect(startEvent, isNull);
+      expect(controller.state, isA<DndPending>());
+
+      await gesture.moveBy(const Offset(80, 0));
+      await tester.pump();
+
+      expect(startEvent?.activeId, const DndId('task-1'));
+      expect(moveEvents, isNotEmpty);
+      expect(controller.state, isA<DndDragging>());
+
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('cancels pending pointer activation when gesture ends early', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+      DndDragCancelEvent? cancelEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: DndDraggable(
+            id: const DndId('task-1'),
+            activationConstraint: const DndSensorActivationConstraint(distance: 100),
+            onDragStart: (event) {
+              startEvent = event;
+            },
+            onDragCancel: (event) {
+              cancelEvent = event;
+            },
+            child: const SizedBox(width: 120, height: 120),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(20, 20));
+      await gesture.moveBy(const Offset(20, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(startEvent, isNull);
+      expect(cancelEvent?.activeId, const DndId('task-1'));
+      expect(cancelEvent?.reason, DndCancelReason.sensor);
+      expect(controller.state, const DndIdle());
+    });
+
+    testWidgets('waits for pointer delay before starting a drag', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: DndDraggable(
+            id: const DndId('task-1'),
+            activationConstraint: const DndSensorActivationConstraint(
+              delay: Duration(milliseconds: 300),
+            ),
+            onDragStart: (event) {
+              startEvent = event;
+            },
+            child: const SizedBox(width: 120, height: 120),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(20, 20));
+      await gesture.moveBy(const Offset(20, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 299));
+
+      expect(startEvent, isNull);
+      expect(controller.state, isA<DndPending>());
+
+      await tester.pump(const Duration(milliseconds: 1));
+
+      expect(startEvent?.activeId, const DndId('task-1'));
+      expect(controller.state, isA<DndDragging>());
+
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('cancels delayed pointer activation when tolerance is exceeded', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+      DndDragCancelEvent? cancelEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: DndDraggable(
+            id: const DndId('task-1'),
+            activationConstraint: const DndSensorActivationConstraint(
+              delay: Duration(seconds: 1),
+              tolerance: 5,
+            ),
+            onDragStart: (event) {
+              startEvent = event;
+            },
+            onDragCancel: (event) {
+              cancelEvent = event;
+            },
+            child: const SizedBox(width: 120, height: 120),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(20, 20));
+      await gesture.moveBy(const Offset(20, 0));
+      await tester.pump();
+
+      expect(startEvent, isNull);
+      expect(cancelEvent?.activeId, const DndId('task-1'));
+      expect(cancelEvent?.reason, DndCancelReason.sensor);
+      expect(controller.state, const DndIdle());
+
+      await gesture.cancel();
+    });
+
     testWidgets('cancels an active drag when disabled during the gesture', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

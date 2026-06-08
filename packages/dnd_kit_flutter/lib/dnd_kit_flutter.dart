@@ -6,4 +6,5 @@ export 'src/controller.dart';
 export 'src/draggable.dart';
 export 'src/droppable.dart';
 export 'src/measuring.dart';
+export 'src/pointer_sensor.dart';
 export 'src/scope.dart';

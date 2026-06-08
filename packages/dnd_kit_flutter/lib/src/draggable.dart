@@ -3,19 +3,8 @@ import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
 import 'measuring.dart';
+import 'pointer_sensor.dart';
 import 'scope.dart';
-
-/// Called when a draggable starts a drag session.
-typedef DndDragStartCallback = void Function(DndDragStartEvent event);
-
-/// Called when an active draggable moves.
-typedef DndDragMoveCallback = void Function(DndDragMoveEvent event);
-
-/// Called when an active draggable ends.
-typedef DndDragEndCallback = void Function(DndDragEndEvent event);
-
-/// Called when a pending or active draggable is cancelled.
-typedef DndDragCancelCallback = void Function(DndDragCancelEvent event);
 
 /// Registers a child as draggable and wires basic pointer gestures to a scope.
 class DndDraggable extends StatefulWidget {
@@ -26,6 +15,7 @@ class DndDraggable extends StatefulWidget {
     required this.child,
     this.disabled = false,
     this.data,
+    this.activationConstraint = DndSensorActivationConstraint.none,
     this.hitTestBehavior,
     this.onDragStart,
     this.onDragMove,
@@ -44,6 +34,9 @@ class DndDraggable extends StatefulWidget {
 
   /// Optional application-owned metadata stored in the controller registry.
   final Object? data;
+
+  /// The pointer activation constraint required before a drag starts.
+  final DndSensorActivationConstraint activationConstraint;
 
   /// How this draggable participates in hit testing.
   final HitTestBehavior? hitTestBehavior;
@@ -69,7 +62,7 @@ class _DndDraggableState extends State<DndDraggable> {
   DndController? _controller;
   DndController? _registeredController;
   DndDraggableRegistration? _registration;
-  bool _gestureStartedDrag = false;
+  DndPointerSensor? _pointerSensor;
   bool _disabledCancelScheduled = false;
 
   @override
@@ -84,19 +77,20 @@ class _DndDraggableState extends State<DndDraggable> {
     super.didUpdateWidget(oldWidget);
     _syncRegistration();
 
-    if (!oldWidget.disabled && widget.disabled && _isActiveWidgetDrag) {
+    if (!oldWidget.disabled && widget.disabled && _isWidgetGestureDrag) {
       _scheduleDisabledCancel();
     }
   }
 
   @override
   void dispose() {
+    _pointerSensor?.dispose();
     _unregister();
     super.dispose();
   }
 
-  bool get _isActiveWidgetDrag {
-    return _gestureStartedDrag && _controller?.activeId == widget.id;
+  bool get _isWidgetGestureDrag {
+    return _pointerSensor?.isActive == true && _controller?.activeId == widget.id;
   }
 
   DndDraggableRegistration get _currentRegistration {
@@ -157,49 +151,38 @@ class _DndDraggableState extends State<DndDraggable> {
       controller.measuring.updateDraggableRect(widget.id, activeRect);
     }
 
-    controller.beginDrag(
+    final initialPointer = _pointFromOffset(details.globalPosition);
+    final sensor = DndPointerSensor(
+      controller: controller,
+      activeRect: activeRect,
+      constraint: widget.activationConstraint,
+      onDragStart: widget.onDragStart,
+      onDragMove: widget.onDragMove,
+      onDragEnd: widget.onDragEnd,
+      onDragCancel: widget.onDragCancel,
+    );
+    _pointerSensor = sensor;
+    sensor.start(
       DndSensorActivationEvent(
         activeId: widget.id,
-        position: _pointFromOffset(details.globalPosition),
+        position: initialPointer,
         inputKind: DndInputKind.pointer,
       ),
-      activeRect: activeRect,
     );
-
-    final event = controller.startDrag();
-    if (event == null) {
-      return;
-    }
-
-    _gestureStartedDrag = true;
-    widget.onDragStart?.call(event);
   }
 
   void _handlePanUpdate(DragUpdateDetails details) {
-    if (!_isActiveWidgetDrag) {
-      return;
-    }
-
-    final event = _controller?.moveDrag(_pointFromOffset(details.globalPosition));
-    if (event != null) {
-      widget.onDragMove?.call(event);
-    }
+    final currentPointer = _pointFromOffset(details.globalPosition);
+    _pointerSensor?.move(currentPointer);
   }
 
   void _handlePanEnd(DragEndDetails details) {
-    if (!_isActiveWidgetDrag) {
-      return;
-    }
-
-    final event = _controller?.endDrag();
-    if (event != null) {
-      widget.onDragEnd?.call(event);
-    }
-    _resetAfterGesture();
+    _pointerSensor?.end();
+    _pointerSensor = null;
   }
 
   void _handlePanCancel() {
-    if (!_isActiveWidgetDrag) {
+    if (!_isWidgetGestureDrag) {
       return;
     }
 
@@ -207,16 +190,8 @@ class _DndDraggableState extends State<DndDraggable> {
   }
 
   void _cancelDrag({required DndCancelReason reason}) {
-    final event = _controller?.cancelDrag(reason: reason);
-    if (event != null) {
-      widget.onDragCancel?.call(event);
-    }
-    _resetAfterGesture();
-  }
-
-  void _resetAfterGesture() {
-    _gestureStartedDrag = false;
-    _controller?.reset();
+    _pointerSensor?.cancel(reason: reason);
+    _pointerSensor = null;
   }
 
   void _scheduleDisabledCancel() {
@@ -227,7 +202,7 @@ class _DndDraggableState extends State<DndDraggable> {
     _disabledCancelScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _disabledCancelScheduled = false;
-      if (!mounted || !widget.disabled || !_isActiveWidgetDrag) {
+      if (!mounted || !widget.disabled || !_isWidgetGestureDrag) {
         return;
       }
 
