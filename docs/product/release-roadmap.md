@@ -17,7 +17,8 @@ Build the pure Dart foundation:
 - event models;
 - collision detectors;
 - modifier contracts;
-- registry contracts.
+- registry contracts;
+- sensor contracts.
 
 ## Phase 2 - Basic Flutter Adapter
 
