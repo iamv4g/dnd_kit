@@ -42,6 +42,9 @@ class DndController extends ChangeNotifier {
   /// The droppable currently under the active drag, when one exists.
   DndId? get overId => _overId;
 
+  /// The measured rectangle of the active draggable, when one is known.
+  DndRect? get activeRect => _activeRect;
+
   /// Whether no drag is active or pending.
   bool get isIdle => _state is DndIdle;
 
