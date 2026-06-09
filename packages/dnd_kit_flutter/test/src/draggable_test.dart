@@ -1,5 +1,6 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -169,16 +170,52 @@ void main() {
         ),
       );
 
-      await tester.dragFrom(const Offset(10, 10), const Offset(15, 20));
+      final gesture = await tester.startGesture(
+        const Offset(10, 10),
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.moveBy(const Offset(15, 20));
+      await gesture.up();
       await tester.pump();
 
       expect(startEvent?.activeId, const DndId('task-1'));
       expect(startEvent?.initialPointer, const DndPoint(10, 10));
-      expect(startEvent?.inputKind, DndInputKind.pointer);
+      expect(startEvent?.inputKind, DndInputKind.mouse);
       expect(moveEvents, isNotEmpty);
       expect(moveEvents.last.currentPointer, const DndPoint(25, 30));
       expect(endEvent?.activeId, const DndId('task-1'));
       expect(endEvent?.currentPointer, const DndPoint(25, 30));
+      expect(controller.state, const DndIdle());
+    });
+
+    testWidgets('reports touch input kind for touch pan gestures', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: DndDraggable(
+            id: const DndId('task-1'),
+            onDragStart: (event) {
+              startEvent = event;
+            },
+            child: const SizedBox(width: 40, height: 40),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        const Offset(10, 10),
+        kind: PointerDeviceKind.touch,
+      );
+      await gesture.moveBy(const Offset(15, 20));
+      await gesture.up();
+      await tester.pump();
+
+      expect(startEvent?.activeId, const DndId('task-1'));
+      expect(startEvent?.inputKind, DndInputKind.touch);
       expect(controller.state, const DndIdle());
     });
 
@@ -353,7 +390,10 @@ void main() {
         ),
       );
 
-      final gesture = await tester.startGesture(const Offset(20, 20));
+      final gesture = await tester.startGesture(
+        const Offset(20, 20),
+        kind: PointerDeviceKind.touch,
+      );
       await tester.pump(const Duration(milliseconds: 299));
 
       expect(startEvent, isNull);
@@ -363,6 +403,7 @@ void main() {
 
       expect(startEvent?.activeId, const DndId('task-1'));
       expect(startEvent?.initialPointer, const DndPoint(20, 20));
+      expect(startEvent?.inputKind, DndInputKind.touch);
       expect(controller.state, isA<DndDragging>());
 
       await gesture.up();
@@ -480,11 +521,17 @@ void main() {
         ),
       );
 
-      await tester.dragFrom(const Offset(10, 10), const Offset(20, 0));
+      final gesture = await tester.startGesture(
+        const Offset(10, 10),
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.moveBy(const Offset(20, 0));
+      await gesture.up();
       await tester.pump();
 
       expect(startEvent?.activeId, const DndId('task-1'));
       expect(startEvent?.initialPointer, const DndPoint(10, 10));
+      expect(startEvent?.inputKind, DndInputKind.mouse);
       expect(endEvent?.activeId, const DndId('task-1'));
       expect(controller.state, const DndIdle());
     });

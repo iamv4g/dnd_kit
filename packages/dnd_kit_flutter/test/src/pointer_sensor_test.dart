@@ -24,6 +24,36 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        sensor.descriptor.canActivate(
+          const DndSensorActivationEvent(
+            activeId: DndId('task-1'),
+            position: DndPoint(0, 0),
+            inputKind: DndInputKind.mouse,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        sensor.descriptor.canActivate(
+          const DndSensorActivationEvent(
+            activeId: DndId('task-1'),
+            position: DndPoint(0, 0),
+            inputKind: DndInputKind.touch,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        sensor.descriptor.canActivate(
+          const DndSensorActivationEvent(
+            activeId: DndId('task-1'),
+            position: DndPoint(0, 0),
+            inputKind: DndInputKind.keyboard,
+          ),
+        ),
+        isFalse,
+      );
     });
 
     test('drives controller start, move, and end lifecycle', () {
@@ -57,9 +87,35 @@ void main() {
       sensor.end();
 
       expect(startEvent?.activeId, const DndId('task-1'));
+      expect(startEvent?.inputKind, DndInputKind.pointer);
       expect(moveEvent?.currentPointer, const DndPoint(20, 30));
       expect(endEvent?.currentPointer, const DndPoint(20, 30));
       expect(controller.state, const DndIdle());
+    });
+
+    test('preserves specialized input kind in lifecycle events', () {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragStartEvent? startEvent;
+
+      final sensor = DndPointerSensor(
+        controller: controller,
+        onDragStart: (event) {
+          startEvent = event;
+        },
+      );
+
+      sensor.start(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(10, 10),
+          inputKind: DndInputKind.mouse,
+        ),
+      );
+
+      expect(startEvent?.inputKind, DndInputKind.mouse);
+
+      sensor.cancel();
     });
 
     test('cancels pending activation through the controller', () {

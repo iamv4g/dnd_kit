@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
@@ -198,7 +199,11 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
       return;
     }
 
-    _startPointerSensor(_pointFromOffset(details.globalPosition), fromHandle: fromHandle);
+    _startPointerSensor(
+      _pointFromOffset(details.globalPosition),
+      inputKind: _inputKindFromPointerKind(details.kind),
+      fromHandle: fromHandle,
+    );
   }
 
   void _handlePointerDown(PointerDownEvent event) {
@@ -206,7 +211,11 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
       return;
     }
 
-    _startPointerSensor(_pointFromOffset(event.position), fromHandle: false);
+    _startPointerSensor(
+      _pointFromOffset(event.position),
+      inputKind: _inputKindFromPointerKind(event.kind),
+      fromHandle: false,
+    );
   }
 
   void _handlePointerMove(PointerMoveEvent event) {
@@ -235,7 +244,11 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
     _cancelDrag(reason: DndCancelReason.sensor);
   }
 
-  void _startPointerSensor(DndPoint initialPointer, {required bool fromHandle}) {
+  void _startPointerSensor(
+    DndPoint initialPointer, {
+    required DndInputKind inputKind,
+    required bool fromHandle,
+  }) {
     final startedFromHandle = fromHandle || _handlePointerActive;
     if (_handleCount > 0 && !startedFromHandle) {
       return;
@@ -271,9 +284,17 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
       DndSensorActivationEvent(
         activeId: widget.id,
         position: initialPointer,
-        inputKind: DndInputKind.pointer,
+        inputKind: inputKind,
       ),
     );
+  }
+
+  DndInputKind _inputKindFromPointerKind(PointerDeviceKind? kind) {
+    return switch (kind) {
+      PointerDeviceKind.mouse => DndInputKind.mouse,
+      PointerDeviceKind.touch => DndInputKind.touch,
+      _ => DndInputKind.pointer,
+    };
   }
 
   DndSensorActivationConstraint get _effectiveActivationConstraint {

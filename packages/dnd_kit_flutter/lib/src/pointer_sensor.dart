@@ -63,7 +63,12 @@ class DndPointerSensor implements DndSensor {
       kind: DndSensorKind.pointer,
       inputKind: DndInputKind.pointer,
       constraint: constraint,
-      activator: (event) => event.inputKind == DndInputKind.pointer,
+      activator: (event) {
+        return switch (event.inputKind) {
+          DndInputKind.pointer || DndInputKind.mouse || DndInputKind.touch => true,
+          DndInputKind.unknown || DndInputKind.keyboard => false,
+        };
+      },
     );
   }
 
