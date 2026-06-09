@@ -1,7 +1,7 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:flutter/foundation.dart';
 
-import 'measuring.dart';
+import '../measuring/measuring.dart';
 
 /// Coordinates Flutter adapter drag state while keeping user data external.
 class DndController extends ChangeNotifier {

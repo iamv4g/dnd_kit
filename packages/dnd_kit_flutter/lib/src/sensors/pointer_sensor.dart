@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 
-import 'controller.dart';
+import '../scope/controller.dart';
 
 /// Called when a draggable starts a drag session.
 typedef DndDragStartCallback = void Function(DndDragStartEvent event);

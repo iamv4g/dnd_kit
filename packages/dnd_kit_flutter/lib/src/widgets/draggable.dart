@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
-import 'controller.dart';
-import 'long_press_activation.dart';
-import 'measuring.dart';
-import 'pointer_sensor.dart';
-import 'scope.dart';
+import '../measuring/measuring.dart';
+import '../scope/controller.dart';
+import '../scope/scope.dart';
+import '../sensors/long_press_activation.dart';
+import '../sensors/pointer_sensor.dart';
 
 /// Registers a child as draggable and wires basic pointer gestures to a scope.
 class DndDraggable extends StatefulWidget {

@@ -2,9 +2,9 @@ import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'controller.dart';
-import 'measuring.dart';
-import 'scope.dart';
+import '../measuring/measuring.dart';
+import '../scope/controller.dart';
+import '../scope/scope.dart';
 
 /// Registers a child as a droppable target in the nearest drag-and-drop scope.
 class DndDroppable extends StatefulWidget {

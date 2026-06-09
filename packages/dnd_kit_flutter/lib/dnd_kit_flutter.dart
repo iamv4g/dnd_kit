@@ -2,11 +2,11 @@
 ///
 library;
 
-export 'src/controller.dart';
-export 'src/drag_handle.dart';
-export 'src/draggable.dart' hide DndDraggableHandleController, DndDraggableHandleScope;
-export 'src/droppable.dart';
-export 'src/long_press_activation.dart';
-export 'src/measuring.dart';
-export 'src/pointer_sensor.dart';
-export 'src/scope.dart';
+export 'src/measuring/measuring.dart';
+export 'src/scope/controller.dart';
+export 'src/scope/scope.dart';
+export 'src/sensors/long_press_activation.dart';
+export 'src/sensors/pointer_sensor.dart';
+export 'src/widgets/drag_handle.dart';
+export 'src/widgets/draggable.dart' hide DndDraggableHandleController, DndDraggableHandleScope;
+export 'src/widgets/droppable.dart';
