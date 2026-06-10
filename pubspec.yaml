@@ -22,3 +22,11 @@ melos:
       run: dart run melos exec --concurrency 1 -- "dart analyze"
     test:
       run: dart run melos exec --dir-exists test -- "dart test"
+    validate:
+      run: |
+        dart format --set-exit-if-changed .
+        dart run melos run analyze
+        dart test packages/dnd_kit_core
+        flutter test packages/dnd_kit_flutter
+        flutter test packages/dnd_kit_sortable
+        flutter test examples/kanban_board

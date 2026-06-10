@@ -58,3 +58,5 @@ Use Kanban as a realistic proof that the generic engine supports complex UIs.
 
 Add diagnostics, performance baselines, cross-platform verification, docs, and
 release-quality checks.
+
+First story: `docs/stories/phase-8-production-hardening/US-031-release-quality-workspace-validation.md`.
