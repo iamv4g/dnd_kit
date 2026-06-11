@@ -78,10 +78,11 @@ class DndDragOverlay extends StatelessWidget {
           activeRect: activeRect,
           overId: effectiveController.overId,
         );
+        final origin = _stackOriginOf(context);
 
         return Positioned(
-          left: activeRect.left,
-          top: activeRect.top,
+          left: activeRect.left - origin.dx,
+          top: activeRect.top - origin.dy,
           width: activeRect.width,
           height: activeRect.height,
           child: Transform.translate(
@@ -94,5 +95,29 @@ class DndDragOverlay extends StatelessWidget {
         );
       },
     );
+  }
+
+  Offset _stackOriginOf(BuildContext context) {
+    RenderBox? stackBox;
+    context.visitAncestorElements((element) {
+      if (element.widget is Stack) {
+        final renderObject = element.findRenderObject();
+        if (renderObject is RenderBox) {
+          stackBox = renderObject;
+        }
+        return false;
+      }
+      return true;
+    });
+
+    if (stackBox != null) {
+      return stackBox!.localToGlobal(Offset.zero);
+    }
+
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) {
+      return Offset.zero;
+    }
+    return renderObject.localToGlobal(Offset.zero);
   }
 }

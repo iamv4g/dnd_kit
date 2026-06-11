@@ -33,4 +33,39 @@ void main() {
     expect(find.text('Interactive Board'), findsOneWidget);
     expect(find.text('Design Dark Mode UI'), findsOneWidget);
   });
+
+  testWidgets('keeps the basic drag overlay aligned inside the gallery shell',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const ExampleGalleryApp());
+    await tester.pumpAndSettle();
+
+    final redCard = find.text('Red');
+    final initialTextTopLeft = tester.getTopLeft(redCard);
+    final gesture = await tester.startGesture(tester.getCenter(redCard));
+    await tester.pump();
+    await gesture.moveBy(const Offset(40, 20));
+    await tester.pump();
+
+    final expectedTextTopLeft = initialTextTopLeft.translate(40, 20);
+    final redTextPositions = tester
+        .widgetList<Text>(redCard)
+        .map((widget) => tester.getTopLeft(find.byWidget(widget)))
+        .toList();
+
+    expect(
+      redTextPositions.any(
+        (offset) =>
+            (offset.dx - expectedTextTopLeft.dx).abs() < 1 &&
+            (offset.dy - expectedTextTopLeft.dy).abs() < 1,
+      ),
+      isTrue,
+      reason: 'overlay should follow the dragged card without sidebar offset',
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
 }

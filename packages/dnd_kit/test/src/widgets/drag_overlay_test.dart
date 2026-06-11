@@ -127,6 +127,58 @@ void main() {
           tester.getSize(find.byKey(const ValueKey<String>('overlay-child'))), const Size(40, 50));
     });
 
+    testWidgets('converts global active rect into local stack coordinates', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              children: <Widget>[
+                const SizedBox(width: 200),
+                SizedBox(
+                  width: 400,
+                  height: 300,
+                  child: Stack(
+                    children: <Widget>[
+                      DndDragOverlay(
+                        builder: (context, details) {
+                          return const SizedBox(
+                            key: ValueKey<String>('nested-overlay-child'),
+                            width: 40,
+                            height: 50,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      controller.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(210, 20),
+        ),
+        activeRect: const DndRect(left: 220, top: 30, width: 40, height: 50),
+      );
+      controller.startDrag();
+      controller.moveDrag(const DndPoint(235, 45));
+      await tester.pump();
+
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey<String>('nested-overlay-child'))),
+        const Offset(245, 55),
+      );
+    });
+
     testWidgets('ignores pointer events by default', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

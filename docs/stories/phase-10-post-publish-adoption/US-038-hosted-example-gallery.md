@@ -82,3 +82,10 @@ None expected.
 - Browser verification served the release artifact under
   `/dnd_kit.flutter/`, rendered the Basic demo, and navigated to Kanban and
   Multi-container demos.
+- Follow-up gallery bugfix: `DndDragOverlay` now converts global draggable
+  rects into the local coordinates of the nearest parent `Stack`, preventing
+  Basic demo overlays from shifting by the gallery sidebar offset. Regression
+  proof passed with `fvm flutter test packages/dnd_kit/test/src/widgets/drag_overlay_test.dart`,
+  `fvm flutter test examples/example_gallery`, `fvm dart analyze`,
+  `cd examples/example_gallery && fvm flutter build web --release --base-href /dnd_kit.flutter/`,
+  `fvm dart run melos run validate`, and `git diff --check`.
