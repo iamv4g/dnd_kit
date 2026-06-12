@@ -22,7 +22,7 @@ final class DndDragOverlayDetails {
   /// The active drag session.
   final DndDragSession session;
 
-  /// The measured rectangle of the active draggable at drag start or refresh.
+  /// The active draggable rectangle, anchored at drag start.
   final DndRect activeRect;
 
   /// The droppable currently under the active drag, when one exists.

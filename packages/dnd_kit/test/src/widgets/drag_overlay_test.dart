@@ -179,6 +179,65 @@ void main() {
       );
     });
 
+    testWidgets('keeps overlay aligned when the source rect shifts during drag', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              DndDragOverlay(
+                builder: (context, details) {
+                  return const SizedBox(
+                    key: ValueKey<String>('scroll-shift-overlay-child'),
+                    width: 40,
+                    height: 50,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      const activeId = DndId('task-1');
+      controller.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: activeId,
+          position: DndPoint(130, 60),
+        ),
+        activeRect: const DndRect(left: 120, top: 40, width: 40, height: 50),
+      );
+      controller.startDrag();
+      controller.moveDrag(const DndPoint(170, 80));
+      await tester.pump();
+
+      expect(
+        tester.getTopLeft(
+          find.byKey(const ValueKey<String>('scroll-shift-overlay-child')),
+        ),
+        const Offset(160, 60),
+      );
+
+      controller.measuring.updateDraggableRect(
+        activeId,
+        const DndRect(left: 72, top: -8, width: 40, height: 50),
+      );
+      controller.moveDrag(const DndPoint(172, 82));
+      await tester.pump();
+
+      expect(
+        tester.getTopLeft(
+          find.byKey(const ValueKey<String>('scroll-shift-overlay-child')),
+        ),
+        const Offset(162, 62),
+        reason: 'scroll-driven source remeasurement must not be added to the pointer delta',
+      );
+    });
+
     testWidgets('ignores pointer events by default', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

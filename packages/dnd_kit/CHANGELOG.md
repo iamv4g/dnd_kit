@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-dev.2
+
+- Fixed active drag geometry so overlays and collision detection stay aligned
+  with the pointer when a scrollable ancestor moves during the drag.
+
 ## 0.1.0-dev.1
 
 - Added a package-local `example/example.md` so pub.dev can render a compact

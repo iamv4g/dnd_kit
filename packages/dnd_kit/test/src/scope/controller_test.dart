@@ -221,5 +221,51 @@ void main() {
           controller.measuring.draggableStatus(const DndId('task-1')), DndMeasurementStatus.clean);
       expect(moveEvent?.currentPointer, const DndPoint(20, 20));
     });
+
+    test('keeps active rect origin stable when source measurement shifts during drag', () {
+      DndCollisionInput? latestInput;
+      final controller = DndController(
+        collisionDetector: (input) {
+          latestInput = input;
+          return DndCollisionResult.empty;
+        },
+      );
+      addTearDown(controller.dispose);
+
+      controller.registry.registerDroppable(const DndDroppableRegistration(id: DndId('column-1')));
+      controller.measuring.updateDroppableRect(
+        const DndId('column-1'),
+        const DndRect(left: 0, top: 0, width: 400, height: 400),
+      );
+
+      const activeId = DndId('task-1');
+      controller.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: activeId,
+          position: DndPoint(110, 110),
+        ),
+        activeRect: const DndRect(left: 100, top: 100, width: 40, height: 50),
+      );
+      controller.startDrag();
+      controller.moveDrag(const DndPoint(130, 140));
+
+      expect(
+        latestInput?.activeRect,
+        const DndRect(left: 120, top: 130, width: 40, height: 50),
+      );
+
+      controller.measuring.updateDraggableRect(
+        activeId,
+        const DndRect(left: 40, top: 20, width: 60, height: 70),
+      );
+      controller.moveDrag(const DndPoint(132, 142));
+
+      expect(
+        latestInput?.activeRect,
+        const DndRect(left: 122, top: 132, width: 60, height: 70),
+        reason:
+            'scroll-driven source remeasurement should update size without moving the drag origin',
+      );
+    });
   });
 }

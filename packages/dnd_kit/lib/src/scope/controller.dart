@@ -44,7 +44,7 @@ class DndController extends ChangeNotifier {
   /// The droppable currently under the active drag, when one exists.
   DndId? get overId => _overId;
 
-  /// The measured rectangle of the active draggable, when one is known.
+  /// The active draggable rectangle, anchored at drag start when one is known.
   DndRect? get activeRect => _activeRect;
 
   /// Whether no drag is active or pending.
@@ -202,9 +202,24 @@ class DndController extends ChangeNotifier {
 
   void _refreshMeasurements(DndId activeId) {
     measuring.refreshDirty();
-    final activeRect = measuring.draggableRect(activeId);
-    if (activeRect != null) {
-      _activeRect = activeRect;
+    final current = _state;
+    if (current is DndDragging || current is DndDropping) {
+      final currentActiveRect = _activeRect;
+      final measuredActiveRect = measuring.draggableRect(activeId);
+      if (currentActiveRect != null && measuredActiveRect != null) {
+        _activeRect = DndRect(
+          left: currentActiveRect.left,
+          top: currentActiveRect.top,
+          width: measuredActiveRect.width,
+          height: measuredActiveRect.height,
+        );
+      }
+      return;
+    }
+
+    final measuredActiveRect = measuring.draggableRect(activeId);
+    if (measuredActiveRect != null) {
+      _activeRect = measuredActiveRect;
     }
   }
 
