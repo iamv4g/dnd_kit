@@ -105,6 +105,50 @@ void main() {
       expect(secondController.registry.hasDroppable(const DndId('column-1')), isTrue);
     });
 
+    testWidgets('warns when duplicate droppable widgets persist after reconciliation',
+        (tester) async {
+      final warnings = <DndWarning>[];
+      final controller = DndController(
+        diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              DndDroppable(
+                id: DndId('column-1'),
+                child: SizedBox(width: 80, height: 80),
+              ),
+              Positioned(
+                top: 100,
+                child: DndDroppable(
+                  id: DndId('column-1'),
+                  child: SizedBox(width: 80, height: 80),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        warnings,
+        [
+          isA<DndWarning>()
+              .having((warning) => warning.code, 'code', 'duplicate-droppable-id')
+              .having((warning) => warning.id, 'id', const DndId('column-1'))
+              .having((warning) => warning.message, 'message', contains('after reconciliation')),
+        ],
+      );
+
+      await tester.pump();
+      expect(warnings, hasLength(1));
+    });
+
     testWidgets('keeps disabled droppables registered as disabled metadata', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

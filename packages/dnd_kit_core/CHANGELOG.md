@@ -8,8 +8,13 @@
   detection — required so draggables in a lazy `ListView.builder` survive the
   list rebuilding a keyed entry (new element mounts before the old is disposed).
   A departing owner can no longer remove a registration that a newer owner
-  already took over. Calls without `owner` keep the strict duplicate-id debug
-  assertion.
+  already took over.
+- Owner-aware entries now also keep per-id owner claims and emit a deferred
+  duplicate warning when multiple owners still claim the same id after
+  reconciliation. This restores actionable duplicate diagnostics for
+  owner-registered entries without reintroducing the lazy-list remount crash.
+- Calls without `owner` keep the strict duplicate-id debug assertion and
+  immediate warning behavior for direct `DndRegistry` usage.
 
 ## 0.1.0-dev.1
 

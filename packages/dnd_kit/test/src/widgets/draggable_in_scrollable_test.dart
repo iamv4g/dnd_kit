@@ -176,7 +176,10 @@ void main() {
     // can be re-mounted (new owner registers) before the old element is
     // disposed (old owner unregisters). Owner-aware registration must tolerate
     // this instead of asserting a duplicate id.
-    final controller = DndController();
+    final warnings = <DndWarning>[];
+    final controller = DndController(
+      diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+    );
     addTearDown(controller.dispose);
     final ids = List<DndId>.generate(6, (i) => DndId('item-$i'));
 
@@ -226,6 +229,11 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+    expect(
+      warnings,
+      isEmpty,
+      reason: 'same-frame owner handoff in a lazy list should not emit duplicate warnings',
+    );
     // The shifted item is registered exactly once and remains queryable.
     expect(controller.registry.hasDraggable(const DndId('item-1')), isTrue);
     expect(controller.registry.hasDroppable(const DndId('item-1')), isTrue);

@@ -201,6 +201,51 @@ void main() {
       expect(secondController.registry.hasDraggable(const DndId('task-1')), isTrue);
     });
 
+    testWidgets('warns when duplicate draggable widgets persist after reconciliation',
+        (tester) async {
+      final warnings = <DndWarning>[];
+      final controller = DndController(
+        diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              DndDraggable(
+                id: DndId('task-1'),
+                child: SizedBox(width: 40, height: 40),
+              ),
+              Positioned(
+                top: 60,
+                child: DndDraggable(
+                  id: DndId('task-1'),
+                  child: SizedBox(width: 40, height: 40),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        warnings,
+        [
+          isA<DndWarning>()
+              .having((warning) => warning.code, 'code', 'duplicate-draggable-id')
+              .having((warning) => warning.id, 'id', const DndId('task-1'))
+              .having((warning) => warning.message, 'message', contains('after reconciliation')),
+        ],
+      );
+
+      await tester.pump();
+      expect(warnings, hasLength(1),
+          reason: 'persistent duplicates should not spam repeated warnings');
+    });
+
     testWidgets('does not start a drag when disabled', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

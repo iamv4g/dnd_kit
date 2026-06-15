@@ -1,5 +1,6 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../measuring/measuring.dart';
 
@@ -12,7 +13,12 @@ class DndController extends ChangeNotifier {
     Iterable<DndModifier> modifiers = const <DndModifier>[],
     DndDiagnosticsConfig diagnosticsConfig = const DndDiagnosticsConfig(),
   })  : _state = initialState,
-        registry = DndRegistry(diagnosticsConfig: diagnosticsConfig),
+        registry = DndRegistry(
+          diagnosticsConfig: diagnosticsConfig,
+          scheduleDeferredTask: (task) {
+            SchedulerBinding.instance.addPostFrameCallback((_) => task());
+          },
+        ),
         modifiers = List<DndModifier>.unmodifiable(modifiers),
         collisionDetector = collisionDetector ??
             DndCollisionDetectors.compose(

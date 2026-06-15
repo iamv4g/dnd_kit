@@ -121,7 +121,7 @@ class _DndDroppableState extends State<DndDroppable> {
     }
 
     if (_registration != next) {
-      controller.registry.updateDroppable(next);
+      controller.registry.updateDroppable(next, owner: this);
       _registration = next;
       _markMeasurementDirty();
     }

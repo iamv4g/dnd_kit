@@ -29,6 +29,9 @@
   auto-scrolling a lazy list during a drag, when the list re-mounts a keyed
   item before disposing the old one. `findChildIndexCallback` is now a
   performance recommendation rather than a requirement.
+- Duplicate `DndDraggable`/`DndDroppable` ids that remain mounted after widget
+  reconciliation now surface an actionable `DndDiagnosticsConfig.onWarning`
+  callback instead of staying silently last-wins.
 - The Kanban and multi-container examples now use `ListView.builder` (with
   `findChildIndexCallback`) to demonstrate lazy sortable columns. The Kanban
   board is lazy in both axes — the horizontal column row and each column's

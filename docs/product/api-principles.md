@@ -122,9 +122,11 @@ lists (`ListView.builder`).
 - Registration is owner-aware: a lazy list may re-mount a keyed item (new owner)
   before disposing the old element without tripping duplicate-id detection, and
   a departing owner cannot remove a registration a newer owner took over. As a
-  result, registering an id through a widget is last-wins; the strict
-  duplicate-id debug assertion applies only to direct `DndRegistry` use without
-  an `owner`.
+  result, registering an id through a widget is last-wins during the current
+  frame; if multiple widget owners still claim the same id after reconciliation,
+  `DndDiagnosticsConfig.onWarning` emits a deferred duplicate warning. The
+  strict duplicate-id debug assertion still applies only to direct
+  `DndRegistry` use without an `owner`.
 - When using `ListView.builder` with reorderable content, providing
   `findChildIndexCallback` is recommended so keyed items are relocated (not
   rebuilt) on reorder. It is a performance optimization, not a correctness

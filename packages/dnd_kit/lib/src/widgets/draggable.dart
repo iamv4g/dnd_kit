@@ -221,7 +221,7 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
     }
 
     if (_registration != next) {
-      controller.registry.updateDraggable(next);
+      controller.registry.updateDraggable(next, owner: this);
       _registration = next;
       _markMeasurementDirty();
     }

@@ -113,14 +113,20 @@ final class DndRegistrySnapshot {
   }
 }
 
+/// Schedules a deferred registry task after transient reconciliation settles.
+typedef DndDeferredTaskScheduler = void Function(void Function() task);
+
 /// Pure Dart registry for draggable and droppable entries.
 final class DndRegistry {
   /// Creates a registry.
   DndRegistry({
     DndDiagnosticsConfig diagnosticsConfig = const DndDiagnosticsConfig(),
-  }) : _diagnosticsConfig = diagnosticsConfig;
+    DndDeferredTaskScheduler? scheduleDeferredTask,
+  })  : _diagnosticsConfig = diagnosticsConfig,
+        _scheduleDeferredTask = scheduleDeferredTask;
 
   final DndDiagnosticsConfig _diagnosticsConfig;
+  final DndDeferredTaskScheduler? _scheduleDeferredTask;
   final Map<DndId, DndDraggableRegistration> _draggables = <DndId, DndDraggableRegistration>{};
   final Map<DndId, DndDroppableRegistration> _droppables = <DndId, DndDroppableRegistration>{};
 
@@ -130,6 +136,13 @@ final class DndRegistry {
   // letting the departing owner remove the live registration.
   final Map<DndId, Object> _draggableOwners = <DndId, Object>{};
   final Map<DndId, Object> _droppableOwners = <DndId, Object>{};
+  final Map<DndId, LinkedHashMap<Object, DndDraggableRegistration>> _draggableClaims =
+      <DndId, LinkedHashMap<Object, DndDraggableRegistration>>{};
+  final Map<DndId, LinkedHashMap<Object, DndDroppableRegistration>> _droppableClaims =
+      <DndId, LinkedHashMap<Object, DndDroppableRegistration>>{};
+  final Set<DndId> _warnedDraggableDuplicates = <DndId>{};
+  final Set<DndId> _warnedDroppableDuplicates = <DndId>{};
+  bool _deferredDuplicateCheckScheduled = false;
 
   /// Registered draggables keyed by stable id.
   Map<DndId, DndDraggableRegistration> get draggables {
@@ -185,8 +198,14 @@ final class DndRegistry {
       return;
     }
 
-    _draggables[registration.id] = registration;
-    _draggableOwners[registration.id] = owner;
+    final claims = _draggableClaims.putIfAbsent(
+      registration.id,
+      LinkedHashMap<Object, DndDraggableRegistration>.new,
+    );
+    claims.remove(owner);
+    claims[owner] = registration;
+    _syncCurrentDraggable(registration.id);
+    _scheduleDeferredDuplicateCheck();
   }
 
   /// Registers [registration] as a droppable entry.
@@ -209,17 +228,45 @@ final class DndRegistry {
       return;
     }
 
-    _droppables[registration.id] = registration;
-    _droppableOwners[registration.id] = owner;
+    final claims = _droppableClaims.putIfAbsent(
+      registration.id,
+      LinkedHashMap<Object, DndDroppableRegistration>.new,
+    );
+    claims.remove(owner);
+    claims[owner] = registration;
+    _syncCurrentDroppable(registration.id);
+    _scheduleDeferredDuplicateCheck();
   }
 
   /// Updates or inserts [registration] as a draggable entry.
-  void updateDraggable(DndDraggableRegistration registration) {
+  void updateDraggable(DndDraggableRegistration registration, {Object? owner}) {
+    if (owner != null) {
+      final claims = _draggableClaims[registration.id];
+      if (claims != null && claims.containsKey(owner)) {
+        claims.remove(owner);
+        claims[owner] = registration;
+        _syncCurrentDraggable(registration.id);
+        _scheduleDeferredDuplicateCheck();
+        return;
+      }
+    }
+
     _draggables[registration.id] = registration;
   }
 
   /// Updates or inserts [registration] as a droppable entry.
-  void updateDroppable(DndDroppableRegistration registration) {
+  void updateDroppable(DndDroppableRegistration registration, {Object? owner}) {
+    if (owner != null) {
+      final claims = _droppableClaims[registration.id];
+      if (claims != null && claims.containsKey(owner)) {
+        claims.remove(owner);
+        claims[owner] = registration;
+        _syncCurrentDroppable(registration.id);
+        _scheduleDeferredDuplicateCheck();
+        return;
+      }
+    }
+
     _droppables[registration.id] = registration;
   }
 
@@ -230,12 +277,26 @@ final class DndRegistry {
   /// a departing owner cannot drop the live registration.
   DndDraggableRegistration? unregisterDraggable(DndId id, {Object? owner}) {
     if (owner != null) {
-      final currentOwner = _draggableOwners[id];
-      if (currentOwner != null && !identical(currentOwner, owner)) {
+      final claims = _draggableClaims[id];
+      if (claims == null || !claims.containsKey(owner)) {
         return null;
       }
+
+      claims.remove(owner);
+      _warnedDraggableDuplicates.remove(id);
+      if (claims.isEmpty) {
+        _draggableClaims.remove(id);
+        _draggableOwners.remove(id);
+        return _draggables.remove(id);
+      }
+
+      _syncCurrentDraggable(id);
+      _scheduleDeferredDuplicateCheck();
+      return null;
     }
     _draggableOwners.remove(id);
+    _draggableClaims.remove(id);
+    _warnedDraggableDuplicates.remove(id);
     return _draggables.remove(id);
   }
 
@@ -244,12 +305,26 @@ final class DndRegistry {
   /// See [unregisterDraggable] for the [owner] semantics.
   DndDroppableRegistration? unregisterDroppable(DndId id, {Object? owner}) {
     if (owner != null) {
-      final currentOwner = _droppableOwners[id];
-      if (currentOwner != null && !identical(currentOwner, owner)) {
+      final claims = _droppableClaims[id];
+      if (claims == null || !claims.containsKey(owner)) {
         return null;
       }
+
+      claims.remove(owner);
+      _warnedDroppableDuplicates.remove(id);
+      if (claims.isEmpty) {
+        _droppableClaims.remove(id);
+        _droppableOwners.remove(id);
+        return _droppables.remove(id);
+      }
+
+      _syncCurrentDroppable(id);
+      _scheduleDeferredDuplicateCheck();
+      return null;
     }
     _droppableOwners.remove(id);
+    _droppableClaims.remove(id);
+    _warnedDroppableDuplicates.remove(id);
     return _droppables.remove(id);
   }
 
@@ -259,6 +334,98 @@ final class DndRegistry {
     _droppables.clear();
     _draggableOwners.clear();
     _droppableOwners.clear();
+    _draggableClaims.clear();
+    _droppableClaims.clear();
+    _warnedDraggableDuplicates.clear();
+    _warnedDroppableDuplicates.clear();
+  }
+
+  void _syncCurrentDraggable(DndId id) {
+    final claims = _draggableClaims[id];
+    if (claims == null || claims.isEmpty) {
+      _draggableOwners.remove(id);
+      _draggables.remove(id);
+      return;
+    }
+
+    final currentClaim = claims.entries.last;
+    _draggableOwners[id] = currentClaim.key;
+    _draggables[id] = currentClaim.value;
+  }
+
+  void _syncCurrentDroppable(DndId id) {
+    final claims = _droppableClaims[id];
+    if (claims == null || claims.isEmpty) {
+      _droppableOwners.remove(id);
+      _droppables.remove(id);
+      return;
+    }
+
+    final currentClaim = claims.entries.last;
+    _droppableOwners[id] = currentClaim.key;
+    _droppables[id] = currentClaim.value;
+  }
+
+  void _scheduleDeferredDuplicateCheck() {
+    final scheduler = _scheduleDeferredTask;
+    if (scheduler == null || _deferredDuplicateCheckScheduled) {
+      return;
+    }
+
+    _deferredDuplicateCheckScheduled = true;
+    scheduler(() {
+      _deferredDuplicateCheckScheduled = false;
+      _flushDeferredDuplicateWarnings();
+    });
+  }
+
+  void _flushDeferredDuplicateWarnings() {
+    _flushDeferredWarningsForDraggables();
+    _flushDeferredWarningsForDroppables();
+  }
+
+  void _flushDeferredWarningsForDraggables() {
+    final duplicateIds = <DndId>{};
+    for (final entry in _draggableClaims.entries) {
+      if (entry.value.length > 1) {
+        duplicateIds.add(entry.key);
+        if (_warnedDraggableDuplicates.add(entry.key)) {
+          _diagnosticsConfig.warn(
+            DndWarning(
+              code: 'duplicate-draggable-id',
+              id: entry.key,
+              message: 'Duplicate draggable id remained registered across multiple widgets after '
+                  'reconciliation: ${entry.key}. Each active draggable in the same DndRegistry '
+                  'must use a unique DndId.',
+            ),
+          );
+        }
+      }
+    }
+
+    _warnedDraggableDuplicates.removeWhere((id) => !duplicateIds.contains(id));
+  }
+
+  void _flushDeferredWarningsForDroppables() {
+    final duplicateIds = <DndId>{};
+    for (final entry in _droppableClaims.entries) {
+      if (entry.value.length > 1) {
+        duplicateIds.add(entry.key);
+        if (_warnedDroppableDuplicates.add(entry.key)) {
+          _diagnosticsConfig.warn(
+            DndWarning(
+              code: 'duplicate-droppable-id',
+              id: entry.key,
+              message: 'Duplicate droppable id remained registered across multiple widgets after '
+                  'reconciliation: ${entry.key}. Each active droppable in the same DndRegistry '
+                  'must use a unique DndId.',
+            ),
+          );
+        }
+      }
+    }
+
+    _warnedDroppableDuplicates.removeWhere((id) => !duplicateIds.contains(id));
   }
 
   void _warnDuplicate({

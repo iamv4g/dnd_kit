@@ -235,5 +235,116 @@ void main() {
       expect(registry.draggables, isEmpty);
       expect(registry.droppables, isEmpty);
     });
+
+    test('defers owner-aware duplicate warnings until the scheduled check runs', () {
+      final scheduledTasks = <void Function()>[];
+      final warnings = <DndWarning>[];
+      final registry = DndRegistry(
+        diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+        scheduleDeferredTask: scheduledTasks.add,
+      );
+      final firstOwner = Object();
+      final secondOwner = Object();
+
+      registry.registerDraggable(
+        const DndDraggableRegistration(id: DndId('drag')),
+        owner: firstOwner,
+      );
+      registry.registerDraggable(
+        const DndDraggableRegistration(id: DndId('drag'), disabled: true),
+        owner: secondOwner,
+      );
+
+      expect(warnings, isEmpty, reason: 'owner-aware duplicates should wait for reconciliation');
+      expect(scheduledTasks, hasLength(1), reason: 'duplicate checks should be coalesced');
+
+      scheduledTasks.single();
+
+      expect(
+        warnings,
+        [
+          isA<DndWarning>()
+              .having((warning) => warning.code, 'code', 'duplicate-draggable-id')
+              .having((warning) => warning.id, 'id', const DndId('drag'))
+              .having((warning) => warning.message, 'message', contains('after reconciliation')),
+        ],
+      );
+      expect(
+        registry.draggable(const DndId('drag')),
+        const DndDraggableRegistration(id: DndId('drag'), disabled: true),
+        reason: 'last registered owner should remain live',
+      );
+    });
+
+    test('owner-aware duplicates that resolve before the deferred check do not warn', () {
+      final scheduledTasks = <void Function()>[];
+      final warnings = <DndWarning>[];
+      final registry = DndRegistry(
+        diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+        scheduleDeferredTask: scheduledTasks.add,
+      );
+      final firstOwner = Object();
+      final secondOwner = Object();
+
+      registry.registerDroppable(
+        const DndDroppableRegistration(id: DndId('drop')),
+        owner: firstOwner,
+      );
+      registry.registerDroppable(
+        const DndDroppableRegistration(id: DndId('drop'), disabled: true),
+        owner: secondOwner,
+      );
+      expect(scheduledTasks, hasLength(1));
+
+      registry.unregisterDroppable(const DndId('drop'), owner: firstOwner);
+      scheduledTasks.single();
+
+      expect(warnings, isEmpty);
+      expect(
+        registry.droppable(const DndId('drop')),
+        const DndDroppableRegistration(id: DndId('drop'), disabled: true),
+      );
+    });
+
+    test('owner-aware duplicate warnings emit once per persistent duplicate state', () {
+      final scheduledTasks = <void Function()>[];
+      final warnings = <DndWarning>[];
+      final registry = DndRegistry(
+        diagnosticsConfig: DndDiagnosticsConfig(onWarning: warnings.add),
+        scheduleDeferredTask: scheduledTasks.add,
+      );
+      final firstOwner = Object();
+      final secondOwner = Object();
+      final thirdOwner = Object();
+
+      registry.registerDraggable(
+        const DndDraggableRegistration(id: DndId('drag')),
+        owner: firstOwner,
+      );
+      registry.registerDraggable(
+        const DndDraggableRegistration(id: DndId('drag'), disabled: true),
+        owner: secondOwner,
+      );
+      scheduledTasks.removeAt(0)();
+      expect(warnings, hasLength(1));
+
+      registry.updateDraggable(
+        const DndDraggableRegistration(id: DndId('drag'), data: 'updated'),
+        owner: secondOwner,
+      );
+      scheduledTasks.removeAt(0)();
+      expect(warnings, hasLength(1), reason: 'unchanged duplicate state should not spam warnings');
+
+      registry.unregisterDraggable(const DndId('drag'), owner: firstOwner);
+      scheduledTasks.removeAt(0)();
+      expect(warnings, hasLength(1));
+
+      registry.registerDraggable(
+        const DndDraggableRegistration(id: DndId('drag'), data: 'new duplicate'),
+        owner: thirdOwner,
+      );
+      scheduledTasks.removeAt(0)();
+      expect(warnings, hasLength(2), reason: 'a new persistent duplicate should warn again');
+    });
   });
 }
