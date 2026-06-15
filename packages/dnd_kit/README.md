@@ -11,7 +11,7 @@ engine. Importing `dnd_kit` and `dnd_kit_flutter` gives you the exact same API;
 `dnd_kit` simply offers the shorter name.
 
 Try the hosted example gallery:
-https://vanvixi.github.io/dnd_kit.flutter/
+https://vanvixi.github.io/dnd_kit/
 
 ## Import
 

@@ -7,7 +7,7 @@ engine. The `dnd_kit` umbrella package re-exports this library under the
 shorter name.
 
 Try the hosted example gallery:
-https://vanvixi.github.io/dnd_kit.flutter/
+https://vanvixi.github.io/dnd_kit/
 
 The package is centered on Flutter-native widgets and controllers:
 

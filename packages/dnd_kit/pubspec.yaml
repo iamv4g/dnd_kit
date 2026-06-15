@@ -1,9 +1,9 @@
 name: dnd_kit
 description: Umbrella package that re-exports the dnd_kit_flutter drag-and-drop toolkit under the shorter dnd_kit name.
 version: 0.1.0-dev.2
-homepage: https://github.com/vanvixi/dnd_kit.flutter
-repository: https://github.com/vanvixi/dnd_kit.flutter/tree/main/packages/dnd_kit
-issue_tracker: https://github.com/vanvixi/dnd_kit.flutter/issues
+homepage: https://github.com/vanvixi/dnd_kit
+repository: https://github.com/vanvixi/dnd_kit/tree/main/packages/dnd_kit
+issue_tracker: https://github.com/vanvixi/dnd_kit/issues
 topics:
   - drag-and-drop
   - dnd

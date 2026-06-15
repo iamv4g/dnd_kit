@@ -2,7 +2,7 @@
 
 This package-local example gives pub.dev a compact, illustrative sample. Full
 runnable Flutter apps live in the repository-level
-[`examples/`](https://github.com/vanvixi/dnd_kit.flutter/tree/main/examples)
+[`examples/`](https://github.com/vanvixi/dnd_kit/tree/main/examples)
 directory.
 
 ```dart
@@ -62,9 +62,9 @@ class TaskDropZone extends StatelessWidget {
 
 More complete examples:
 
-- [`examples/basic_drag_drop`](https://github.com/vanvixi/dnd_kit.flutter/tree/main/examples/basic_drag_drop)
+- [`examples/basic_drag_drop`](https://github.com/vanvixi/dnd_kit/tree/main/examples/basic_drag_drop)
   shows a small runnable drag/drop app.
-- [`examples/kanban_board`](https://github.com/vanvixi/dnd_kit.flutter/tree/main/examples/kanban_board)
+- [`examples/kanban_board`](https://github.com/vanvixi/dnd_kit/tree/main/examples/kanban_board)
   shows a realistic board built with generic drag/drop APIs.
-- [`examples/multi_container_sortable`](https://github.com/vanvixi/dnd_kit.flutter/tree/main/examples/multi_container_sortable)
+- [`examples/multi_container_sortable`](https://github.com/vanvixi/dnd_kit/tree/main/examples/multi_container_sortable)
   documents the experimental multi-container sortable shape.

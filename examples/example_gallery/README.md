@@ -11,5 +11,5 @@ fvm flutter run -d chrome
 Build for GitHub Pages:
 
 ```bash
-fvm flutter build web --release --base-href /dnd_kit.flutter/
+fvm flutter build web --release --base-href /dnd_kit/
 ```

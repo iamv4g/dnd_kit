@@ -36,7 +36,7 @@ jobs:
 
       - name: Build gallery
         working-directory: examples/example_gallery
-        run: flutter build web --release --base-href /dnd_kit.flutter/
+        run: flutter build web --release --base-href /dnd_kit/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -3,7 +3,7 @@
 `dnd_kit` re-exports the Flutter adapter from `dnd_kit_flutter`, so usage is
 identical — import `package:dnd_kit/dnd_kit.dart` and use the same API. Full
 runnable Flutter apps live in the repository-level
-[`examples/`](https://github.com/vanvixi/dnd_kit.flutter/tree/main/examples)
+[`examples/`](https://github.com/vanvixi/dnd_kit/tree/main/examples)
 directory.
 
 ```dart
