@@ -5,21 +5,10 @@ import 'package:flutter/widgets.dart';
 import '../scope/controller.dart';
 import '../scope/scope.dart';
 
-/// Configuration for [DndAutoScroll].
-final class DndAutoScrollOptions {
-  /// Creates auto-scroll options.
-  const DndAutoScrollOptions({
-    this.edgeThreshold = 56,
-    this.maxVelocity = 16,
-  })  : assert(edgeThreshold > 0, 'Edge threshold must be positive.'),
-        assert(maxVelocity > 0, 'Max velocity must be positive.');
-
-  /// Distance from the viewport edge where auto-scroll can activate.
-  final double edgeThreshold;
-
-  /// Maximum logical pixels to scroll per frame.
-  final double maxVelocity;
-}
+/// [DndAutoScrollOptions] and the edge/velocity math are framework-neutral and
+/// live in `dnd_kit_core`; the options class is re-exported here so existing
+/// imports keep working.
+export 'package:dnd_kit_core/dnd_kit_core.dart' show DndAutoScrollOptions;
 
 /// Controls drag-driven scrolling for a single [Scrollable].
 final class DndAutoScrollController {
@@ -127,25 +116,14 @@ final class DndAutoScrollController {
     }
 
     final localPointer = box.globalToLocal(Offset(pointer.x, pointer.y));
-    if (localPointer.dx < 0 ||
-        localPointer.dx > box.size.width ||
-        localPointer.dy < 0 ||
-        localPointer.dy > box.size.height) {
-      return 0;
-    }
-
-    final threshold = options.edgeThreshold;
-    final maxVelocity = options.maxVelocity;
-    if (localPointer.dy < threshold && position.pixels > position.minScrollExtent) {
-      return -maxVelocity * ((threshold - localPointer.dy) / threshold);
-    }
-
-    final trailingDistance = box.size.height - localPointer.dy;
-    if (trailingDistance < threshold && position.pixels < position.maxScrollExtent) {
-      return maxVelocity * ((threshold - trailingDistance) / threshold);
-    }
-
-    return 0;
+    return dndAutoScrollVelocity(
+      localPointer: DndPoint(localPointer.dx, localPointer.dy),
+      viewportSize: DndSize(box.size.width, box.size.height),
+      scrollPixels: position.pixels,
+      minScrollExtent: position.minScrollExtent,
+      maxScrollExtent: position.maxScrollExtent,
+      options: options,
+    );
   }
 }
 

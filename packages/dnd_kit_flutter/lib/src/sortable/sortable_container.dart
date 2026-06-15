@@ -1,8 +1,6 @@
 import 'package:dnd_kit_core/dnd_kit_core.dart';
 import 'package:meta/meta.dart';
 
-import 'sortable_details.dart';
-
 /// Experimental sortable container metadata for multi-container sorting.
 ///
 /// Applications own the actual container and item collections. This model only

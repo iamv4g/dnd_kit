@@ -4,8 +4,6 @@ import 'package:flutter/widgets.dart';
 
 import '../scope/controller.dart';
 import '../scope/scope.dart';
-import 'sortable_details.dart';
-import 'sortable_strategy.dart';
 
 /// Provides sortable order and drag controller state to a subtree.
 class SortableScope extends StatelessWidget {

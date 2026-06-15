@@ -1,5 +1,5 @@
-import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('DndMeasuringRegistry', () {

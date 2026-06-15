@@ -14,8 +14,9 @@ The seed specification remains in `SPEC.md` as historical input material.
 
 ## Product Surfaces
 
-- Pure Dart package APIs for geometry, state, collision, modifier, sensor, and
-  sortable math.
+- Pure Dart package APIs for geometry, state, collision, modifier, sensor,
+  sortable math, the framework-neutral drag runtime (`DndRuntime`), and the
+  measuring-cache contract (`DndMeasuringRegistry`).
 - Flutter widget APIs for drag scopes, controllers, draggables, droppables,
   handles, overlays, measuring, sensors, auto-scroll, and accessibility.
 - Sortable preset APIs for vertical lists, horizontal lists, and grids.
@@ -62,6 +63,23 @@ intent; applications own mutation.
 - Release hardening adds `melos run test`, `melos run analyze`, and example
   build checks.
 
+## Shared Runtime
+
+`dnd_kit_core` owns the single drag engine. `DndRuntime` holds the drag state
+machine, collision orchestration, modifier application, and measuring-cache
+interactions in pure Dart. Adapters wrap it with their own change-notification:
+`dnd_kit_flutter`'s `DndController extends ChangeNotifier` forwards
+`notifyListeners`, and the future `dnd_kit_jaspr` adapter wraps the same runtime
+for the browser. See `SPEC_JASPR.md` §4.3 and ADR 0015.
+
+The shared layer also owns the sortable contract and strategy math
+(`SortableMoveDetails`, `SortableStrategies` for vertical/horizontal/grid) and
+the DOM-free auto-scroll edge/velocity math (`dndAutoScrollVelocity`,
+`DndAutoScrollOptions`). Adapters keep only the framework-specific execution:
+Flutter retains the `Ticker`, render-box measuring, and `ScrollPosition`
+scrolling and delegates the math.
+
 ## Decisions
 
 - `docs/decisions/0007-dnd-kit-package-architecture.md`
+- `docs/decisions/0015-shared-runtime-in-core.md`
