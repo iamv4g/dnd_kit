@@ -6,6 +6,12 @@ import 'package:universal_web/web.dart' as web;
 import '../scope/controller.dart';
 import '../scope/scope.dart';
 
+const DndSensorActivationConstraint _kDefaultTouchActivationConstraint =
+    DndSensorActivationConstraint(
+  delay: Duration(milliseconds: 500),
+  tolerance: 18,
+);
+
 /// A drag source for the Jaspr adapter.
 ///
 /// `DndDraggable` registers a stable [id] with the enclosing [DndScope]'s
@@ -25,12 +31,13 @@ class DndDraggable extends StatefulComponent {
     this.data,
     this.disabled = false,
     this.constraint = DndSensorActivationConstraint.none,
+    this.keyboardDragStep = 25,
     this.onDragStart,
     this.onDragMove,
     this.onDragEnd,
     this.onDragCancel,
     super.key,
-  });
+  }) : assert(keyboardDragStep > 0, 'Keyboard drag step must be positive.');
 
   /// The stable draggable id registered with the controller.
   final DndId id;
@@ -46,6 +53,9 @@ class DndDraggable extends StatefulComponent {
 
   /// The activation constraint applied before a drag session starts.
   final DndSensorActivationConstraint constraint;
+
+  /// Logical pixels moved for each keyboard arrow key press.
+  final double keyboardDragStep;
 
   /// Called when a drag session starts.
   final DndDragStartCallback? onDragStart;
@@ -63,12 +73,15 @@ class DndDraggable extends StatefulComponent {
   State<DndDraggable> createState() => _DndDraggableState();
 }
 
-class _DndDraggableState extends State<DndDraggable> {
+class _DndDraggableState extends State<DndDraggable> implements DndDraggableHandleController {
   final GlobalNodeKey<web.HTMLElement> _nodeKey = GlobalNodeKey<web.HTMLElement>();
 
   DndController? _controller;
   DndDraggableRegistration? _registration;
   DndPointerSensor? _sensor;
+  int _handleCount = 0;
+  bool _handlePointerActive = false;
+  bool _handleSyncScheduled = false;
 
   @override
   void didChangeDependencies() {
@@ -123,6 +136,10 @@ class _DndDraggableState extends State<DndDraggable> {
   }
 
   DndRect? _measure() {
+    if (!kIsWeb) {
+      return null;
+    }
+
     final node = _nodeKey.currentNode;
     if (node == null) {
       return null;
@@ -145,12 +162,24 @@ class _DndDraggableState extends State<DndDraggable> {
       return;
     }
     final pointer = event as web.PointerEvent;
-    _nodeKey.currentNode?.setPointerCapture(pointer.pointerId);
+    final startedFromHandle = _handlePointerActive;
+    if (_handleCount > 0 && !startedFromHandle) {
+      return;
+    }
+
+    try {
+      _nodeKey.currentNode?.setPointerCapture(pointer.pointerId);
+    } catch (_) {
+      // Synthetic browser-test pointer events do not participate in the real
+      // pointer-capture lifecycle; ignore capture failures and keep the drag
+      // session logic testable.
+    }
+    final inputKind = _inputKindFor(pointer);
 
     final sensor = DndPointerSensor(
       runtime: controller.runtime,
       activeRect: _measure(),
-      constraint: component.constraint,
+      constraint: _effectivePointerConstraint(inputKind),
       onDragStart: component.onDragStart,
       onDragMove: (moveEvent) {
         _applyTransform(moveEvent.transform);
@@ -170,7 +199,7 @@ class _DndDraggableState extends State<DndDraggable> {
       DndSensorActivationEvent(
         activeId: component.id,
         position: DndPoint(pointer.clientX.toDouble(), pointer.clientY.toDouble()),
-        inputKind: _inputKindFor(pointer),
+        inputKind: inputKind,
       ),
     );
   }
@@ -182,15 +211,19 @@ class _DndDraggableState extends State<DndDraggable> {
 
   void _handlePointerUp(web.Event event) {
     _sensor?.end();
+    _handlePointerActive = false;
   }
 
   void _handlePointerCancel(web.Event event) {
     _sensor?.cancel();
+    _handlePointerActive = false;
   }
 
   void _endGesture() {
     _applyTransform(DndTransform.identity);
+    _sensor?.dispose();
     _sensor = null;
+    _handlePointerActive = false;
   }
 
   void _applyTransform(DndTransform transform) {
@@ -210,19 +243,244 @@ class _DndDraggableState extends State<DndDraggable> {
     };
   }
 
+  DndSensorActivationConstraint _effectivePointerConstraint(DndInputKind inputKind) {
+    if (component.constraint != DndSensorActivationConstraint.none) {
+      return component.constraint;
+    }
+
+    return switch (inputKind) {
+      DndInputKind.touch => _kDefaultTouchActivationConstraint,
+      _ => DndSensorActivationConstraint.none,
+    };
+  }
+
+  bool get _isKeyboardDrag {
+    final state = _controller?.state;
+    return state is DndDragging &&
+        state.session.activeId == component.id &&
+        state.session.inputKind == DndInputKind.keyboard;
+  }
+
+  @override
+  bool handleKeyboardEvent(web.KeyboardEvent event) {
+    if (component.disabled) {
+      return false;
+    }
+
+    final normalizedKey = _normalizeKeyboardKey(event.key);
+    if (normalizedKey == null) {
+      return false;
+    }
+
+    return switch (normalizedKey) {
+      _NormalizedKey.pickupOrDrop => _toggleKeyboardDrag(),
+      _NormalizedKey.cancel => _cancelKeyboardDrag(),
+      _NormalizedKey.left => _moveKeyboardDrag(DndPoint(-component.keyboardDragStep, 0)),
+      _NormalizedKey.right => _moveKeyboardDrag(DndPoint(component.keyboardDragStep, 0)),
+      _NormalizedKey.up => _moveKeyboardDrag(DndPoint(0, -component.keyboardDragStep)),
+      _NormalizedKey.down => _moveKeyboardDrag(DndPoint(0, component.keyboardDragStep)),
+    };
+  }
+
+  bool _toggleKeyboardDrag() {
+    if (_isKeyboardDrag) {
+      final event = _controller?.endDrag();
+      if (event == null) {
+        return false;
+      }
+
+      _applyTransform(DndTransform.identity);
+      component.onDragEnd?.call(event);
+      _controller?.reset();
+      return true;
+    }
+
+    return _startKeyboardDrag();
+  }
+
+  bool _startKeyboardDrag() {
+    final controller = _controller;
+    if (controller == null || !controller.isIdle) {
+      return false;
+    }
+
+    final activeRect = _measure();
+    controller.beginDrag(
+      DndSensorActivationEvent(
+        activeId: component.id,
+        position: activeRect?.center ?? DndPoint.zero,
+        inputKind: DndInputKind.keyboard,
+      ),
+      activeRect: activeRect,
+    );
+
+    final event = controller.startDrag();
+    if (event == null) {
+      controller.reset();
+      return false;
+    }
+
+    component.onDragStart?.call(event);
+    return true;
+  }
+
+  bool _moveKeyboardDrag(DndPoint delta) {
+    final session = _controller?.activeSession;
+    if (!_isKeyboardDrag || session == null) {
+      return false;
+    }
+
+    final event = _controller?.moveDrag(session.currentPointer.translate(delta));
+    if (event == null) {
+      return false;
+    }
+
+    _applyTransform(event.transform);
+    component.onDragMove?.call(event);
+    return true;
+  }
+
+  bool _cancelKeyboardDrag() {
+    if (!_isKeyboardDrag) {
+      return false;
+    }
+
+    final event = _controller?.cancelDrag(reason: DndCancelReason.user);
+    if (event == null) {
+      return false;
+    }
+
+    _applyTransform(DndTransform.identity);
+    component.onDragCancel?.call(event);
+    _controller?.reset();
+    return true;
+  }
+
+  @override
+  void registerHandle() {
+    _handleCount += 1;
+    _scheduleHandleStateSync();
+  }
+
+  @override
+  void unregisterHandle() {
+    if (_handleCount == 0) {
+      return;
+    }
+
+    _handleCount -= 1;
+    _scheduleHandleStateSync();
+  }
+
+  @override
+  void markHandlePointerActive() {
+    _handlePointerActive = true;
+  }
+
+  @override
+  void clearHandlePointerActive() {
+    _handlePointerActive = false;
+  }
+
+  void _scheduleHandleStateSync() {
+    if (_handleSyncScheduled || !mounted) {
+      return;
+    }
+
+    _handleSyncScheduled = true;
+    Future<void>.microtask(() {
+      _handleSyncScheduled = false;
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _handleHostKeyDown(web.Event event) {
+    if (_handleCount > 0) {
+      return;
+    }
+
+    final keyboardEvent = event as web.KeyboardEvent;
+    if (handleKeyboardEvent(keyboardEvent)) {
+      keyboardEvent.preventDefault();
+    }
+  }
+
   @override
   Component build(BuildContext context) {
-    return div(
-      key: _nodeKey,
-      events: component.disabled
-          ? null
-          : <String, void Function(web.Event)>{
-              'pointerdown': _handlePointerDown,
-              'pointermove': _handlePointerMove,
-              'pointerup': _handlePointerUp,
-              'pointercancel': _handlePointerCancel,
-            },
-      [component.child],
+    return DndDraggableHandleScope(
+      draggable: this,
+      child: div(
+        key: _nodeKey,
+        attributes: <String, String>{
+          if (!component.disabled && _handleCount == 0) 'tabindex': '0',
+          'role': 'button',
+          'aria-disabled': component.disabled ? 'true' : 'false',
+          'aria-roledescription': 'draggable',
+        },
+        events: component.disabled
+            ? null
+            : <String, EventCallback>{
+                'pointerdown': _handlePointerDown,
+                'pointermove': _handlePointerMove,
+                'pointerup': _handlePointerUp,
+                'pointercancel': _handlePointerCancel,
+                if (_handleCount == 0) 'keydown': _handleHostKeyDown,
+              },
+        [component.child],
+      ),
     );
   }
+}
+
+class DndDraggableHandleScope extends InheritedComponent {
+  const DndDraggableHandleScope({
+    required this.draggable,
+    required super.child,
+  });
+
+  final DndDraggableHandleController draggable;
+
+  static DndDraggableHandleScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedComponentOfExactType<DndDraggableHandleScope>();
+  }
+
+  @override
+  bool updateShouldNotify(DndDraggableHandleScope oldComponent) {
+    return draggable != oldComponent.draggable;
+  }
+}
+
+abstract interface class DndDraggableHandleController {
+  void registerHandle();
+
+  void unregisterHandle();
+
+  void markHandlePointerActive();
+
+  void clearHandlePointerActive();
+
+  bool handleKeyboardEvent(web.KeyboardEvent event);
+}
+
+enum _NormalizedKey {
+  pickupOrDrop,
+  cancel,
+  left,
+  right,
+  up,
+  down,
+}
+
+_NormalizedKey? _normalizeKeyboardKey(String key) {
+  return switch (key) {
+    ' ' || 'Space' || 'Spacebar' || 'Enter' => _NormalizedKey.pickupOrDrop,
+    'Escape' || 'Esc' => _NormalizedKey.cancel,
+    'ArrowLeft' => _NormalizedKey.left,
+    'ArrowRight' => _NormalizedKey.right,
+    'ArrowUp' => _NormalizedKey.up,
+    'ArrowDown' => _NormalizedKey.down,
+    _ => null,
+  };
 }
