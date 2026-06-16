@@ -173,8 +173,8 @@ void main() {
       runtime.startDrag();
       runtime.moveDrag(const DndPoint(120, 20));
 
-      expect(runtime.measuring.droppableStatus(const DndId('column-1')),
-          DndMeasurementStatus.clean);
+      expect(
+          runtime.measuring.droppableStatus(const DndId('column-1')), DndMeasurementStatus.clean);
       expect(runtime.overId, const DndId('column-1'));
     });
 
@@ -207,8 +207,7 @@ void main() {
       runtime.startDrag();
       final moveEvent = runtime.moveDrag(const DndPoint(100, 100));
 
-      expect(
-          runtime.measuring.draggableStatus(const DndId('task-1')), DndMeasurementStatus.clean);
+      expect(runtime.measuring.draggableStatus(const DndId('task-1')), DndMeasurementStatus.clean);
       expect(moveEvent?.currentPointer, const DndPoint(20, 20));
     });
 

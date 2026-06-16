@@ -21,11 +21,16 @@ melos:
   scripts:
     analyze:
       run: dart run melos exec --concurrency 1 -- "dart analyze"
+    analyze:affected:
+      run: dart run tool/affected_validate.dart analyze
     test:
       run: dart run melos exec --dir-exists test -- "dart test"
-    validate:
+    test:affected:
+      run: dart run tool/affected_validate.dart test
+    validate:full:
       run: |
-        dart format --set-exit-if-changed .
+        set -e
+        dart format --output=none --set-exit-if-changed .
         dart run melos run analyze
         dart test packages/dnd_kit_core
         dart test packages/dnd_kit_jaspr
@@ -33,3 +38,7 @@ melos:
         flutter test examples/kanban_board
         flutter test examples/multi_container_sortable
         flutter test examples/example_gallery
+    validate:
+      run: dart run melos run validate:full
+    validate:affected:
+      run: dart run tool/affected_validate.dart validate

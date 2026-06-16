@@ -84,3 +84,12 @@ story proof status.
 This repo uses Harness for agent-ready implementation work. Before changing
 code, read [AGENTS.md](AGENTS.md) and use `scripts/bin/harness-cli` for intake,
 story, proof, decision, and trace records.
+
+For verification, keep two lanes:
+
+- `dart run melos run validate`: full-workspace release gate.
+- `MELOS_DIFF=HEAD dart run melos run validate:affected`: changed-code lane for
+  day-to-day story work.
+
+Use another git ref such as `MELOS_DIFF=origin/main` when you want the
+affected-only lane to compare your branch against a shared base.
