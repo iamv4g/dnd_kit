@@ -1,6 +1,6 @@
 import 'dart:async' show unawaited;
 
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:flutter/gestures.dart'
     show
         DelayedMultiDragGestureRecognizer,

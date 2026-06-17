@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 import 'package:universal_web/web.dart' as web;
@@ -16,7 +16,7 @@ import '../scope/scope.dart';
 /// drag pointer enters its leading or trailing edge band.
 ///
 /// Reuse posture (SPEC_JASPR §6.4): the edge-threshold and velocity math lives
-/// in `dnd_kit_core` ([dndAutoScrollVelocity]); this component only adds the
+/// in `dnd_kit` ([dndAutoScrollVelocity]); this component only adds the
 /// browser execution layer — measuring the viewport via `getBoundingClientRect`
 /// and applying `scrollTop`. The shared [DndRuntime] stays the only drag engine.
 ///

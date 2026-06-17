@@ -2,9 +2,7 @@
 
 `dnd_kit_flutter` is the Flutter adapter of the dnd_kit toolkit for building
 sortable lists, grids, Kanban boards, dashboards, canvas editors, and other
-drag-heavy interfaces. It builds on the framework-agnostic `dnd_kit_core`
-engine. The `dnd_kit` umbrella package re-exports this library under the
-shorter name.
+drag-heavy interfaces. It builds on the framework-agnostic `dnd_kit` engine.
 
 Try the hosted example gallery:
 https://vanvixi.github.io/dnd_kit/
@@ -27,13 +25,7 @@ intent; your app updates its own lists, boards, stores, or documents.
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 ```
 
-Or through the `dnd_kit` umbrella package:
-
-```dart
-import 'package:dnd_kit/dnd_kit.dart';
-```
-
-Either entry point also exports the pure Dart `dnd_kit_core` primitives such as
+This entry point also exports the pure Dart `dnd_kit` engine primitives such as
 `DndId`, `DndRect`, collision detectors, modifiers, events, and drag state.
 
 ## Basic Drag And Drop
@@ -132,7 +124,6 @@ Core behavior is intentionally open:
 
 | Package                                                       | Use it for                                                                            |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | Flutter apps — the stable, recommended Flutter entry point (re-exports this package). |
-| [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps that want dev releases or the explicit adapter package.                  |
-| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.                              |
-| [`dnd_kit_core`](https://pub.dev/packages/dnd_kit_core)       | The shared, framework-agnostic engine.                                                |
+| [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps — widgets, sensors, overlays, and sortable presets. |
+| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.         |
+| [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | The shared, framework-agnostic engine.                          |

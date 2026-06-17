@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:jaspr/jaspr.dart';
 
 /// Coordinates Jaspr adapter drag state while keeping user data external.
 ///
 /// This is the Jaspr counterpart of the Flutter `DndController`: a thin wrapper
-/// over the framework-neutral [DndRuntime] in `dnd_kit_core`. It exposes the
+/// over the framework-neutral [DndRuntime] in `dnd_kit`. It exposes the
 /// runtime as a Jaspr [ChangeNotifier]. When used under [DndScope], duplicate-id
 /// diagnostics are deferred to the Jaspr post-frame boundary so owner-aware
 /// registration settles at a frame boundary appropriate for Jaspr component

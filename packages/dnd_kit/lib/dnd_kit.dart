@@ -1,17 +1,30 @@
-/// Flutter drag-and-drop toolkit with sortable presets.
+/// Pure Dart core engine for the dnd_kit drag-and-drop family.
 ///
-/// This is the `dnd_kit` umbrella package. It re-exports the Flutter adapter
-/// from `dnd_kit_flutter` (which in turn re-exports the pure Dart
-/// `dnd_kit_core` engine), so applications can use the shorter import:
+/// This is the `dnd_kit` package: the framework-neutral engine that the
+/// `dnd_kit_flutter` and `dnd_kit_jaspr` adapters build on. Flutter apps import
+/// `package:dnd_kit_flutter/dnd_kit_flutter.dart`; Jaspr apps import
+/// `package:dnd_kit_jaspr/dnd_kit_jaspr.dart`.
 ///
-/// ```dart
-/// import 'package:dnd_kit/dnd_kit.dart';
-/// ```
+/// This library has no Flutter dependency. It exposes stable identifiers,
+/// geometry primitives, drag state, events, collision detectors, modifiers,
+/// sensor contracts, registry contracts, the measuring-cache contract, the
+/// framework-neutral drag runtime ([DndRuntime]), sortable move/strategy math,
+/// auto-scroll edge/velocity math, and diagnostics shared by every framework
+/// adapter.
 ///
-/// The public API — [DndScope], [DndController], [DndDraggable],
-/// [DndDroppable], [DndDragOverlay], auto-scroll helpers, and the stable
-/// sortable APIs such as [SortableScope] and [SortableItem] — is identical to
-/// importing `package:dnd_kit_flutter/dnd_kit_flutter.dart` directly.
 library;
 
-export 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
+export 'src/auto_scroll.dart';
+export 'src/geometry.dart';
+export 'src/id.dart';
+export 'src/collision.dart';
+export 'src/diagnostics.dart';
+export 'src/events.dart';
+export 'src/measuring.dart';
+export 'src/modifier.dart';
+export 'src/pointer_sensor.dart';
+export 'src/registry.dart';
+export 'src/runtime.dart';
+export 'src/sensor.dart';
+export 'src/sortable.dart';
+export 'src/state.dart';

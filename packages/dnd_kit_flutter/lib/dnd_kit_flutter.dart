@@ -23,7 +23,7 @@
 ///
 library;
 
-export 'package:dnd_kit_core/dnd_kit_core.dart';
+export 'package:dnd_kit/dnd_kit.dart';
 
 export 'src/measuring/measuring.dart' hide DndMeasuredBox;
 export 'src/scope/controller.dart';

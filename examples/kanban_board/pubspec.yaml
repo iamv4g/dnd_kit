@@ -10,8 +10,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  dnd_kit:
-    path: ../../packages/dnd_kit
+  dnd_kit_flutter:
+    path: ../../packages/dnd_kit_flutter
 
   flutter:
     sdk: flutter

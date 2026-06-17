@@ -1,23 +1,22 @@
 # dnd_kit
 
-`dnd_kit` is a Flutter drag-and-drop toolkit for building sortable lists,
-grids, Kanban boards, dashboards, canvas editors, and other drag-heavy
-interfaces.
+`dnd_kit` is the pure Dart core engine for the dnd_kit drag-and-drop family.
 
-This is the **stable Flutter entry point**. It is a thin umbrella that re-exports
-the Flutter adapter from
-[`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter), which is built on
-the framework-agnostic [`dnd_kit_core`](https://pub.dev/packages/dnd_kit_core)
-engine. Importing `dnd_kit` and `dnd_kit_flutter` gives you the exact same API;
-`dnd_kit` simply offers the shorter name.
+It contains the framework-neutral drag runtime, geometry, collision detection,
+modifiers, registry contracts, sensor contracts, sortable math, and auto-scroll
+math shared by every adapter. It has no Flutter dependency.
 
-`dnd_kit` publishes **stable releases only**. If you want the latest dev
-releases, depend on `dnd_kit_flutter` directly. Building for **Jaspr** (Dart
-web) instead of Flutter? Use `dnd_kit_jaspr` — `dnd_kit` requires the
-Flutter SDK and is not usable in a pure Jaspr project.
+> **Building an app?** You usually want an adapter, not this package directly:
+> Flutter apps depend on
+> [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter); Jaspr (Dart web)
+> apps depend on [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr). Depend
+> on `dnd_kit` directly only when you need the framework-agnostic engine (custom
+> adapters, testable drag/drop math, or contract tests).
 
-Try the hosted example gallery:
-https://vanvixi.github.io/dnd_kit/
+> **Migrating from `dnd_kit` `0.1.x`?** Those releases were the Flutter umbrella
+> that re-exported `dnd_kit_flutter`. As of `0.3.0-dev.0`, `dnd_kit` is the
+> engine. Replace `package:dnd_kit/dnd_kit.dart` with
+> `package:dnd_kit_flutter/dnd_kit_flutter.dart` and depend on `dnd_kit_flutter`.
 
 ## Import
 
@@ -25,20 +24,39 @@ https://vanvixi.github.io/dnd_kit/
 import 'package:dnd_kit/dnd_kit.dart';
 ```
 
-This re-exports the full Flutter widget layer (`DndScope`, `DndController`,
-`DndDraggable`, `DndDroppable`, `DndDragOverlay`, auto-scroll helpers, and the
-stable `SortableScope` / `SortableItem` presets) plus the pure Dart
-`dnd_kit_core` primitives such as `DndId`, `DndRect`, collision detectors,
-modifiers, events, and drag state.
+## What It Provides
 
-See the [`dnd_kit_flutter` documentation](https://pub.dev/packages/dnd_kit_flutter)
-for the full API guide and usage examples.
+- `DndId` for stable application-owned identifiers.
+- `DndPoint`, `DndSize`, `DndRect`, and `DndTransform` for toolkit geometry.
+- `DndState`, `DndDragSession`, and drag events for lifecycle modeling.
+- `DndRuntime` as the shared framework-neutral drag engine.
+- `DndCollisionDetector` plus built-in detectors such as
+  `DndCollisionDetectors.closestCenter`,
+  `DndCollisionDetectors.closestCorners`,
+  `DndCollisionDetectors.rectIntersection`, and
+  `DndCollisionDetectors.pointerWithin`.
+- `DndModifier` plus built-in modifiers such as
+  `DndModifiers.restrictToVerticalAxis`,
+  `DndModifiers.restrictToHorizontalAxis`,
+  `DndModifiers.restrictToBoundary`, and `DndModifiers.snapToGrid`.
+- `DndRegistry` and diagnostics hooks for draggable and droppable metadata.
+- `DndMeasuringRegistry`, sortable move/strategy math, and auto-scroll
+  edge/velocity helpers shared by adapters.
+
+## Package Boundary
+
+`dnd_kit` intentionally has no Flutter dependency. It does not import
+`package:flutter/*`, `dart:ui`, `BuildContext`, `RenderBox`, `Offset`, `Rect`,
+or `Size`.
+
+Flutter widgets, measuring, overlays, auto-scroll, and stable sortable presets
+live in the `dnd_kit_flutter` adapter. The Jaspr component layer lives in
+`dnd_kit_jaspr`.
 
 ## dnd_kit family
 
-| Package                                                       | Use it for                                                                                 |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | Flutter apps — the stable, recommended Flutter entry point (re-exports `dnd_kit_flutter`). |
-| [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps that want dev releases or the explicit adapter package.                       |
-| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.                                   |
-| [`dnd_kit_core`](https://pub.dev/packages/dnd_kit_core)       | The shared, framework-agnostic engine.                                                     |
+| Package                                                       | Use it for                                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | The shared, framework-agnostic engine. Build adapters or use the math.    |
+| [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps — widgets, sensors, overlays, and sortable presets.          |
+| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.                  |

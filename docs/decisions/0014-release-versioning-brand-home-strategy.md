@@ -4,7 +4,12 @@ Date: 2026-06-15
 
 ## Status
 
-Accepted
+Superseded by ADR 0017
+
+Decisions 1 (umbrella role), 3, and 6 below — that the bare name `dnd_kit` is
+the stable Flutter umbrella — are reversed by ADR 0017, which makes `dnd_kit`
+the pure Dart core engine and removes the umbrella. The Flutter-SDK constraint
+that kept the adapters separate still holds.
 
 ## Context
 

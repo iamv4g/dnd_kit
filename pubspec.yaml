@@ -5,7 +5,6 @@ environment:
 
 workspace:
   - packages/dnd_kit
-  - packages/dnd_kit_core
   - packages/dnd_kit_flutter
   - packages/dnd_kit_jaspr
   - examples/kanban_board
@@ -32,7 +31,7 @@ melos:
         set -e
         dart format --output=none --set-exit-if-changed .
         dart run melos run analyze
-        dart test packages/dnd_kit_core
+        dart test packages/dnd_kit
         dart test packages/dnd_kit_jaspr
         flutter test packages/dnd_kit_flutter
         flutter test examples/kanban_board

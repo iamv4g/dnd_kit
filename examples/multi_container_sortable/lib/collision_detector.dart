@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:dnd_kit/dnd_kit.dart';
+import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 
 DndCollisionResult multiContainerCollisionDetector(DndCollisionInput input) {
   // 1. Pointer inside collisions

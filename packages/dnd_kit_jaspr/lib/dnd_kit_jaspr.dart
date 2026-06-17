@@ -1,6 +1,6 @@
 /// Jaspr (web) adapter for the dnd_kit drag-and-drop family.
 ///
-/// `dnd_kit_jaspr` is built on the shared `dnd_kit_core` engine, so Jaspr and
+/// `dnd_kit_jaspr` is built on the shared `dnd_kit` engine, so Jaspr and
 /// Flutter behave as peer adapters over one drag runtime. Applications import
 /// this library directly:
 ///
@@ -18,7 +18,7 @@
 ///
 library;
 
-export 'package:dnd_kit_core/dnd_kit_core.dart';
+export 'package:dnd_kit/dnd_kit.dart';
 
 export 'src/a11y/announcements.dart';
 export 'src/a11y/live_region.dart' show DndLiveRegion;

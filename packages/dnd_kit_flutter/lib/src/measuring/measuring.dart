@@ -1,14 +1,14 @@
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
-/// The framework-neutral measuring cache now lives in `dnd_kit_core`.
+/// The framework-neutral measuring cache now lives in `dnd_kit`.
 ///
 /// `DndMeasuringRegistry` and `DndMeasurementStatus` are re-exported here so
 /// existing `package:dnd_kit_flutter/dnd_kit_flutter.dart` imports keep working.
 /// Only the Flutter-specific act of measuring a render box stays in this file.
-export 'package:dnd_kit_core/dnd_kit_core.dart' show DndMeasuringRegistry, DndMeasurementStatus;
+export 'package:dnd_kit/dnd_kit.dart' show DndMeasuringRegistry, DndMeasurementStatus;
 
 /// Measures [context]'s render box in global coordinates.
 DndRect? measureDndRect(BuildContext context) {

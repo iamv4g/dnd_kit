@@ -1,4 +1,4 @@
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:test/test.dart';
 
 void main() {

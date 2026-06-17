@@ -1,4 +1,4 @@
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -6,9 +6,9 @@ import '../scope/controller.dart';
 import '../scope/scope.dart';
 
 /// [DndAutoScrollOptions] and the edge/velocity math are framework-neutral and
-/// live in `dnd_kit_core`; the options class is re-exported here so existing
+/// live in `dnd_kit`; the options class is re-exported here so existing
 /// imports keep working.
-export 'package:dnd_kit_core/dnd_kit_core.dart' show DndAutoScrollOptions;
+export 'package:dnd_kit/dnd_kit.dart' show DndAutoScrollOptions;
 
 /// Controls drag-driven scrolling for a single [Scrollable].
 final class DndAutoScrollController {

@@ -1,11 +1,11 @@
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 /// Coordinates Flutter adapter drag state while keeping user data external.
 ///
 /// This is a thin Flutter wrapper over the framework-neutral [DndRuntime] in
-/// `dnd_kit_core`: it exposes the runtime as a [ChangeNotifier] and defers the
+/// `dnd_kit`: it exposes the runtime as a [ChangeNotifier] and defers the
 /// registry's duplicate-id diagnostics to the post-frame boundary. All drag
 /// lifecycle, collision, modifier, and measuring behavior lives in the shared
 /// runtime so the Flutter and Jaspr adapters share one drag engine.

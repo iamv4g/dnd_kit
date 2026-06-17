@@ -18,8 +18,8 @@ dev_dependencies:
   lints: ^5.0.0
 
 dependency_overrides:
-  dnd_kit_core:
-    path: ../../packages/dnd_kit_core
+  dnd_kit:
+    path: ../../packages/dnd_kit
 
 jaspr:
   mode: client

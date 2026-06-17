@@ -1,4 +1,4 @@
-import 'package:dnd_kit_core/dnd_kit_core.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 
 /// Builds the screen-reader text announced when a drag starts.
 typedef DndDragStartAnnouncement = String Function(DndId active);

@@ -1,6 +1,6 @@
 name: dnd_kit_jaspr
-description: Jaspr (web) adapter for the dnd_kit drag-and-drop family, built on the shared dnd_kit_core engine.
-version: 0.2.0-dev.0
+description: Jaspr (web) adapter for the dnd_kit drag-and-drop family, built on the shared dnd_kit engine.
+version: 0.3.0-dev.0
 homepage: https://github.com/vanvixi/dnd_kit
 repository: https://github.com/vanvixi/dnd_kit/tree/main/packages/dnd_kit_jaspr
 issue_tracker: https://github.com/vanvixi/dnd_kit/issues
@@ -16,7 +16,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  dnd_kit_core: ^0.2.0-dev.0
+  dnd_kit: ^0.3.0-dev.0
   jaspr: ^0.23.0
   universal_web: ^1.1.0
 

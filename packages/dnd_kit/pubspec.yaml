@@ -1,27 +1,24 @@
 name: dnd_kit
-description: Stable Flutter entry point for the dnd_kit drag-and-drop toolkit; re-exports dnd_kit_flutter. For Jaspr, use dnd_kit_jaspr.
-version: 0.1.0
+description: Pure Dart core engine for the dnd_kit drag-and-drop family. Flutter apps use dnd_kit_flutter; Jaspr apps use dnd_kit_jaspr.
+version: 0.3.0-dev.0
 homepage: https://github.com/vanvixi/dnd_kit
 repository: https://github.com/vanvixi/dnd_kit/tree/main/packages/dnd_kit
 issue_tracker: https://github.com/vanvixi/dnd_kit/issues
 topics:
   - drag-and-drop
   - dnd
-  - flutter
+  - geometry
   - sortable
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
-  flutter: ">=3.24.0"
 
 resolution: workspace
 
 dependencies:
-  dnd_kit_flutter: ^0.2.0-dev.0
-  flutter:
-    sdk: flutter
+  collection: ^1.19.0
+  meta: ^1.15.0
 
 dev_dependencies:
-  flutter_lints: ^5.0.0
-  flutter_test:
-    sdk: flutter
+  lints: ^5.0.0
+  test: ^1.25.0

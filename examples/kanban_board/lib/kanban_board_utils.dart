@@ -1,4 +1,4 @@
-import 'package:dnd_kit/dnd_kit.dart';
+import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 
 import 'models.dart';
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0-dev.0
+
+- Depends on the renamed engine package `dnd_kit: ^0.3.0-dev.0` (previously
+  `dnd_kit_core`, now discontinued). No Flutter API change — the dependency
+  rename and version bump only track the engine package becoming `dnd_kit`. See
+  ADR 0017.
+
 ## 0.2.0-dev.0
 
 - Starts the shared-runtime development line for `dnd_kit_flutter` on top of
