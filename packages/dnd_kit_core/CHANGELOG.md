@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0-dev.0
+
+- Starts the shared-runtime development line for `dnd_kit_core`.
+- Adds `DndRuntime` as the framework-neutral drag engine shared by the Flutter
+  and Jaspr adapters.
+- Moves `DndMeasuringRegistry` and its measurement-status contract into core so
+  adapters can share the same measuring cache model.
+- Moves `DndPointerSensor` to core on top of `DndRuntime`, preserving the
+  pointer-activation state machine across adapters.
+- Brings the shared sortable move/strategy math and auto-scroll edge/velocity
+  math into core for reuse outside Flutter.
+
 ## 0.1.0
 
 - First public release of the pure Dart engine: stable

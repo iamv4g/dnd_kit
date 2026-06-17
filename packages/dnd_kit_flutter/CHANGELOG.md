@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-dev.0
 
+- Starts the shared-runtime development line for `dnd_kit_flutter` on top of
+  `dnd_kit_core: ^0.2.0-dev.0`.
 - **Breaking:** `DndPointerSensor` moved to `dnd_kit_core` and is now driven by a
   `DndRuntime` instead of a `DndController`. Construct it with
   `DndPointerSensor(runtime: controller.runtime, ...)`. The class remains

@@ -6,6 +6,7 @@
 packages/
   dnd_kit_core/     # pure Dart engine, shared by every adapter
   dnd_kit_flutter/  # Flutter adapter
+  dnd_kit_jaspr/    # Jaspr adapter
   dnd_kit/          # umbrella that re-exports dnd_kit_flutter
 examples/
   basic_drag_drop/
@@ -13,10 +14,9 @@ docs/
 ```
 
 The framework-agnostic `dnd_kit_core` is the shared engine. `dnd_kit_flutter`
-is the Flutter adapter built on top of it. `dnd_kit` is a thin umbrella that
-re-exports `dnd_kit_flutter` under the shorter, brand name. This layout leaves
-room for additional framework adapters (for example a future `dnd_kit_jaspr`)
-that reuse `dnd_kit_core` without touching the Flutter adapter.
+is the Flutter adapter built on top of it. `dnd_kit_jaspr` is the Jaspr adapter
+built on the same shared runtime without pulling in Flutter. `dnd_kit` is a
+thin umbrella that re-exports `dnd_kit_flutter` under the shorter, brand name.
 
 ## Package Boundaries
 
@@ -77,6 +77,31 @@ Also owns sortable preset source:
 
 Stable V1 strategies are vertical list, horizontal list, and grid.
 Multi-container, nested sortable, and virtualized adapters remain experimental.
+
+### `dnd_kit_jaspr`
+
+Jaspr adapter package depending on `dnd_kit_core`, `jaspr`, and
+`package:universal_web` for browser execution. It owns the Jaspr component
+layer over the shared drag runtime.
+
+Owns:
+
+- `DndScope`
+- `DndController`
+- `DndDraggable`
+- `DndDroppable`
+- `DndDragHandle`
+- `DndDragOverlay`
+- browser measuring and collision execution
+- browser auto-scroll execution
+- live-region accessibility hooks and accessible labels/descriptions
+
+Must not:
+
+- depend on Flutter or `dart:ui`
+- reimplement drag state, collision math, modifier math, or sortable math that
+  can stay in `dnd_kit_core`
+- require DOM access at import time; all browser access must remain SSR-safe
 
 ### `dnd_kit`
 

@@ -8,13 +8,12 @@ Flutter behave as peer adapters over one drag runtime — the same domain model,
 drag lifecycle, collision logic, modifiers, and sortable math. It depends only
 on `dnd_kit_core` and `jaspr` (no Flutter).
 
-> Status: early development. This release provides `DndScope`,
+> Status: first public development release. This package provides `DndScope`,
 > `DndController`, `DndDraggable`, `DndDroppable`, `DndDragHandle`,
 > `DndDragOverlay`, `DndAutoScroll`, and `DndLiveRegion` over the shared runtime.
-> Shared modifiers
-> are exercised in browser tests, and `examples/jaspr_basic_drag_drop` is the
-> runnable app used for the current browser-proof work. Sortable presets are
-> still in progress. See `SPEC_JASPR.md`,
+> Shared modifiers are exercised in browser tests, and
+> `examples/jaspr_basic_drag_drop` is the runnable app used for browser proof.
+> Sortable presets are still in progress. See `SPEC_JASPR.md`,
 > `docs/stories/phase-14-jaspr-foundation/`, and
 > `docs/stories/phase-15-jaspr-hardening/`.
 
@@ -84,3 +83,14 @@ drop/cancel.
 See `examples/jaspr_basic_drag_drop` for a runnable Jaspr browser app that
 wires `DndScope`, `DndDraggable`, `DndDroppable`, `DndDragHandle`,
 `DndDragOverlay`, and shared-runtime modifiers into one small flow.
+
+## dnd_kit family
+
+Project home: https://vanvixi.github.io/dnd_kit/
+
+| Package                                                       | Use it for                                                                                 |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | Flutter apps — the stable, recommended Flutter entry point (re-exports `dnd_kit_flutter`). |
+| [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps that want dev releases or the explicit adapter package.                       |
+| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.                                   |
+| [`dnd_kit_core`](https://pub.dev/packages/dnd_kit_core)       | The shared, framework-agnostic engine.                                                     |

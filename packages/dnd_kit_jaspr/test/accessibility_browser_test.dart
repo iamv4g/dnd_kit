@@ -84,8 +84,8 @@ void main() {
         ),
       );
 
-      final draggable = web.document.querySelector('[aria-roledescription="draggable"]')!
-          as web.HTMLElement;
+      final draggable =
+          web.document.querySelector('[aria-roledescription="draggable"]')! as web.HTMLElement;
       expect(draggable.getAttribute('aria-label'), 'Task one');
 
       final describedBy = draggable.getAttribute('aria-describedby');

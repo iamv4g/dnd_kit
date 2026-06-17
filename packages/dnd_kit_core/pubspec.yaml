@@ -1,6 +1,6 @@
 name: dnd_kit_core
-description: Pure Dart core primitives and algorithms for dnd_kit.
-version: 0.1.0
+description: Pure Dart core primitives, runtime, and algorithms for dnd_kit.
+version: 0.2.0-dev.0
 homepage: https://github.com/vanvixi/dnd_kit
 repository: https://github.com/vanvixi/dnd_kit/tree/main/packages/dnd_kit_core
 issue_tracker: https://github.com/vanvixi/dnd_kit/issues
