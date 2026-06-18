@@ -25,6 +25,7 @@ package slices so the shared API direction is proven before adapters adopt it.
 | **US-063** | Feasibility and design for horizontal auto-scroll across `dnd_kit`, `dnd_kit_flutter`, and `dnd_kit_jaspr` | ADR 0020 |
 | **US-064** | Add axis-aware auto-scroll math to `dnd_kit`, preserving vertical default behavior | ADR 0020 |
 | **US-065** | Adopt axis-aware auto-scroll in `dnd_kit_flutter` and replace the Kanban example's custom horizontal helper | ADR 0020 |
+| **US-066** | Adopt axis-aware auto-scroll in `dnd_kit_jaspr` and decide whether Jaspr keeps component-owned execution or needs a dedicated controller surface | ADR 0020 |
 
 ## Follow-Up
 
@@ -52,4 +53,5 @@ explicit deferrals:
   for `packages/dnd_kit`).
 - Flutter implementation proof now exists in `US-065` (`flutter test` +
   `dart analyze` for `packages/dnd_kit_flutter`, plus Kanban example proof).
-- Later stories can add Jaspr browser tests for horizontal execution.
+- `US-066` is the planned Jaspr execution slice, including the controller-shape
+  decision for Jaspr auto-scroll ownership.
