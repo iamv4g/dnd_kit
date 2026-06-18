@@ -170,11 +170,25 @@ adapters compute identical move intent. Additive and adapter-local;
 
 Phase README: `docs/stories/phase-18-jaspr-sortable/README.md`.
 
+## Phase 19 - Cross-Adapter Horizontal Auto-Scroll
+
+Assess and, if viable, prepare horizontal auto-scroll for the shared engine and
+both adapters without forking the edge-threshold or velocity math:
+
+- discovery and design for an axis-aware core contract;
+- Flutter execution planning against the existing Kanban board reference;
+- Jaspr execution planning while preserving SSR safety.
+
+Phase README: `docs/stories/phase-19-horizontal-auto-scroll/README.md`.
+
 ## Current State
 
-The repository has implemented work through `US-062`. The Flutter adapter, the
+The repository has implemented work through `US-063`. The Flutter adapter, the
 pure Dart engine, and the Jaspr adapter share the `dnd_kit` brand family under
 the post-US-060 topology, the workspace is unified under the Phase 17 toolchain,
-and both adapters now ship a sortable preset over the shared engine. Future work
-should extend this roadmap through new product docs, story packets, and decisions
-rather than by reviving the old umbrella/core topology from the historical specs.
+and both adapters now ship a sortable preset over the shared engine. Phase 19
+has now closed its discovery slice: horizontal auto-scroll is considered
+feasible through an additive shared-core axis selector, with runtime
+implementation deferred to follow-up stories. Future work should extend this
+roadmap through new product docs, story packets, and decisions rather than by
+reviving the old umbrella/core topology from the historical specs.
