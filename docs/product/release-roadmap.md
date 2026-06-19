@@ -182,9 +182,22 @@ forking the edge-threshold or velocity math:
 
 Phase README: `docs/stories/phase-19-horizontal-auto-scroll/README.md`.
 
+## Phase 20 - Jaspr Example Feature Gallery
+
+Expand the runnable Jaspr example into one tabbed feature gallery that
+demonstrates the adapter's supported public surface in a real browser:
+
+- generic drag/drop with handle + overlay;
+- sortable preset;
+- drag-driven auto-scroll;
+- keyboard + live-region accessibility;
+- shared-runtime modifiers.
+
+Phase README: `docs/stories/phase-20-jaspr-example-gallery/README.md`.
+
 ## Current State
 
-The repository has implemented work through `US-066`. The Flutter adapter, the
+The repository has implemented work through `US-067`. The Flutter adapter, the
 pure Dart engine, and the Jaspr adapter share the `dnd_kit` brand family under
 the post-US-060 topology, the workspace is unified under the Phase 17 toolchain,
 and both adapters now ship a sortable preset over the shared engine. Phase 19
@@ -194,6 +207,9 @@ through an additive shared-core axis selector, `dnd_kit` exposes axis-aware
 shared auto-scroll math, `dnd_kit_flutter` plus the Kanban example use that
 shared contract for horizontal container auto-scroll, and `dnd_kit_jaspr`
 mirrors the same contract for horizontal browser scroll containers while
-keeping its auto-scroll execution component-owned. Future work should extend
-this roadmap through new product docs, story packets, and decisions rather
-than by reviving the old umbrella/core topology from the historical specs.
+keeping its auto-scroll execution component-owned. Phase 20 closes the runnable
+Jaspr example gap with `examples/jaspr_example_gallery`, a tabbed feature
+gallery covering drag/drop, sortable, auto-scroll, accessibility, and
+modifiers over the shared runtime. Future work should extend this roadmap
+through new product docs, story packets, and decisions rather than by reviving
+the old umbrella/core topology from the historical specs.

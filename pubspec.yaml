@@ -11,7 +11,7 @@ workspace:
   - examples/basic_drag_drop
   - examples/multi_container_sortable
   - examples/example_gallery
-  - examples/jaspr_basic_drag_drop
+  - examples/jaspr_example_gallery
 
 dev_dependencies:
   lints: ^5.0.0

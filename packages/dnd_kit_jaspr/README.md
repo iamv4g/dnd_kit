@@ -13,10 +13,11 @@ curve. It depends only on `dnd_kit` and `jaspr` (no Flutter).
 > `DndDragOverlay`, `DndAutoScroll`, `DndLiveRegion`, `SortableScope`, and
 > `SortableItem` over the shared runtime. Shared modifiers and sortable
 > behavior are exercised in browser and component tests, and
-> `examples/jaspr_basic_drag_drop` is the runnable app used for browser proof.
+> `examples/jaspr_example_gallery` is the runnable app used for browser proof.
 > See `SPEC_JASPR.md`, `docs/stories/phase-14-jaspr-foundation/`,
 > `docs/stories/phase-15-jaspr-hardening/`, and
-> `docs/stories/phase-18-jaspr-sortable/`.
+> `docs/stories/phase-18-jaspr-sortable/`, and
+> `docs/stories/phase-20-jaspr-example-gallery/`.
 
 ## Usage
 
@@ -91,9 +92,9 @@ drop/cancel.
 
 ## Example
 
-See `examples/jaspr_basic_drag_drop` for a runnable Jaspr browser app that
-wires `DndScope`, `DndDraggable`, `DndDroppable`, `DndDragHandle`,
-`DndDragOverlay`, and shared-runtime modifiers into one small flow.
+See `examples/jaspr_example_gallery` for a runnable tabbed Jaspr browser
+feature gallery covering generic drag/drop, sortable, auto-scroll,
+accessibility, and shared-runtime modifiers.
 
 ## dnd_kit family
 

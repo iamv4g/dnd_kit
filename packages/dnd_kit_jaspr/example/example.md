@@ -1,8 +1,8 @@
 # dnd_kit_jaspr Example
 
 This package-local example gives pub.dev a compact, illustrative sample. The
-full runnable Jaspr browser app lives in the repository-level
-[`examples/jaspr_basic_drag_drop`](https://github.com/vanvixi/dnd_kit/tree/main/examples/jaspr_basic_drag_drop)
+full runnable Jaspr feature gallery lives in the repository-level
+[`examples/jaspr_example_gallery`](https://github.com/vanvixi/dnd_kit/tree/main/examples/jaspr_example_gallery)
 directory.
 
 ```dart
@@ -41,6 +41,6 @@ class TaskBoard extends StatelessComponent {
 
 More complete examples:
 
-- [`examples/jaspr_basic_drag_drop`](https://github.com/vanvixi/dnd_kit/tree/main/examples/jaspr_basic_drag_drop)
-  shows a runnable browser drag/drop app with handles, overlay, modifiers, and
-  shared-runtime behavior.
+- [`examples/jaspr_example_gallery`](https://github.com/vanvixi/dnd_kit/tree/main/examples/jaspr_example_gallery)
+  shows a runnable browser feature gallery with drag/drop, sortable,
+  auto-scroll, accessibility, modifiers, and shared-runtime behavior.

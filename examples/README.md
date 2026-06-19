@@ -5,10 +5,10 @@ Example apps are added story by story as behavior becomes real.
 The hosted gallery app (`examples/example_gallery`) collects runnable demo
 widgets from standalone examples into one web target for GitHub Pages.
 
-Planned examples include:
+Current examples include:
 
 - basic drag and drop;
-- Jaspr basic drag and drop (`examples/jaspr_basic_drag_drop`);
+- Jaspr feature gallery (`examples/jaspr_example_gallery`);
 - hosted example gallery (`examples/example_gallery`);
 - drag overlay;
 - sortable list;

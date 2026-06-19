@@ -12,7 +12,7 @@ examples/
   kanban_board/
   multi_container_sortable/
   example_gallery/
-  jaspr_basic_drag_drop/
+  jaspr_example_gallery/
 docs/
 ```
 
