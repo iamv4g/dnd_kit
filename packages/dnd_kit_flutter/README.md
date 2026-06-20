@@ -120,6 +120,36 @@ Core behavior is intentionally open:
 - attach `DndDiagnosticsConfig.onWarning` to surface duplicate ID and registry
   warnings.
 
+## Accessibility
+
+`dnd_kit_flutter` keeps the Flutter adapter's accessibility model adapter-local
+and Flutter-native. `DndDraggable` and `DndDragHandle` accept optional
+semantics labels and hints, while `DndScope` can opt into drag lifecycle
+announcements for assistive technologies.
+
+```dart
+DndScope(
+  announcements: const DndAnnouncements(),
+  child: DndDraggable(
+    id: const DndId('task-1'),
+    label: 'Quarterly planning task',
+    hint: 'Press Space to pick up, arrow keys to move, Enter to drop.',
+    child: ListTile(
+      title: const Text('Quarterly planning'),
+      trailing: const DndDragHandle(
+        label: 'Reorder handle',
+        hint: 'Drag from here to move this task.',
+        child: Icon(Icons.drag_indicator),
+      ),
+    ),
+  ),
+)
+```
+
+Announcements are derived from shared controller state transitions, so keyboard
+and pointer drags speak the same start, over-target, drop, and cancel events
+without introducing a second drag runtime.
+
 ## dnd_kit family
 
 | Package                                                       | Use it for                                                                            |

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+- Adds `DndAnnouncements` and scope-level drag lifecycle announcements for
+  assistive technologies through Flutter's announcement APIs.
+- `DndDraggable` and `DndDragHandle` now support optional semantics `label`
+  and `hint` fields so applications can provide accessible naming and usage
+  instructions without forking drag behavior.
+- Keyboard drag focus stays on the activator through pickup, movement, drop,
+  and cancel flows, with widget-test coverage for focus and announcement
+  behavior.
+
 ## 0.3.0
 
 - Depends on the renamed engine package `dnd_kit: ^0.3.0` (previously

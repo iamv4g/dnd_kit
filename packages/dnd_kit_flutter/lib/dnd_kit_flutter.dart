@@ -25,6 +25,7 @@ library;
 
 export 'package:dnd_kit/dnd_kit.dart';
 
+export 'src/a11y/announcements.dart';
 export 'src/measuring/measuring.dart' hide DndMeasuredBox;
 export 'src/scope/controller.dart';
 export 'src/scope/scope.dart';

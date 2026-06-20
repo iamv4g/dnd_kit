@@ -11,10 +11,12 @@ import 'package:flutter/gestures.dart'
         MultiDragGestureRecognizer,
         PointerDeviceKind,
         kLongPressTimeout;
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
+import '../a11y/announcements.dart';
 import '../measuring/measuring.dart';
 import '../scope/controller.dart';
 import '../scope/scope.dart';
@@ -72,6 +74,8 @@ class DndDraggable extends StatefulWidget {
     this.longPressActivation,
     this.enableHapticFeedback,
     this.keyboardDragStep = 25,
+    this.label,
+    this.hint,
     this.hitTestBehavior,
     this.onDragStart,
     this.onDragMove,
@@ -113,6 +117,14 @@ class DndDraggable extends StatefulWidget {
   /// Logical pixels moved for each keyboard arrow key press.
   final double keyboardDragStep;
 
+  /// Optional semantics label announced for this draggable.
+  final String? label;
+
+  /// Optional semantics hint announced for this draggable.
+  ///
+  /// When null, the adapter provides the default keyboard drag instructions.
+  final String? hint;
+
   /// How this draggable participates in hit testing.
   final HitTestBehavior? hitTestBehavior;
 
@@ -136,7 +148,8 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
   final GlobalKey _measureKey = GlobalKey();
   final FocusNode _focusNode = FocusNode(debugLabel: 'DndDraggable');
   DndController? _controller;
-  DndController? _registeredController;
+  DndController? _registrationController;
+  DndController? _announcementController;
   DndDraggableRegistration? _registration;
   DndPointerSensor? _pointerSensor;
   MultiDragGestureRecognizer? _dragRecognizer;
@@ -145,13 +158,19 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
   bool _disabledCancelScheduled = false;
   bool _handlePointerActive = false;
   int _handleCount = 0;
+  DndAnnouncements? _announcements;
+  String? _lastAnnouncementStateLabel;
+  DndId? _lastAnnouncementOverId;
+  DndId? _announcementActiveId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller = DndScope.of(context);
     _scopeEnableHapticFeedback = DndScope.maybeEnableHapticFeedbackOf(context);
+    _announcements = DndScope.maybeAnnouncementsOf(context);
     _syncRegistration();
+    _bindControllerListener();
   }
 
   @override
@@ -166,6 +185,7 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
 
   @override
   void dispose() {
+    _announcementController?.removeListener(_handleControllerChanged);
     if (_isWidgetGestureDrag) {
       // A lazy list (e.g. ListView.builder) is recycling this element while it
       // is the active drag source. Keep the in-flight gesture, registration,
@@ -210,10 +230,10 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
     }
 
     final next = _currentRegistration;
-    if (_registeredController != controller || _registration?.id != next.id) {
+    if (_registrationController != controller || _registration?.id != next.id) {
       _unregister();
       controller.registry.registerDraggable(next, owner: this);
-      _registeredController = controller;
+      _registrationController = controller;
       _registration = next;
       _markMeasurementDirty();
       return;
@@ -226,8 +246,22 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
     }
   }
 
+  void _bindControllerListener() {
+    final controller = _controller;
+    if (_announcementController == controller) {
+      return;
+    }
+
+    _announcementController?.removeListener(_handleControllerChanged);
+    _announcementController = controller;
+    _announcementController?.addListener(_handleControllerChanged);
+    if (controller != null) {
+      _syncAnnouncements(controller);
+    }
+  }
+
   void _unregister() {
-    final controller = _registeredController;
+    final controller = _registrationController;
     final registration = _registration;
     if (controller != null && registration != null) {
       // Only drop the measured rect if we still owned the registration; a newer
@@ -238,7 +272,7 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
       }
     }
 
-    _registeredController = null;
+    _registrationController = null;
     _registration = null;
   }
 
@@ -248,7 +282,7 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
   }
 
   void _markMeasurementDirty() {
-    final controller = _registeredController;
+    final controller = _registrationController;
     final registration = _registration;
     if (controller == null || registration == null) {
       return;
@@ -676,6 +710,71 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
     return KeyEventResult.ignored;
   }
 
+  void _handleControllerChanged() {
+    final controller = _announcementController;
+    if (controller == null || !mounted) {
+      return;
+    }
+    _syncAnnouncements(controller);
+  }
+
+  void _syncAnnouncements(DndController controller) {
+    final announcements = _announcements;
+    if (announcements == null || !MediaQuery.supportsAnnounceOf(context)) {
+      _resetAnnouncementTrackingIfIdle(controller);
+      return;
+    }
+
+    final activeId = controller.activeId ?? _announcementActiveId;
+    if (activeId != widget.id) {
+      _resetAnnouncementTrackingIfIdle(controller);
+      return;
+    }
+
+    final state = controller.state;
+    final label = state.runtimeType.toString();
+    String? message;
+
+    if (state is DndDragging) {
+      _announcementActiveId = state.session.activeId;
+      if (_lastAnnouncementStateLabel != 'DndDragging') {
+        message = announcements.onDragStart(state.session.activeId);
+        _lastAnnouncementOverId = controller.overId;
+      } else if (controller.overId != _lastAnnouncementOverId) {
+        message = announcements.onDragOver(state.session.activeId, controller.overId);
+        _lastAnnouncementOverId = controller.overId;
+      }
+    } else if (state is DndDropping && _lastAnnouncementStateLabel != 'DndDropping') {
+      if (activeId != null) {
+        message = announcements.onDragEnd(activeId, controller.overId);
+      }
+    } else if (state is DndCancelled && _lastAnnouncementStateLabel != 'DndCancelled') {
+      if (activeId != null) {
+        message = announcements.onDragCancel(activeId);
+      }
+    } else if (state is DndIdle) {
+      _announcementActiveId = null;
+      _lastAnnouncementOverId = null;
+    }
+
+    _lastAnnouncementStateLabel = label;
+    if (message != null) {
+      final view = View.maybeOf(context);
+      final textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr;
+      if (view != null) {
+        unawaited(SemanticsService.sendAnnouncement(view, message, textDirection));
+      }
+    }
+  }
+
+  void _resetAnnouncementTrackingIfIdle(DndController controller) {
+    if (controller.state is DndIdle) {
+      _announcementActiveId = null;
+      _lastAnnouncementOverId = null;
+      _lastAnnouncementStateLabel = 'DndIdle';
+    }
+  }
+
   bool _startKeyboardDrag() {
     final controller = _controller;
     if (controller == null || !controller.isIdle) {
@@ -738,7 +837,9 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
       child: Semantics(
         enabled: !widget.disabled,
         focusable: !widget.disabled,
-        hint: 'Press Space or Enter to pick up, arrow keys to move, Escape to cancel.',
+        label: widget.label,
+        hint:
+            widget.hint ?? 'Press Space or Enter to pick up, arrow keys to move, Escape to cancel.',
         textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
         child: Focus(
           focusNode: _focusNode,
