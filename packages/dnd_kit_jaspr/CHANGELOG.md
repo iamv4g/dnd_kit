@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+- Fixes a framework assertion (`owner._debugCurrentBuildTarget != null`) thrown
+  during static/server pre-rendering when a `DndDraggable` contains a
+  `DndDragHandle`. Registering a handle scheduled a deferred `setState` that ran
+  outside a build owner on the server; it is now guarded to the client. The
+  pre-rendered markup matches the first client build, so hydration reuses the
+  subtree instead of replacing it.
+
 ## 0.3.0
 
 - Depends on the renamed engine package `dnd_kit: ^0.3.0` (previously

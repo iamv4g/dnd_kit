@@ -521,7 +521,13 @@ class _DndDraggableState extends State<DndDraggable> implements DndDraggableHand
   }
 
   void _scheduleHandleStateSync() {
-    if (_handleSyncScheduled || !mounted) {
+    // Handle registration only changes client-side interactivity (the root's
+    // focusability and keyboard wiring). During server pre-rendering there is
+    // no active build owner for the deferred setState, so scheduling it throws
+    // a framework assertion; skip it. The initial server markup and the first
+    // client build then match, so hydration reuses the DOM instead of
+    // replacing it.
+    if (!kIsWeb || _handleSyncScheduled || !mounted) {
       return;
     }
 
