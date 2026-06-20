@@ -12,6 +12,7 @@ workspace:
   - examples/multi_container_sortable
   - examples/example_gallery
   - examples/jaspr_example_gallery
+  - website
 
 dev_dependencies:
   lints: ^5.0.0
