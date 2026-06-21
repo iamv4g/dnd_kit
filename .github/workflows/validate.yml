@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history so affected validation can diff against the base commit.
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -22,5 +25,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Validate workspace
-        run: dart run melos run validate
+      # Validate only the packages affected by the diff. affected_validate.dart
+      # format-checks every changed .dart file and analyzes/tests the affected
+      # packages (incl. dnd_kit_website), and falls back to validate:full when a
+      # workspace, tooling, workflow, or pubspec file changes.
+      - name: Validate affected
+        env:
+          # PR: diff against the base commit. Push to main: against the prior tip.
+          MELOS_DIFF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: dart run melos run validate:affected
