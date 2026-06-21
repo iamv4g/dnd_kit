@@ -15,6 +15,7 @@
 library;
 
 export 'src/auto_scroll.dart';
+export 'src/a11y/announcements.dart';
 export 'src/geometry.dart';
 export 'src/id.dart';
 export 'src/collision.dart';

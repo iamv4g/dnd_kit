@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- Adds `DndAnnouncements` to the shared engine as a framework-neutral
+  accessibility contract for drag start/over/end/cancel announcements.
+- Flutter and Jaspr adapters now reuse the shared contract from `dnd_kit`
+  instead of maintaining duplicate pure-Dart announcement builders.
+
 ## 0.3.0
 
 - **Package identity change.** `dnd_kit` is now the pure Dart core engine of the

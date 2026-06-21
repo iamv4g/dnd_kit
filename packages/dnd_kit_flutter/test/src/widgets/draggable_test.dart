@@ -6,11 +6,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('DndDraggable', () {
-    Future<void> focusDraggable(WidgetTester tester) async {
+    FocusNode draggableFocusNode(WidgetTester tester) {
       final focus = tester.widget<Focus>(
         find.descendant(of: find.byType(DndDraggable), matching: find.byType(Focus)).first,
       );
-      focus.focusNode!.requestFocus();
+      return focus.focusNode!;
+    }
+
+    Future<void> focusDraggable(WidgetTester tester) async {
+      draggableFocusNode(tester).requestFocus();
       await tester.pump();
     }
 
@@ -1132,6 +1136,80 @@ void main() {
       expect(controller.state, const DndIdle());
     });
 
+    testWidgets('exposes semantics label and hint for a draggable', (tester) async {
+      await tester.pumpWidget(
+        const DndScope(
+          child: DndDraggable(
+            id: DndId('task-1'),
+            label: 'Backlog task',
+            hint: 'Press Space to pick up this task and arrow keys to move it.',
+            child: SizedBox(width: 40, height: 40),
+          ),
+        ),
+      );
+
+      final semantics = tester.widget<Semantics>(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Backlog task' &&
+                  widget.properties.hint ==
+                      'Press Space to pick up this task and arrow keys to move it.',
+            )
+            .first,
+      );
+
+      expect(semantics.properties.label, 'Backlog task');
+      expect(
+        semantics.properties.hint,
+        'Press Space to pick up this task and arrow keys to move it.',
+      );
+    });
+
+    testWidgets('exposes semantics label and hint for a drag handle', (tester) async {
+      await tester.pumpWidget(
+        const DndScope(
+          child: DndDraggable(
+            id: DndId('task-1'),
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: Stack(
+                textDirection: TextDirection.ltr,
+                children: <Widget>[
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: DndDragHandle(
+                      label: 'Reorder handle',
+                      hint: 'Drag from here to move this task.',
+                      child: SizedBox(width: 30, height: 30),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final semantics = tester.widget<Semantics>(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Reorder handle' &&
+                  widget.properties.hint == 'Drag from here to move this task.',
+            )
+            .first,
+      );
+
+      expect(semantics.properties.label, 'Reorder handle');
+      expect(semantics.properties.hint, 'Drag from here to move this task.');
+      expect(semantics.properties.enabled, isTrue);
+    });
+
     testWidgets('cancels an active drag when disabled during the gesture', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);
@@ -1491,6 +1569,66 @@ void main() {
       expect(controller.state, const DndIdle());
     });
 
+    testWidgets('keeps focus on the activator throughout keyboard drag and drop', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const DndDraggable(
+            id: DndId('task-1'),
+            keyboardDragStep: 10,
+            child: SizedBox(width: 40, height: 40),
+          ),
+        ),
+      );
+
+      await focusDraggable(tester);
+      final focusNode = draggableFocusNode(tester);
+      expect(focusNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(focusNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(focusNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(focusNode.hasPrimaryFocus, isTrue);
+      expect(controller.state, const DndIdle());
+    });
+
+    testWidgets('keeps focus on the activator when keyboard drag is cancelled', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: const DndDraggable(
+            id: DndId('task-1'),
+            child: SizedBox(width: 40, height: 40),
+          ),
+        ),
+      );
+
+      await focusDraggable(tester);
+      final focusNode = draggableFocusNode(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(focusNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(focusNode.hasPrimaryFocus, isTrue);
+      expect(controller.state, const DndIdle());
+    });
+
     testWidgets('does not start keyboard dragging when disabled', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);
@@ -1574,6 +1712,75 @@ void main() {
         semantics.properties.hint,
         'Press Space or Enter to pick up, arrow keys to move, Escape to cancel.',
       );
+    });
+
+    testWidgets('announces drag lifecycle changes when scope announcements are enabled',
+        (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(supportsAnnounce: true),
+          child: DndScope(
+            controller: controller,
+            announcements: const DndAnnouncements(),
+            child: Stack(
+              textDirection: TextDirection.ltr,
+              children: <Widget>[
+                const Positioned(
+                  left: 100,
+                  top: 0,
+                  child: DndDroppable(
+                    id: DndId('column-1'),
+                    child: SizedBox(width: 80, height: 80),
+                  ),
+                ),
+                const Positioned(
+                  left: 0,
+                  top: 0,
+                  child: DndDraggable(
+                    id: DndId('task-1'),
+                    child: SizedBox(width: 40, height: 40),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeAnnouncements(), isEmpty);
+
+      final gesture = await tester.startGesture(
+        const Offset(20, 20),
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.moveBy(const Offset(10, 0));
+      await tester.pump();
+
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Picked up draggable item task-1.'],
+      );
+
+      await gesture.moveBy(const Offset(100, 0));
+      await tester.pump();
+
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Draggable item task-1 moved over droppable column-1.'],
+      );
+
+      await gesture.up();
+      await tester.pump();
+
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Draggable item task-1 was dropped over droppable column-1.'],
+      );
+      expect(controller.state, const DndIdle());
     });
   });
 }

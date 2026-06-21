@@ -142,6 +142,9 @@ warnings without depending only on debug assertions.
 - The browser adapter supports pointer, mouse, touch, and keyboard activation,
   DOM measuring, overlay rendering, browser auto-scroll execution, and
   live-region accessibility over the shared engine.
+- Shared accessibility copy customization belongs in the pure-Dart
+  `DndAnnouncements` contract; adapter execution of those announcements stays
+  local to Flutter semantics APIs and Jaspr live regions.
 - Browser access must remain SSR-safe: no DOM requirement at import time, and
   browser-only behavior stays guarded behind runtime checks.
 - Where parity is portable, Flutter and Jaspr should preserve the same

@@ -4,7 +4,6 @@ import 'package:jaspr/jaspr.dart';
 
 import '../scope/controller.dart';
 import '../scope/scope.dart';
-import 'announcements.dart';
 
 /// Inline style for a visually-hidden but screen-reader-available element.
 const String kDndVisuallyHiddenStyle = 'position:absolute; width:1px; height:1px; '

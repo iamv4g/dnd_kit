@@ -1,8 +1,8 @@
-import 'package:dnd_kit_jaspr/dnd_kit_jaspr.dart';
+import 'package:dnd_kit/dnd_kit.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DndAnnouncements defaults', () {
+  group('DndAnnouncements', () {
     const announcements = DndAnnouncements();
     const active = DndId('task-1');
     const over = DndId('column-2');
@@ -42,7 +42,6 @@ void main() {
         onDragStart: (active) => 'lift ${active.value}',
       );
       expect(custom.onDragStart(active), 'lift task-1');
-      // Untouched builders keep defaults.
       expect(custom.onDragCancel(active), 'Dragging draggable item task-1 was cancelled.');
     });
   });

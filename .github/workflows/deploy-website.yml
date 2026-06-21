@@ -1,0 +1,103 @@
+name: Deploy Website
+
+# Run only when a pull request is merged into main (not on every PR event),
+# plus a manual trigger.
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Skip PRs that were closed without merging; always allow manual runs.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the post-merge main so we deploy exactly what landed.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Pinned to match the project's jaspr ^0.23.1, and run under the
+      # Flutter-pinned Dart so the build daemon snapshots match the SDK (a
+      # mismatched Dart crashes the daemon with "Invalid kernel binary format").
+      - name: Install Jaspr CLI
+        run: dart pub global activate jaspr_cli 0.23.1
+
+      - name: Build Tailwind CSS
+        working-directory: website
+        run: tool/styles.sh --minify
+
+      - name: Build website
+        working-directory: website
+        run: dart pub global run jaspr_cli:jaspr build --verbose
+
+      - name: Verify build output
+        working-directory: website/build/jaspr
+        run: |
+          set -e
+          ls -la
+          test -f index.html || { echo "ERROR: index.html not found"; exit 1; }
+          test -f main.client.dart.js || { echo "ERROR: client bundle not found"; exit 1; }
+          echo "Build output OK"
+
+      # The project Pages site lives at the /dnd_kit/ subpath. jaspr build has no
+      # --base-href flag and Document emits <base href="/"/>, so rewrite it here
+      # (asset URLs in index.html are relative and resolve against this base).
+      - name: Set base href for the project subpath
+        working-directory: website/build/jaspr
+        run: |
+          set -e
+          sed -i 's|<base href="/"/>|<base href="/dnd_kit/"/>|' index.html
+          grep -q '<base href="/dnd_kit/"/>' index.html
+          touch .nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/build/jaspr
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

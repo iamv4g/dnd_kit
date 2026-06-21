@@ -44,6 +44,7 @@ Owns:
 - drag state and session models
 - the framework-neutral drag runtime (`DndRuntime`)
 - the measuring-cache contract (`DndMeasuringRegistry`)
+- the shared accessibility announcement contract (`DndAnnouncements`)
 - collision detector contracts and built-in algorithms
 - modifier contracts and pure Dart modifiers
 - sensor contracts and the shared pointer sensor
@@ -118,7 +119,8 @@ Owns:
 - live-region accessibility hooks and accessible labels/descriptions
 
 Jaspr inherits the shared single-container sortable strategies (vertical list,
-horizontal list, and grid) from `dnd_kit`. Multi-container sorting remains a
+horizontal list, and grid) from `dnd_kit`, along with the shared
+`DndAnnouncements` accessibility contract. Multi-container sorting remains a
 Flutter-only experimental feature for now.
 
 Must not:

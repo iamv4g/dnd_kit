@@ -39,6 +39,8 @@ import 'package:dnd_kit/dnd_kit.dart';
   `DndModifiers.restrictToVerticalAxis`,
   `DndModifiers.restrictToHorizontalAxis`,
   `DndModifiers.restrictToBoundary`, and `DndModifiers.snapToGrid`.
+- `DndAnnouncements` as the shared pure-Dart accessibility announcement
+  contract reused by framework adapters.
 - `DndRegistry` and diagnostics hooks for draggable and droppable metadata.
 - `DndMeasuringRegistry`, sortable move/strategy math, and auto-scroll
   edge/velocity helpers shared by adapters.

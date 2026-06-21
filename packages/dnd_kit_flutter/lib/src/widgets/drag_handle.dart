@@ -9,6 +9,8 @@ class DndDragHandle extends StatefulWidget {
     super.key,
     required this.child,
     this.disabled = false,
+    this.label,
+    this.hint,
     this.hitTestBehavior,
   });
 
@@ -17,6 +19,12 @@ class DndDragHandle extends StatefulWidget {
 
   /// Whether this handle should ignore drag gestures.
   final bool disabled;
+
+  /// Optional semantics label announced for this handle.
+  final String? label;
+
+  /// Optional semantics hint announced for this handle.
+  final String? hint;
 
   /// How this handle participates in hit testing.
   final HitTestBehavior? hitTestBehavior;
@@ -52,24 +60,30 @@ class _DndDragHandleState extends State<DndDragHandle> {
   @override
   Widget build(BuildContext context) {
     final draggable = _scope?.draggable;
-    return Listener(
-      behavior: widget.hitTestBehavior ?? HitTestBehavior.opaque,
-      onPointerDown: widget.disabled || draggable == null
-          ? null
-          : (_) {
-              draggable.markHandlePointerActive();
-            },
-      onPointerUp: widget.disabled || draggable == null
-          ? null
-          : (_) {
-              draggable.clearHandlePointerActive();
-            },
-      onPointerCancel: widget.disabled || draggable == null
-          ? null
-          : (_) {
-              draggable.clearHandlePointerActive();
-            },
-      child: widget.child,
+    return Semantics(
+      enabled: !widget.disabled && draggable != null,
+      label: widget.label,
+      hint: widget.hint,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      child: Listener(
+        behavior: widget.hitTestBehavior ?? HitTestBehavior.opaque,
+        onPointerDown: widget.disabled || draggable == null
+            ? null
+            : (_) {
+                draggable.markHandlePointerActive();
+              },
+        onPointerUp: widget.disabled || draggable == null
+            ? null
+            : (_) {
+                draggable.clearHandlePointerActive();
+              },
+        onPointerCancel: widget.disabled || draggable == null
+            ? null
+            : (_) {
+                draggable.clearHandlePointerActive();
+              },
+        child: widget.child,
+      ),
     );
   }
 }

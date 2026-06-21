@@ -1,3 +1,4 @@
+import 'package:dnd_kit/dnd_kit.dart' show DndAnnouncements;
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
@@ -9,6 +10,7 @@ class DndScope extends StatefulWidget {
     super.key,
     this.controller,
     this.enableHapticFeedback = true,
+    this.announcements,
     required this.child,
   });
 
@@ -22,6 +24,11 @@ class DndScope extends StatefulWidget {
   /// Defaults to true.
   final bool enableHapticFeedback;
 
+  /// Optional drag lifecycle announcements for assistive technologies.
+  ///
+  /// When null, no accessibility announcements are emitted by the adapter.
+  final DndAnnouncements? announcements;
+
   /// The subtree that can read this scope's controller.
   final Widget child;
 
@@ -33,6 +40,11 @@ class DndScope extends StatefulWidget {
   /// Returns the nearest scope-level haptic feedback default, if any.
   static bool? maybeEnableHapticFeedbackOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<_DndControllerScope>()?.enableHapticFeedback;
+  }
+
+  /// Returns the nearest scope-level announcement configuration, if any.
+  static DndAnnouncements? maybeAnnouncementsOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_DndControllerScope>()?.announcements;
   }
 
   /// Returns the nearest [DndController].
@@ -98,6 +110,7 @@ class _DndScopeState extends State<DndScope> {
     return _DndControllerScope(
       controller: _controller,
       enableHapticFeedback: widget.enableHapticFeedback,
+      announcements: widget.announcements,
       child: widget.child,
     );
   }
@@ -107,16 +120,19 @@ class _DndControllerScope extends InheritedNotifier<DndController> {
   const _DndControllerScope({
     required DndController controller,
     required this.enableHapticFeedback,
+    required this.announcements,
     required super.child,
   }) : super(notifier: controller);
 
   DndController get controller => notifier!;
 
   final bool enableHapticFeedback;
+  final DndAnnouncements? announcements;
 
   @override
   bool updateShouldNotify(_DndControllerScope oldWidget) {
     return enableHapticFeedback != oldWidget.enableHapticFeedback ||
+        announcements != oldWidget.announcements ||
         super.updateShouldNotify(oldWidget);
   }
 }

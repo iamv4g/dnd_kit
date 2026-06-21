@@ -71,13 +71,13 @@ When updating durable proof status, use numeric booleans:
 | Integration | Not required; the regression is isolated to the server pre-render path with package-level proof. |
 | E2E | Not required. |
 | Platform | `fvm dart analyze packages/dnd_kit_jaspr` stays clean. |
-| Release | `dnd_kit_jaspr` CHANGELOG records the fix and the package version is bumped to `0.3.1` for a later publish. |
+| Release | `dnd_kit_jaspr` CHANGELOG records the fix and the package version is bumped to `0.3.1`, shipped in the coordinated family `0.3.1` publish (US-073). |
 
 ## Harness Delta
 
 No Harness process change. Closes the backlog candidate epic "Jaspr draggable
-SSR handle-sync assertion (→ 0.3.1)" recorded earlier; the backlog row is marked
-done pending `pub publish`.
+SSR handle-sync assertion (→ 0.3.1)" recorded earlier; the fix shipped in
+`dnd_kit_jaspr` 0.3.1 via the coordinated family publish (US-073).
 
 ## Evidence
 

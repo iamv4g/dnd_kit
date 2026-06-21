@@ -1,4 +1,4 @@
-import 'package:dnd_kit/dnd_kit.dart';
+import '../id.dart';
 
 /// Builds the screen-reader text announced when a drag starts.
 typedef DndDragStartAnnouncement = String Function(DndId active);
@@ -12,12 +12,11 @@ typedef DndDragEndAnnouncement = String Function(DndId active, DndId? over);
 /// Builds the text announced when a drag is cancelled.
 typedef DndDragCancelAnnouncement = String Function(DndId active);
 
-/// Configurable screen-reader announcements for the Jaspr drag lifecycle.
+/// Configurable accessibility announcements shared by adapter drag lifecycles.
 ///
-/// `DndLiveRegion` derives announcements from the shared controller's state
-/// transitions and renders them into an ARIA live region. Provide a custom
-/// instance through `DndScope(announcements: ...)` or per `DndLiveRegion` to
-/// localize or reword the defaults.
+/// This contract is pure Dart and framework-neutral. Adapters keep platform
+/// execution local, but they reuse this shared value type so default messages,
+/// typedefs, and customization hooks stay aligned across the package family.
 final class DndAnnouncements {
   /// Creates announcement builders, defaulting to English messages.
   const DndAnnouncements({

@@ -69,9 +69,9 @@ viewport.
 
 Mount a `DndLiveRegion` inside the scope to announce drag start, drag-over
 changes, drop, and cancel to screen readers. Messages come from a configurable
-`DndAnnouncements` (with English defaults) provided through `DndScope`, and
-draggables/handles accept an accessible `label` plus optional keyboard
-`description`:
+`DndAnnouncements` (shared from `dnd_kit`, with English defaults) provided
+through `DndScope`, and draggables/handles accept an accessible `label` plus
+optional keyboard `description`:
 
 ```dart
 DndScope(

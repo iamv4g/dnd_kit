@@ -220,9 +220,49 @@ across the current package family:
 First story:
 `docs/stories/phase-22-coordinated-family-release/US-069-publish-current-family-dev-line/overview.md`.
 
+## Phase 23 - Flutter Accessibility Hardening
+
+Close the remaining adapter accessibility gap after Jaspr's Phase 15 hardening
+by giving `dnd_kit_flutter` a first-class Flutter-native accessibility story
+for the next package patch release:
+
+- configurable semantics labels and usage instructions for draggables and drag
+  handles;
+- optional assistive-technology announcements for drag lifecycle changes;
+- focus-stable keyboard dragging with adapter-local execution over the shared
+  runtime;
+- package docs and changelog preparation for `dnd_kit_flutter 0.3.1`.
+
+Phase README: `docs/stories/phase-23-flutter-accessibility-hardening/README.md`.
+
+## Phase 24 - Shared Accessibility Contract
+
+Remove duplicate accessibility contract code now that both adapters expose a
+first-class a11y surface:
+
+- move `DndAnnouncements` and its pure-Dart builders into `dnd_kit`;
+- rewire `dnd_kit_flutter` and `dnd_kit_jaspr` to reuse the shared contract;
+- keep Flutter semantics execution and Jaspr live-region execution
+  adapter-local;
+- shift default/custom announcement unit proof into the core package.
+
+Phase README: `docs/stories/phase-24-shared-accessibility-contract/README.md`.
+
+## Phase 25 - Coordinated Family Patch Release
+
+Close the prepared `0.3.1` package line as one auditable family publication:
+
+- publish `dnd_kit 0.3.1` first as the shared dependency root;
+- publish `dnd_kit_flutter 0.3.1` second against `dnd_kit: ^0.3.1`;
+- publish `dnd_kit_jaspr 0.3.1` third against `dnd_kit: ^0.3.1`;
+- keep changelog truth, family dry-run proof, and the maintainer-run publish
+  order explicit in one release packet.
+
+Phase README: `docs/stories/phase-25-coordinated-family-patch-release/README.md`.
+
 ## Current State
 
-The repository has implemented work through `US-068`. The Flutter adapter, the
+The repository has implemented work through `US-073`. The Flutter adapter, the
 pure Dart engine, and the Jaspr adapter share the `dnd_kit` brand family under
 the post-US-060 topology, the workspace is unified under the Phase 17 toolchain,
 and both adapters now ship a sortable preset over the shared engine. Phase 19
@@ -235,8 +275,17 @@ mirrors the same contract for horizontal browser scroll containers while
 keeping its auto-scroll execution component-owned. Phase 20 closes the runnable
 Jaspr example gap with `examples/jaspr_example_gallery`, a tabbed feature
 gallery covering drag/drop, sortable, auto-scroll, accessibility, and
-modifiers over the shared runtime. Phase 21 then closes the first gallery-found
-adapter regression by restoring `DndDragOverlay` rebinding after a controlled
-`DndScope` controller swap. Future work should extend this roadmap through new
-product docs, story packets, and decisions rather than by reviving the old
-umbrella/core topology from the historical specs.
+modifiers over the shared runtime. Phase 21 then closes the next gallery-found
+adapter regressions by restoring `DndDragOverlay` rebinding after a controlled
+`DndScope` controller swap and fixing the Jaspr SSR handle-sync assertion.
+Phase 23 then closes Flutter accessibility hardening by adding semantics
+labels/hints, handle accessibility, and lifecycle announcements in the
+`dnd_kit_flutter 0.3.1` line. Phase 24 then removes duplicate announcement
+contract code by moving `DndAnnouncements` into `dnd_kit` while keeping Flutter
+semantics execution and Jaspr live-region execution adapter-local. Phase 25 is
+the closed release packet for those prepared package deltas as a coordinated
+stable `0.3.1` family release; local proof passed and the three packages were
+published in dependency order on 2026-06-20. Future work
+should extend this roadmap through new product docs, story packets, and
+decisions rather than by reviving the old umbrella/core topology from the
+historical specs.

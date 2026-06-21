@@ -8,6 +8,9 @@
   outside a build owner on the server; it is now guarded to the client. The
   pre-rendered markup matches the first client build, so hydration reuses the
   subtree instead of replacing it.
+- Depends on `dnd_kit: ^0.3.1` and now reuses the shared `DndAnnouncements`
+  accessibility contract from the core package instead of maintaining a local
+  duplicate.
 
 ## 0.3.0
 

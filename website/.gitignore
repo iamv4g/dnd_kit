@@ -1,0 +1,11 @@
+# Dart / Jaspr
+.dart_tool/
+build/
+.packages
+pubspec_lock
+
+# Generated Tailwind output (compiled from web/styles.tw.css)
+web/styles.css
+
+# Standalone tailwindcss CLI binary (downloaded locally, see README)
+tool/tailwindcss

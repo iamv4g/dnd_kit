@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-paper: 250 249 245; /* #FAF9F5 */
+    --color-surface: 255 255 255; /* #FFFFFF */
+    --color-raised: 240 238 230; /* #F0EEE6 */
+    --color-ink: 31 30 29; /* #1F1E1D */
+    --color-muted: 107 104 98; /* #6B6862 */
+    --color-line: 232 228 218; /* #E8E4DA */
+    --color-accent: 217 119 87; /* #D97757 */
+    --color-accent-deep: 189 93 58; /* #BD5D3A */
+    color-scheme: light;
+  }
+
+  .dark {
+    --color-paper: 31 30 29; /* #1F1E1D */
+    --color-surface: 38 38 36; /* #262624 */
+    --color-raised: 48 48 45; /* #30302D */
+    --color-ink: 240 238 230; /* #F0EEE6 */
+    --color-muted: 168 163 154; /* #A8A39A */
+    --color-line: 58 56 51; /* #3A3833 */
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Global safety net: nothing may widen the page past the device width on
+       mobile (each horizontal scroller, e.g. the Kanban rail, also contains
+       itself). clip (not hidden) keeps the sticky nav working. */
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  ::selection {
+    @apply bg-accent/25;
+  }
+
+  /* Draggable affordances: a handle-less draggable is grabbable as a whole;
+     a draggable with a handle is grabbable only at the handle. */
+  [aria-roledescription="drag handle"],
+  [aria-roledescription="draggable"]:not(:has([aria-roledescription="drag handle"])) {
+    cursor: grab;
+  }
+  [aria-roledescription="drag handle"]:active,
+  [aria-roledescription="draggable"]:not(:has([aria-roledescription="drag handle"])):active {
+    cursor: grabbing;
+  }
+  /* Stop native link/image dragging and text selection from hijacking the
+     pointer-based drag sensor. */
+  [aria-roledescription="draggable"] {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+  [aria-roledescription="draggable"] a,
+  [aria-roledescription="draggable"] img {
+    -webkit-user-drag: none;
+  }
+  /* `touch-action: none` only on the actual drag surface, so a touch there
+     starts a drag instead of scrolling. Card bodies (a draggable WITH a handle)
+     keep default touch-action so the page still scrolls when swiping them. */
+  [aria-roledescription="drag handle"],
+  [aria-roledescription="draggable"]:not(:has([aria-roledescription="drag handle"])) {
+    touch-action: none;
+  }
+  /* While any drag is active, force the grabbing cursor everywhere. */
+  html[data-dragging="true"],
+  html[data-dragging="true"] * {
+    cursor: grabbing !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  /* Recurring grip-dot handle affordance (rendered with the ⠿ glyph). */
+  .grip {
+    @apply inline-grid h-7 w-7 cursor-grab select-none place-items-center rounded-lg text-lg leading-none text-muted/60 transition-colors;
+  }
+  .grip:hover {
+    @apply bg-accent/10 text-accent;
+  }
+  .grip:active {
+    @apply cursor-grabbing;
+  }
+
+  /* Valid drop target — soft coral wash + dashed outline when hovered. */
+  .drop-zone {
+    @apply rounded-2xl border-2 border-dashed border-line transition-colors duration-200;
+  }
+  .drop-zone[data-over="true"] {
+    @apply border-accent bg-accent/10;
+  }
+
+  .pill-link {
+    @apply rounded-full px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:text-ink;
+  }
+}
+
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal[data-shown="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
