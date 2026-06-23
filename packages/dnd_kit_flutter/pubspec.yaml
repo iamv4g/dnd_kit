@@ -1,6 +1,6 @@
 name: dnd_kit_flutter
 description: Flutter drag-and-drop toolkit with core widgets, sensors, measuring, overlays, and sortable presets.
-version: 0.3.2
+version: 0.4.0
 homepage: https://iamv4g.github.io/dnd_kit/
 repository: https://github.com/iamv4g/dnd_kit/tree/main/packages/dnd_kit_flutter
 issue_tracker: https://github.com/iamv4g/dnd_kit/issues
@@ -17,7 +17,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  dnd_kit: ^0.3.2
+  dnd_kit: ^0.4.0
   flutter:
     sdk: flutter
   meta: ^1.15.0

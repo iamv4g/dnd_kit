@@ -1,6 +1,6 @@
 name: dnd_kit
 description: Pure Dart core engine for the dnd_kit drag-and-drop family. Flutter apps use dnd_kit_flutter; Jaspr apps use dnd_kit_jaspr.
-version: 0.3.2
+version: 0.4.0
 homepage: https://iamv4g.github.io/dnd_kit/
 repository: https://github.com/iamv4g/dnd_kit/tree/main/packages/dnd_kit
 issue_tracker: https://github.com/iamv4g/dnd_kit/issues

@@ -22,8 +22,9 @@ product docs, story packets, and decision records under `docs/`.
 ## Product Surfaces
 
 - Pure Dart package APIs for geometry, state, collision, modifier, sensor,
-  sortable math, the framework-neutral drag runtime (`DndRuntime`), and the
-  measuring-cache contract (`DndMeasuringRegistry`).
+  sortable math, the experimental multi-container helper contract, the
+  framework-neutral drag runtime (`DndRuntime`), and the measuring-cache
+  contract (`DndMeasuringRegistry`).
 - Flutter widget APIs for drag scopes, controllers, draggables, droppables,
   handles, overlays, measuring, sensors, auto-scroll, and accessibility.
 - Jaspr component APIs for drag scopes, controllers, draggables, droppables,
@@ -43,8 +44,8 @@ dnd_kit
 `dnd_kit` is the shared engine. `dnd_kit_flutter` and `dnd_kit_jaspr` are peer
 adapters over it; neither depends on the other. There is no umbrella package.
 Sortable widgets now live in both adapters, while the sortable move/strategy
-math they use is shared from `dnd_kit`. Experimental multi-container helpers
-remain Flutter-only for now.
+math and experimental multi-container helper contract they use are shared from
+`dnd_kit`.
 
 ## Dependency Rule
 
@@ -88,11 +89,13 @@ interactions in pure Dart. Adapters wrap it with their own change-notification:
 See `SPEC_JASPR.md` §4.3 and ADR 0015.
 
 The shared layer also owns the sortable contract and strategy math
-(`SortableMoveDetails`, `SortableStrategies` for vertical/horizontal/grid) and
-the DOM-free auto-scroll edge/velocity math (`dndAutoScrollVelocity`,
-`DndAutoScrollOptions`, `DndScrollAxis`). Adapters keep only the
-framework-specific execution: Flutter retains the `Ticker`, render-box
-measuring, and `ScrollPosition` scrolling and delegates the math.
+(`SortableMoveDetails`, `SortableStrategies` for vertical/horizontal/grid),
+the experimental multi-container helper contract
+(`SortableContainer`, `SortableMultiContainer`), and the DOM-free auto-scroll
+edge/velocity math (`dndAutoScrollVelocity`, `DndAutoScrollOptions`,
+`DndScrollAxis`). Adapters keep only the framework-specific execution: Flutter
+retains the `Ticker`, render-box measuring, and `ScrollPosition` scrolling and
+delegates the math.
 
 ## Decisions
 
@@ -101,5 +104,6 @@ measuring, and `ScrollPosition` scrolling and delegates the math.
 - `docs/decisions/0017-core-as-brand-package.md`
 - `docs/decisions/0018-flutter-3-44-workspace-unification.md`
 - `docs/decisions/0020-axis-aware-auto-scroll.md`
+- `docs/decisions/0021-shared-experimental-multi-container.md`
 
 For historical Jaspr-specific design context, also see `SPEC_JASPR.md`.

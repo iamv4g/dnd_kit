@@ -1,7 +1,8 @@
 # Experimental Multi-Container Sortable Example
 
 This example shows the experimental multi-container sortable API shape. The API
-is annotated with `@experimental` and can change before V1.
+is annotated with `@experimental`, now lives in the shared `dnd_kit` engine,
+and can change before V1.
 
 ```dart
 final containers = <SortableContainer>[

@@ -42,7 +42,7 @@ docs/
 
 | Package           | Role                                                                                                                                            |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dnd_kit`         | Pure Dart engine: geometry, drag runtime, state, collision, modifier, sensor, registry, and sortable math contracts. Framework-agnostic and shared by every adapter. |
+| `dnd_kit`         | Pure Dart engine: geometry, drag runtime, state, collision, modifier, sensor, registry, sortable math contracts, and the experimental multi-container helper contract. Framework-agnostic and shared by every adapter. |
 | `dnd_kit_flutter` | Flutter adapter with scope, controller, draggable, droppable, overlay, sensors, measuring, auto-scroll, semantics, and stable sortable presets. |
 | `dnd_kit_jaspr`   | Jaspr (Dart web) adapter: components, sortable presets, browser measuring/auto-scroll, and accessibility over the shared engine.                |
 
@@ -77,8 +77,9 @@ workspace unification through `US-061`, and the Jaspr sortable preset through
 `US-062`, plus the horizontal auto-scroll feasibility/design work, the
 axis-aware shared-core implementation slice, and the Flutter execution-layer
 adoption through `US-065`, plus the Jaspr execution-layer adoption through
-`US-066`, plus the Jaspr example feature gallery through `US-067`, and the
-Jaspr drag overlay controller rebind fix through `US-068`.
+`US-066`, plus the Jaspr example feature gallery through `US-067`, plus the
+Jaspr drag overlay controller rebind fix through `US-068`, and the shared
+experimental multi-container parity slice through `US-076`.
 
 The living source of truth is split from historical [SPEC.md](SPEC.md) input
 material into product docs, story packets, validation expectations, and decision

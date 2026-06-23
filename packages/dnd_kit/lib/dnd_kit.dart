@@ -28,4 +28,5 @@ export 'src/registry.dart';
 export 'src/runtime.dart';
 export 'src/sensor.dart';
 export 'src/sortable.dart';
+export 'src/sortable_container.dart';
 export 'src/state.dart';

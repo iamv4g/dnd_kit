@@ -1,115 +1,51 @@
+// ignore_for_file: experimental_member_use
+
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
+import 'package:dnd_kit_flutter/src/sortable/sortable_container.dart' as compat;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('SortableContainer', () {
-    test('stores immutable item order', () {
-      final itemIds = <DndId>[
-        const DndId('item-1'),
-        const DndId('item-2'),
-      ];
-      final container = SortableContainer(
-        id: const DndId('container-1'),
-        itemIds: itemIds,
-      );
-
-      itemIds.add(const DndId('item-3'));
-
-      expect(container.id, const DndId('container-1'));
-      expect(container.itemIds, const <DndId>[DndId('item-1'), DndId('item-2')]);
-      expect(() => container.itemIds.add(const DndId('item-4')), throwsUnsupportedError);
-      expect(container.indexOf(const DndId('item-2')), 1);
-      expect(container.contains(const DndId('item-3')), isFalse);
-    });
-  });
-
-  group('SortableMultiContainer.moveDetailsFor', () {
-    test('reports cross-container moves over an item', () {
-      final details = SortableMultiContainer.moveDetailsFor(
-        _event(activeId: const DndId('task-1'), overId: const DndId('task-3')),
-        containers: <SortableContainer>[
-          SortableContainer(
-            id: const DndId('todo'),
-            itemIds: const <DndId>[DndId('task-1'), DndId('task-2')],
-          ),
-          SortableContainer(
-            id: const DndId('done'),
-            itemIds: const <DndId>[DndId('task-3'), DndId('task-4')],
-          ),
-        ],
-      );
-
-      expect(details?.activeId, const DndId('task-1'));
-      expect(details?.overId, const DndId('task-3'));
-      expect(details?.fromContainerId, const DndId('todo'));
-      expect(details?.toContainerId, const DndId('done'));
-      expect(details?.fromIndex, 0);
-      expect(details?.toIndex, 0);
-    });
-
-    test('reports moves to the end when dropped over a container', () {
+  group('Sortable multi-container compatibility', () {
+    test('barrel import still exposes the shared helper contract', () {
       final details = SortableMultiContainer.moveDetailsFor(
         _event(activeId: const DndId('task-1'), overId: const DndId('done')),
         containers: <SortableContainer>[
           SortableContainer(
             id: const DndId('todo'),
-            itemIds: const <DndId>[DndId('task-1'), DndId('task-2')],
+            itemIds: const <DndId>[DndId('task-1')],
           ),
           SortableContainer(
             id: const DndId('done'),
-            itemIds: const <DndId>[DndId('task-3')],
+            itemIds: const <DndId>[DndId('task-2')],
           ),
         ],
       );
 
       expect(details?.fromContainerId, const DndId('todo'));
       expect(details?.toContainerId, const DndId('done'));
-      expect(details?.fromIndex, 0);
       expect(details?.toIndex, 1);
     });
 
-    test('reports same-container identifiers with from and to fields', () {
-      final details = SortableMultiContainer.moveDetailsFor(
-        _event(activeId: const DndId('task-1'), overId: const DndId('task-2')),
-        containers: <SortableContainer>[
-          SortableContainer(
-            id: const DndId('todo'),
-            itemIds: const <DndId>[DndId('task-1'), DndId('task-2'), DndId('task-3')],
-          ),
-        ],
+    test('source shim re-exports the shared helper symbols', () {
+      final container = compat.SortableContainer(
+        id: const DndId('todo'),
+        itemIds: const <DndId>[DndId('task-1')],
       );
 
-      expect(details?.fromContainerId, const DndId('todo'));
-      expect(details?.toContainerId, const DndId('todo'));
-      expect(details?.fromIndex, 0);
-      expect(details?.toIndex, 1);
-    });
-
-    test('returns null when the active item or drop target is unknown', () {
+      expect(container.id, const DndId('todo'));
+      expect(container.itemIds, const <DndId>[DndId('task-1')]);
       expect(
-        SortableMultiContainer.moveDetailsFor(
-          _event(activeId: const DndId('missing'), overId: const DndId('task-1')),
-          containers: <SortableContainer>[
-            SortableContainer(
-              id: const DndId('todo'),
-              itemIds: const <DndId>[DndId('task-1')],
+        compat.SortableMultiContainer.moveDetailsFor(
+          _event(activeId: const DndId('task-1'), overId: const DndId('done')),
+          containers: <compat.SortableContainer>[
+            container,
+            compat.SortableContainer(
+              id: const DndId('done'),
+              itemIds: const <DndId>[],
             ),
           ],
-        ),
-        isNull,
-      );
-
-      expect(
-        SortableMultiContainer.moveDetailsFor(
-          _event(activeId: const DndId('task-1'), overId: const DndId('missing')),
-          containers: <SortableContainer>[
-            SortableContainer(
-              id: const DndId('todo'),
-              itemIds: const <DndId>[DndId('task-1')],
-            ),
-          ],
-        ),
-        isNull,
+        )?.toIndex,
+        0,
       );
     });
   });

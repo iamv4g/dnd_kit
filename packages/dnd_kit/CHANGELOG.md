@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Adds the experimental multi-container helper contract to the shared engine:
+  `SortableContainer` and `SortableMultiContainer` now live in
+  `package:dnd_kit/dnd_kit.dart` so Flutter and Jaspr apps compute the same
+  cross-container move intent over one pure-Dart source of truth.
+
 ## 0.3.2
 
 - Updates the pub.dev homepage metadata to the hosted project website while

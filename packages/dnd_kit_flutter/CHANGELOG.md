@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Depends on `dnd_kit: ^0.4.0`.
+- Keeps exporting the experimental multi-container helper contract from
+  `package:dnd_kit_flutter/dnd_kit_flutter.dart`, but the underlying
+  `SortableContainer` and `SortableMultiContainer` source now lives in the
+  shared `dnd_kit` engine so Jaspr can reuse the same move-intent helper.
+
 ## 0.3.2
 
 - Updates the pub.dev homepage metadata to the hosted project website.

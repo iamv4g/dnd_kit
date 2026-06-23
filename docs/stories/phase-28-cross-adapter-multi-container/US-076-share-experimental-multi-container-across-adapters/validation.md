@@ -38,5 +38,26 @@ cd packages/dnd_kit_jaspr && fvm dart test -p chrome <targeted multi-container b
 
 ## Acceptance Evidence
 
-Add command output, affected test counts, and any example/browser coverage notes
-after implementation exists.
+- Implemented 2026-06-23 by moving `SortableContainer` and
+  `SortableMultiContainer` into `packages/dnd_kit/lib/src/sortable_container.dart`,
+  exporting them from `package:dnd_kit/dnd_kit.dart`, and turning the old
+  Flutter adapter file into a compatibility re-export shim.
+- `fvm dart analyze packages/dnd_kit packages/dnd_kit_flutter packages/dnd_kit_jaspr`
+  returned `No issues found!`.
+- `fvm dart test packages/dnd_kit` passed with 130 tests, including the new
+  core-owned multi-container helper coverage.
+- `fvm flutter test packages/dnd_kit_flutter` passed with 103 tests, including
+  Flutter barrel/shim compatibility coverage.
+- `fvm dart test packages/dnd_kit_jaspr` passed with 35 tests, including Jaspr
+  barrel reachability coverage for the shared helper.
+- `cd packages/dnd_kit_jaspr && fvm dart test -p chrome test/multi_container_browser_test.dart`
+  passed with 1 browser test proving a real Jaspr drag flow can feed the shared
+  `SortableMultiContainer.moveDetailsFor(...)` contract.
+- `cd examples/multi_container_sortable && fvm flutter test test/widget_test.dart`
+  passed with 3 widget tests covering the Flutter example board's render,
+  cross-column move, and same-column reorder flows.
+- After `0.3.2` had already been published, the local family metadata for this
+  post-publish feature line was advanced to `0.4.0` across
+  `packages/dnd_kit/pubspec.yaml`, `packages/dnd_kit_flutter/pubspec.yaml`, and
+  `packages/dnd_kit_jaspr/pubspec.yaml`, with adapter constraints updated to
+  `dnd_kit: ^0.4.0`.
