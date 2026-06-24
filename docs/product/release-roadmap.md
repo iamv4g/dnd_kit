@@ -288,6 +288,21 @@ production-ready feature with one supported behavior story across adapters:
 
 Phase README: `docs/stories/phase-29-production-ready-multi-container/README.md`.
 
+## Phase 30 - Website Multi-Container Showcase
+
+Adopt the supported Jaspr multi-container surface in the hosted homepage's
+Kanban centerpiece so the public site demonstrates the same production-ready
+board/list contract that shipped in Phase 29:
+
+- refactor the website Kanban showcase from app-owned raw droppable wiring to
+  `SortableMultiScope` / `SortableMultiContainerArea` /
+  `SortableMultiItem`;
+- keep website visuals, telemetry, and state mutation app-owned;
+- align homepage copy and release-roadmap truth with the supported
+  multi-container surface.
+
+Phase README: `docs/stories/phase-30-website-multi-container-showcase/README.md`.
+
 ## Current State
 
 The repository has implemented work through `US-076`. The Flutter adapter, the
@@ -323,6 +338,10 @@ library feature: `dnd_kit` now owns the default board/list interaction policy,
 both adapters expose `SortableMultiScope` / `SortableMultiContainerArea` /
 `SortableMultiItem`, the Flutter example now uses that supported surface, and
 Jaspr browser proof exercises the same behavior over the shared engine.
+Phase 30 then upgraded the hosted Jaspr homepage Kanban showcase to that same
+supported multi-container surface, replacing the stale app-owned raw-droppable
+assembly path while keeping the website's own visuals, telemetry, and state
+mutation local to the site.
 Future work should extend this roadmap through new product docs, story packets,
 and decisions rather than by reviving the old umbrella/core topology from the
 historical specs.

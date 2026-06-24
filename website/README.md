@@ -14,10 +14,11 @@ drag state as you go.
   components hydrated in the browser (`lib/main.client.dart`). The drag widgets
   are SSR-safe, so they pre-render and hydrate without DOM access on the server.
 - **Drag woven in, not bolted on.** `lib/sections/kanban_showcase.dart` is the
-  centerpiece — a cross-column board on the generic `DndDraggable` /
-  `DndDroppable` primitives with app-owned move logic (the Jaspr adapter ships a
-  single-container sortable preset only). The nav pills and feature grid use the
-  `SortableScope` preset; the hero chips and playground use generic drop zones.
+  centerpiece — a cross-column board on the supported Jaspr multi-container
+  surface (`SortableMultiScope` / `SortableMultiContainerArea` /
+  `SortableMultiItem`) with app-owned state mutation. The nav pills and feature
+  grid use the single-container `SortableScope` preset; the hero chips and
+  playground use generic drop zones.
 - **Telemetry HUD** (`lib/drag/telemetry_hud.dart`) is the signature element: a
   shared `DragBus` collects every island's controller state into one live
   readout.
@@ -39,7 +40,7 @@ so a single class (`bg-paper`, `text-ink`) adapts to light/dark.
 ```sh
 # from this directory (website/)
 tool/styles.sh --watch          # terminal 1: rebuild CSS on change
-dart pub global run jaspr_cli:jaspr serve   # terminal 2: dev server on :8080
+fvm dart pub global run jaspr_cli:jaspr serve   # terminal 2: dev server on :8080
 ```
 
 (If `tailwindcss` is already on your PATH you can use that instead of
@@ -49,7 +50,7 @@ dart pub global run jaspr_cli:jaspr serve   # terminal 2: dev server on :8080
 
 ```sh
 tool/styles.sh --minify         # compile web/styles.css
-dart pub global run jaspr_cli:jaspr build   # outputs static files to build/jaspr
+fvm dart pub global run jaspr_cli:jaspr build   # outputs static files to build/jaspr
 ```
 
 The contents of `build/jaspr` are plain static files — deploy them to any

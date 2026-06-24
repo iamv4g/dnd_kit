@@ -7,12 +7,10 @@ import '../drag/grip.dart';
 
 /// The centerpiece: an interactive multi-column board.
 ///
-/// The Jaspr adapter ships a single-container sortable preset only, so this
-/// cross-column board is built on the generic [DndDraggable] / [DndDroppable]
-/// primitives with app-owned move logic — which is exactly what shows off the
-/// library's lower layer. Each card is both a draggable and a droppable under
-/// the same id (the dnd-kit sortable pattern), columns are droppables, and the
-/// board recomputes order on drop.
+/// The board now demonstrates the supported multi-container sortable surface
+/// for Jaspr: [SortableMultiScope], [SortableMultiContainerArea], and
+/// [SortableMultiItem]. The site keeps its own visual language and state, while
+/// the library owns default cross-container collision and insertion semantics.
 @client
 class KanbanShowcase extends StatefulComponent {
   const KanbanShowcase({super.key});
@@ -25,20 +23,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
   late final DndController _controller = DndController()
     ..addListener(_onControllerChanged);
 
-  final Map<String, List<DndId>> _board = {
-    'col-backlog': [
-      const DndId('card-axis'),
-      const DndId('card-grid'),
-      const DndId('card-rtl'),
-      const DndId('card-pointer'),
-      const DndId('card-collision'),
-      const DndId('card-modifiers'),
-      const DndId('card-measure'),
-    ],
-    'col-progress': [const DndId('card-overlay'), const DndId('card-keyboard')],
-    'col-review': [const DndId('card-scroll')],
-    'col-done': [const DndId('card-engine'), const DndId('card-ssr')],
-  };
+  Map<String, List<DndId>> _board = _initialBoard();
 
   int _moves = 0;
 
@@ -57,61 +42,148 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
 
   // --- move logic ----------------------------------------------------------
 
-  bool _isColumn(DndId id) => _board.containsKey(id.value);
+  static Map<String, List<DndId>> _initialBoard() {
+    return {
+      'col-backlog': [
+        const DndId('card-axis'),
+        const DndId('card-grid'),
+        const DndId('card-rtl'),
+        const DndId('card-pointer'),
+        const DndId('card-collision'),
+        const DndId('card-modifiers'),
+        const DndId('card-measure'),
+      ],
+      'col-progress': [
+        const DndId('card-overlay'),
+        const DndId('card-keyboard'),
+      ],
+      'col-review': [const DndId('card-scroll')],
+      'col-done': [const DndId('card-engine'), const DndId('card-ssr')],
+    };
+  }
 
-  String? _columnOf(DndId card) {
+  List<SortableContainer> get _containers {
+    return [
+      for (final column in _kanbanColumns)
+        SortableContainer(
+          id: DndId(column.id),
+          itemIds: _board[column.id] ?? const <DndId>[],
+        ),
+    ];
+  }
+
+  DndId? _columnOf(DndId itemId) {
+    if (_board.containsKey(itemId.value)) {
+      return itemId;
+    }
+
     for (final entry in _board.entries) {
-      if (entry.value.contains(card)) return entry.key;
+      if (entry.value.contains(itemId)) {
+        return DndId(entry.key);
+      }
     }
     return null;
   }
 
-  void _handleDrop(DndDragEndEvent event) {
-    final active = event.activeId;
-    final over = event.overId;
-    if (over == null || over == active) return;
-
-    final fromCol = _columnOf(active);
-    if (fromCol == null) return;
-
-    final String toCol;
-    var toIndex = 0;
-    if (_isColumn(over)) {
-      toCol = over.value;
-      toIndex = _board[toCol]!.length;
-    } else {
-      final overCol = _columnOf(over);
-      if (overCol == null) return;
-      toCol = overCol;
-      toIndex = _board[toCol]!.indexOf(over);
+  bool _columnIsOver(DndId columnId, DndDroppableDetails droppableState) {
+    if (droppableState.isOver) {
+      return true;
     }
 
-    final fromList = _board[fromCol]!;
-    final fromIndex = fromList.indexOf(active);
-    if (fromCol == toCol && fromIndex == toIndex) return;
+    final overId = _controller.overId;
+    if (overId == null) {
+      return false;
+    }
 
-    fromList.removeAt(fromIndex);
-    if (fromCol == toCol && fromIndex < toIndex) toIndex -= 1;
-    final toList = _board[toCol]!;
-    toList.insert(toIndex.clamp(0, toList.length), active);
-
-    setState(() => _moves += 1);
+    final overColumn = _columnOf(overId);
+    return overColumn == columnId;
   }
 
-  // --- rendering -----------------------------------------------------------
+  void _handleMove(SortableMoveDetails move) {
+    final fromId = move.fromContainerId?.value;
+    final toId = move.toContainerId?.value;
+    if (fromId == null || toId == null) {
+      return;
+    }
 
-  DndId? get _overColumn {
-    final over = _controller.overId;
-    if (over == null) return null;
-    if (_isColumn(over)) return over;
-    final col = _columnOf(over);
-    return col == null ? null : DndId(col);
+    final nextBoard = _applyMove(_board, move);
+    if (_sameBoard(_board, nextBoard)) {
+      return;
+    }
+
+    setState(() {
+      _board = nextBoard;
+      _moves += 1;
+    });
+  }
+
+  static Map<String, List<DndId>> _applyMove(
+    Map<String, List<DndId>> board,
+    SortableMoveDetails move,
+  ) {
+    final fromId = move.fromContainerId?.value;
+    final toId = move.toContainerId?.value;
+    if (fromId == null || toId == null) {
+      return board;
+    }
+
+    final next = <String, List<DndId>>{
+      for (final entry in board.entries)
+        entry.key: List<DndId>.from(entry.value),
+    };
+
+    final fromItems = next[fromId];
+    final toItems = next[toId];
+    if (fromItems == null ||
+        toItems == null ||
+        move.fromIndex < 0 ||
+        move.fromIndex >= fromItems.length) {
+      return board;
+    }
+
+    final activeId = fromItems.removeAt(move.fromIndex);
+    if (activeId != move.activeId) {
+      final fallbackIndex = fromItems.indexOf(move.activeId);
+      if (fallbackIndex >= 0) {
+        fromItems.removeAt(fallbackIndex);
+      }
+    }
+
+    final insertIndex = move.toIndex.clamp(0, toItems.length);
+    toItems.insert(insertIndex, move.activeId);
+
+    return next;
+  }
+
+  static bool _sameBoard(
+    Map<String, List<DndId>> a,
+    Map<String, List<DndId>> b,
+  ) {
+    if (a.length != b.length) {
+      return false;
+    }
+
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || other.length != entry.value.length) {
+        return false;
+      }
+      for (var index = 0; index < entry.value.length; index += 1) {
+        if (entry.value[index] != other[index]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   @override
   Component build(BuildContext context) {
-    return DndScope(
+    return SortableMultiScope(
       controller: _controller,
+      containers: _containers,
+      onMove: _handleMove,
       // The board's stacked rows: status bar, the horizontal column rail, the
       // drag overlay and the a11y live region. (How the rail is kept from
       // widening the page on mobile is explained on the wrapper below.)
@@ -174,7 +246,6 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
   }
 
   Component _column(({String id, String title}) col) {
-    final isOver = _overColumn?.value == col.id;
     final cards = _board[col.id]!;
     // The outer div owns the column width (DndDroppable renders an unstyled
     // wrapper, so sizing lives here). On mobile each column is a fixed-width
@@ -184,45 +255,50 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
       classes:
           'w-[17rem] min-w-0 shrink-0 flex-none sm:w-auto sm:flex-1 sm:basis-0',
       [
-        DndDroppable(
+        SortableMultiContainerArea(
           id: DndId(col.id),
-          child: div(
-            classes:
-                'flex w-full flex-col gap-3 rounded-2xl border bg-raised/60 p-3 '
-                'transition-colors duration-200 '
-                '${isOver ? 'border-accent bg-accent/10' : 'border-line'}',
-            attributes: {'data-over': isOver.toString()},
-            [
-              div(
-                classes:
-                    'flex items-center justify-between px-1 font-mono text-xs '
-                    'uppercase tracking-wider text-muted',
-                [
-                  span([.text(col.title)]),
-                  span(classes: 'text-accent', [.text('${cards.length}')]),
-                ],
-              ),
-              // Cards scroll vertically inside a bounded column; the column
-              // auto-scrolls vertically while a card is dragged past its edge.
-              DndAutoScroll(
-                axis: DndScrollAxis.vertical,
-                controller: _controller,
-                classes:
-                    'flex min-h-[120px] max-h-[55vh] flex-col gap-3 overflow-y-auto '
-                    'pr-0.5',
-                child: .fragment([
-                  if (cards.isEmpty)
-                    div(
-                      classes:
-                          'flex flex-1 items-center justify-center rounded-xl '
-                          'border border-dashed border-line py-6 text-xs text-muted',
-                      const [.text('drop here')],
-                    ),
-                  for (final id in cards) _card(id),
-                ]),
-              ),
-            ],
-          ),
+          itemIds: cards,
+          builder: (context, droppableState, child) {
+            final isOver = _columnIsOver(DndId(col.id), droppableState);
+            return div(
+              classes:
+                  'flex w-full flex-col gap-3 rounded-2xl border bg-raised/60 '
+                  'p-3 transition-colors duration-200 '
+                  '${isOver ? 'border-accent bg-accent/10' : 'border-line'}',
+              attributes: {'data-over': isOver.toString()},
+              [child],
+            );
+          },
+          child: .fragment([
+            div(
+              classes:
+                  'flex items-center justify-between px-1 font-mono text-xs '
+                  'uppercase tracking-wider text-muted',
+              [
+                span([.text(col.title)]),
+                span(classes: 'text-accent', [.text('${cards.length}')]),
+              ],
+            ),
+            // Cards scroll vertically inside a bounded column; the column
+            // auto-scrolls vertically while a card is dragged past its edge.
+            DndAutoScroll(
+              axis: DndScrollAxis.vertical,
+              controller: _controller,
+              classes:
+                  'flex min-h-[120px] max-h-[55vh] flex-col gap-3 overflow-y-auto '
+                  'pr-0.5',
+              child: .fragment([
+                if (cards.isEmpty)
+                  div(
+                    classes:
+                        'flex flex-1 items-center justify-center rounded-xl '
+                        'border border-dashed border-line py-6 text-xs text-muted',
+                    const [.text('drop here')],
+                  ),
+                for (final id in cards) _card(id),
+              ]),
+            ),
+          ]),
         ),
       ],
     );
@@ -230,28 +306,25 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
 
   Component _card(DndId id) {
     final card = _cardData[id.value]!;
-    final isActive = _controller.activeId == id;
-    final isOver = _controller.overId == id;
-    final stateClasses = isActive
-        ? 'opacity-40'
-        : isOver
-        ? 'ring-2 ring-accent ring-offset-2 ring-offset-raised'
-        : '';
-    return DndDroppable(
+    return SortableMultiItem(
       id: id,
-      child: DndDraggable(
-        id: id,
-        constraint: const DndSensorActivationConstraint(distance: 8),
-        label: 'Card ${card.title}',
-        description:
-            'Press space to pick up, arrow keys to move between cards, '
-            'space to drop, escape to cancel.',
-        onDragEnd: _handleDrop,
-        child: div(
+      constraint: const DndSensorActivationConstraint(distance: 8),
+      label: 'Card ${card.title}',
+      description:
+          'Press space to pick up, arrow keys to move between cards, '
+          'space to drop, escape to cancel.',
+      builder: (context, sortableState, child) {
+        final stateClasses = sortableState.isActive
+            ? 'opacity-40'
+            : sortableState.isOver
+            ? 'ring-2 ring-accent ring-offset-2 ring-offset-raised'
+            : '';
+        return div(
           classes: 'transition-[opacity,box-shadow] duration-150 $stateClasses',
-          [_cardFace(card)],
-        ),
-      ),
+          [child],
+        );
+      },
+      child: _cardFace(card),
     );
   }
 

@@ -30,9 +30,10 @@ class Site extends StatelessComponent {
             tag: 'Showcase',
             title: 'A board you can actually move',
             desc:
-                'A cross-column Kanban built on the generic draggable layer. Drag '
-                'a card by its handle within a column or across to another — the '
-                'engine reports intent, the board owns the data.',
+                'A cross-column Kanban built on the supported Jaspr '
+                'multi-container surface. Drag a card by its handle within a '
+                'column or across to another — the engine resolves move intent, '
+                'the board owns the data.',
             child: const KanbanShowcase(),
           ),
           _section(
