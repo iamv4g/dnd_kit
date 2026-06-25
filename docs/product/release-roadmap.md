@@ -335,6 +335,18 @@ Close the docs/adoption gap left after the stable `0.4.0` publication:
 Phase README:
 `docs/stories/phase-32-website-docs-page-and-doc-alignment/README.md`.
 
+## Phase 33 - Example Standardization And Showcase Page
+
+Converge the example apps so the website can host a Flutter/Jaspr showcase page:
+
+- `US-083`: define the examples standard — a canonical demo catalog mirroring
+  the docs concept taxonomy, naming/structure conventions, and the Flutter/Jaspr
+  parity matrix (documentation only, no demo code);
+- follow-up stories then fill the parity gaps and add the showcase page.
+
+Phase README:
+`docs/stories/phase-33-example-standardization-and-showcase/README.md`.
+
 ## Current State
 
 The repository has implemented work through `US-079`. The Flutter adapter, the
@@ -387,7 +399,10 @@ Jaspr and Flutter package READMEs with the shipped stable `0.4.0` family, and
 block, and nine core pages over the shared engine surface, and `US-082`
 completed the coverage with four more Concepts pages (collision, sensors,
 modifiers, auto-scroll), an API Reference page, and a collapsible mobile docs
-menu.
+menu. Phase 33 then opened example standardization: `US-083` defined the
+examples standard — a canonical demo catalog mirroring the docs concept
+taxonomy, naming/structure conventions, and the Flutter/Jaspr parity matrix —
+as the agreed contract before any demo parity or showcase-page work.
 Future work should keep extending this roadmap through new product docs, story
 packets, and decisions rather than by reviving the old umbrella/core topology
 from the historical specs.
