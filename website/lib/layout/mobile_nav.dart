@@ -28,8 +28,11 @@ class _MobileNavState extends State<MobileNav> {
       if (kIsWeb) {
         if (href.startsWith('#')) {
           web.window.location.hash = href;
-        } else {
+        } else if (href.startsWith('http')) {
           web.window.open(href, '_blank');
+        } else {
+          // Internal route (e.g. the docs page) — navigate in the same tab.
+          web.window.location.href = href;
         }
       }
       _close();

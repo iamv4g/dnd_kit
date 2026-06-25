@@ -60,4 +60,6 @@ static host (GitHub Pages, Netlify, Cloudflare Pages, …).
 
 - GitHub: https://github.com/iamv4g/dnd_kit
 - pub.dev: https://pub.dev/packages/dnd_kit_jaspr
-- Docs: _coming soon_ (currently a `#docs` placeholder in the nav/footer)
+- Docs: the multi-page documentation section under the `/docs` routes
+  (`lib/docs/`), linked from the nav and footer. `lib/docs/docs_nav.dart` is the
+  single source of truth for the sidebar, pager, and routes.

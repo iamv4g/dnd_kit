@@ -10,7 +10,10 @@ import 'mobile_nav.dart';
 /// Sticky top navigation. The in-page links are reorderable (drag a pill to
 /// rearrange them) while still navigating on a plain click.
 class NavBar extends StatelessComponent {
-  const NavBar({super.key});
+  const NavBar({this.activeDocs = false, super.key});
+
+  /// Highlights the Docs pill when the docs page is the current route.
+  final bool activeDocs;
 
   @override
   Component build(BuildContext context) {
@@ -43,7 +46,10 @@ class NavBar extends StatelessComponent {
               ),
               a(
                 href: SiteLinks.docs,
-                classes: 'pill-link hidden sm:inline-block',
+                classes:
+                    'pill-link hidden sm:inline-block'
+                    '${activeDocs ? ' text-accent' : ''}',
+                attributes: activeDocs ? const {'aria-current': 'page'} : null,
                 [.text('Docs')],
               ),
               const ThemeToggle(),

@@ -11,8 +11,10 @@ class SiteLinks {
   static const pubFlutter = 'https://pub.dev/packages/dnd_kit_flutter';
   static const pubJaspr = 'https://pub.dev/packages/dnd_kit_jaspr';
 
-  /// Docs site is built later; placeholder for now.
-  static const docs = '#docs';
+  /// The on-site Getting Started docs page (`/docs` route). Written relative so
+  /// it resolves against the document `<base href>` on both the project Pages
+  /// subpath (`/dnd_kit/docs/`) and a local server root (`/docs/`).
+  static const docs = 'docs/';
 }
 
 /// In-page nav targets (also the reorderable nav pills).

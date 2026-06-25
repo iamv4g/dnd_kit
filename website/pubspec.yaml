@@ -12,6 +12,7 @@ dependencies:
   dnd_kit_jaspr:
     path: ../packages/dnd_kit_jaspr
   jaspr: ^0.23.1
+  jaspr_router: ^0.8.2
   universal_web: ^1.1.1
 
 dev_dependencies:

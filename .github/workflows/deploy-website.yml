@@ -68,18 +68,22 @@ jobs:
           set -e
           ls -la
           test -f index.html || { echo "ERROR: index.html not found"; exit 1; }
+          test -f docs/index.html || { echo "ERROR: docs page not found"; exit 1; }
           test -f main.client.dart.js || { echo "ERROR: client bundle not found"; exit 1; }
           echo "Build output OK"
 
       # The project Pages site lives at the /dnd_kit/ subpath. jaspr build has no
       # --base-href flag and Document emits <base href="/"/>, so rewrite it here
-      # (asset URLs in index.html are relative and resolve against this base).
+      # on every generated page (relative asset and cross-page URLs resolve
+      # against this base).
       - name: Set base href for the project subpath
         working-directory: website/build/jaspr
         run: |
           set -e
-          sed -i 's|<base href="/"/>|<base href="/dnd_kit/"/>|' index.html
+          find . -name '*.html' -exec \
+            sed -i 's|<base href="/"/>|<base href="/dnd_kit/"/>|' {} +
           grep -q '<base href="/dnd_kit/"/>' index.html
+          grep -q '<base href="/dnd_kit/"/>' docs/index.html
           touch .nojekyll
 
       - name: Upload Pages artifact

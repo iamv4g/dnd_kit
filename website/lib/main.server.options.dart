@@ -5,6 +5,7 @@
 // Generated with jaspr_builder
 
 import 'package:jaspr/server.dart';
+import 'package:dnd_kit_website/docs/code_tabs.dart' as _code_tabs;
 import 'package:dnd_kit_website/drag/telemetry_hud.dart' as _telemetry_hud;
 import 'package:dnd_kit_website/layout/mobile_nav.dart' as _mobile_nav;
 import 'package:dnd_kit_website/layout/nav_bar.dart' as _nav_bar;
@@ -35,6 +36,10 @@ import 'package:dnd_kit_website/theme/theme_toggle.dart' as _theme_toggle;
 ServerOptions get defaultServerOptions => ServerOptions(
   clientId: 'main.client.dart.js',
   clients: {
+    _code_tabs.CodeTabs: ClientTarget<_code_tabs.CodeTabs>(
+      'code_tabs',
+      params: __code_tabsCodeTabs,
+    ),
     _telemetry_hud.TelemetryHud: ClientTarget<_telemetry_hud.TelemetryHud>(
       'telemetry_hud',
     ),
@@ -53,3 +58,10 @@ ServerOptions get defaultServerOptions => ServerOptions(
     ),
   },
 );
+
+Map<String, Object?> __code_tabsCodeTabs(_code_tabs.CodeTabs c) => {
+  'flutter': c.flutter,
+  'jaspr': c.jaspr,
+  'flutterFile': c.flutterFile,
+  'jasprFile': c.jasprFile,
+};

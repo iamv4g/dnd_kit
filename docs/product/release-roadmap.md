@@ -317,6 +317,21 @@ publication after the multi-container graduation work has soaked:
 Phase README:
 `docs/stories/phase-31-coordinated-family-stable-0-4-0-release/README.md`.
 
+## Phase 32 - Website Docs Page And Post-0.4.0 Doc Alignment
+
+Close the docs/adoption gap left after the stable `0.4.0` publication:
+
+- `US-080`: give the website a real Getting Started docs page on its own `/docs`
+  route (replacing the in-page `#docs` placeholder) and align the root README
+  status plus the Jaspr/Flutter package READMEs with the shipped stable `0.4.0`
+  family;
+- `US-081`: expand `/docs` into a multi-page docs section (shared sidebar shell,
+  right-rail TOC, prev/next pager, Flutter|Jaspr code tabs) covering the nine
+  core pages.
+
+Phase README:
+`docs/stories/phase-32-website-docs-page-and-doc-alignment/README.md`.
+
 ## Current State
 
 The repository has implemented work through `US-079`. The Flutter adapter, the
@@ -360,6 +375,13 @@ packet for that line: the prepared `0.4.0-dev.1` family metadata was promoted
 to stable `0.4.0`, local release proof passed through the shared verifier, and
 the three packages published to pub.dev in dependency order on 2026-06-24:
 `dnd_kit 0.4.0` -> `dnd_kit_flutter 0.4.0` -> `dnd_kit_jaspr 0.4.0`.
+Phase 32 then closed the post-release docs/adoption gap: `US-080` gave the
+website a real Getting Started docs page on its own statically generated `/docs`
+route (replacing the `#docs` placeholder) and aligned the root README plus the
+Jaspr and Flutter package READMEs with the shipped stable `0.4.0` family, and
+`US-081` expanded `/docs` into a multi-page docs section — a shared `DocsShell`
+(grouped sidebar, right-rail TOC, prev/next pager), a Flutter|Jaspr code-tab
+block, and nine core pages over the shared engine surface.
 Future work should keep extending this roadmap through new product docs, story
 packets, and decisions rather than by reviving the old umbrella/core topology
 from the historical specs.

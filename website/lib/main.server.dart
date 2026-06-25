@@ -1,8 +1,8 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/server.dart';
 
+import 'app.dart';
 import 'main.server.options.dart';
-import 'site.dart';
 
 /// Google Fonts: Newsreader (display serif), Hanken Grotesk (body),
 /// Geist Mono (utility/code).
@@ -88,7 +88,7 @@ void main() {
           children: const [RawText(_noFlashScript)],
         ),
       ],
-      body: const Site(),
+      body: const App(),
     ),
   );
 }

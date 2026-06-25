@@ -6,6 +6,7 @@
 
 import 'package:jaspr/client.dart';
 
+import 'package:dnd_kit_website/docs/code_tabs.dart' deferred as _code_tabs;
 import 'package:dnd_kit_website/drag/telemetry_hud.dart'
     deferred as _telemetry_hud;
 import 'package:dnd_kit_website/layout/mobile_nav.dart' deferred as _mobile_nav;
@@ -39,6 +40,15 @@ import 'package:dnd_kit_website/theme/theme_toggle.dart'
 /// ```
 ClientOptions get defaultClientOptions => ClientOptions(
   clients: {
+    'code_tabs': ClientLoader(
+      (p) => _code_tabs.CodeTabs(
+        flutter: p['flutter'] as String,
+        jaspr: p['jaspr'] as String,
+        flutterFile: p['flutterFile'] as String,
+        jasprFile: p['jasprFile'] as String,
+      ),
+      loader: _code_tabs.loadLibrary,
+    ),
     'telemetry_hud': ClientLoader(
       (p) => _telemetry_hud.TelemetryHud(),
       loader: _telemetry_hud.loadLibrary,
