@@ -92,26 +92,34 @@ class DocsShell extends StatelessComponent {
   Component _mobileNav() {
     return Component.element(
       tag: 'details',
-      classes: 'mb-8 rounded-2xl border border-line bg-surface lg:hidden',
+      classes:
+          'sticky top-16 z-20 mb-8 rounded-2xl border border-line '
+          'bg-paper/95 shadow-sm backdrop-blur lg:hidden',
       children: [
         Component.element(
           tag: 'summary',
           classes:
-              'cursor-pointer select-none px-4 py-3 text-sm font-medium text-ink',
+              'cursor-pointer select-none rounded-2xl px-4 py-3 text-sm '
+              'font-medium text-ink',
           children: const [.text('Documentation menu')],
         ),
-        div(classes: 'flex flex-col gap-5 border-t border-line px-4 py-4', [
-          for (final group in docGroups)
-            div(classes: 'flex flex-col gap-1', [
-              span(
-                classes:
-                    'mb-1 font-mono text-xs uppercase tracking-[0.18em] '
-                    'text-muted',
-                [.text(group.label)],
-              ),
-              for (final entry in group.entries) _sidebarLink(entry),
-            ]),
-        ]),
+        div(
+          classes:
+              'flex max-h-[70vh] flex-col gap-5 overflow-auto border-t '
+              'border-line px-4 py-4',
+          [
+            for (final group in docGroups)
+              div(classes: 'flex flex-col gap-1', [
+                span(
+                  classes:
+                      'mb-1 font-mono text-xs uppercase tracking-[0.18em] '
+                      'text-muted',
+                  [.text(group.label)],
+                ),
+                for (final entry in group.entries) _sidebarLink(entry),
+              ]),
+          ],
+        ),
       ],
     );
   }
