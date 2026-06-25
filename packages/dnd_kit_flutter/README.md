@@ -154,5 +154,5 @@ drag runtime.
 | Package                                                       | Use it for                                                                            |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [`dnd_kit_flutter`](https://pub.dev/packages/dnd_kit_flutter) | Flutter apps — widgets, sensors, overlays, and sortable presets. |
-| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the current dev adapter release.         |
+| [`dnd_kit_jaspr`](https://pub.dev/packages/dnd_kit_jaspr)     | Jaspr (Dart web) apps — the web adapter over the shared engine.  |
 | [`dnd_kit`](https://pub.dev/packages/dnd_kit)                 | The shared, framework-agnostic engine.                          |

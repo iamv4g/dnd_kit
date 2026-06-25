@@ -8,7 +8,7 @@ Flutter behave as peer adapters over one drag runtime — the same domain model,
 drag lifecycle, collision logic, modifiers, sortable math, and auto-scroll
 curve. It depends only on `dnd_kit` and `jaspr` (no Flutter).
 
-> Status: current public development release. This package provides `DndScope`,
+> Status: stable `0.4.0` release. This package provides `DndScope`,
 > `DndController`, `DndDraggable`, `DndDroppable`, `DndDragHandle`,
 > `DndDragOverlay`, `DndAutoScroll`, `DndLiveRegion`, `SortableScope`, and
 > `SortableItem` over the shared runtime. Shared modifiers and sortable

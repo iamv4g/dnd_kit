@@ -78,8 +78,11 @@ workspace unification through `US-061`, and the Jaspr sortable preset through
 axis-aware shared-core implementation slice, and the Flutter execution-layer
 adoption through `US-065`, plus the Jaspr execution-layer adoption through
 `US-066`, plus the Jaspr example feature gallery through `US-067`, plus the
-Jaspr drag overlay controller rebind fix through `US-068`, and the shared
-experimental multi-container parity slice through `US-076`.
+Jaspr drag overlay controller rebind fix through `US-068`, the shared
+experimental multi-container parity slice through `US-076`, the
+production-ready multi-container graduation and website showcase through
+`US-078`, and the coordinated family stable `0.4.0` publication (`dnd_kit`,
+`dnd_kit_flutter`, `dnd_kit_jaspr`) through `US-079`.
 
 The living source of truth is split from historical [SPEC.md](SPEC.md) input
 material into product docs, story packets, validation expectations, and decision
