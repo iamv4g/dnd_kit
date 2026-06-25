@@ -327,7 +327,10 @@ Close the docs/adoption gap left after the stable `0.4.0` publication:
   family;
 - `US-081`: expand `/docs` into a multi-page docs section (shared sidebar shell,
   right-rail TOC, prev/next pager, Flutter|Jaspr code tabs) covering the nine
-  core pages.
+  core pages;
+- `US-082`: complete the coverage with four more Concepts pages (collision,
+  sensors, modifiers, auto-scroll), an API Reference page, and a collapsible
+  mobile docs menu.
 
 Phase README:
 `docs/stories/phase-32-website-docs-page-and-doc-alignment/README.md`.
@@ -381,7 +384,10 @@ route (replacing the `#docs` placeholder) and aligned the root README plus the
 Jaspr and Flutter package READMEs with the shipped stable `0.4.0` family, and
 `US-081` expanded `/docs` into a multi-page docs section — a shared `DocsShell`
 (grouped sidebar, right-rail TOC, prev/next pager), a Flutter|Jaspr code-tab
-block, and nine core pages over the shared engine surface.
+block, and nine core pages over the shared engine surface, and `US-082`
+completed the coverage with four more Concepts pages (collision, sensors,
+modifiers, auto-scroll), an API Reference page, and a collapsible mobile docs
+menu.
 Future work should keep extending this roadmap through new product docs, story
 packets, and decisions rather than by reviving the old umbrella/core topology
 from the historical specs.

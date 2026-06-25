@@ -87,8 +87,38 @@ class DocsShell extends StatelessComponent {
     );
   }
 
+  /// A collapsible group menu shown below the `lg` breakpoint, where the
+  /// fixed sidebar is hidden. Native `<details>`, so it needs no hydration.
+  Component _mobileNav() {
+    return Component.element(
+      tag: 'details',
+      classes: 'mb-8 rounded-2xl border border-line bg-surface lg:hidden',
+      children: [
+        Component.element(
+          tag: 'summary',
+          classes:
+              'cursor-pointer select-none px-4 py-3 text-sm font-medium text-ink',
+          children: const [.text('Documentation menu')],
+        ),
+        div(classes: 'flex flex-col gap-5 border-t border-line px-4 py-4', [
+          for (final group in docGroups)
+            div(classes: 'flex flex-col gap-1', [
+              span(
+                classes:
+                    'mb-1 font-mono text-xs uppercase tracking-[0.18em] '
+                    'text-muted',
+                [.text(group.label)],
+              ),
+              for (final entry in group.entries) _sidebarLink(entry),
+            ]),
+        ]),
+      ],
+    );
+  }
+
   Component _content(DocEntry entry) {
     return div(classes: 'min-w-0', [
+      _mobileNav(),
       eyebrow(entry.group),
       h1(classes: 'mt-3 font-serif text-4xl text-ink sm:text-5xl', [
         .text(entry.title),

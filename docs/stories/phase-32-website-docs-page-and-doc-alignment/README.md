@@ -15,7 +15,12 @@ This phase closes that adoption gap across two normal-lane stories:
   multi-page docs section: a shared `DocsShell` (grouped sidebar, right-rail
   "On this page" TOC, previous/next pager), a Flutter|Jaspr `CodeTabs` block,
   and nine core pages (Overview, Installation, Quickstart, Draggable,
-  Droppable, Drag overlay, Sortable lists, Multi-container, Accessibility).
+  Droppable, Drag overlay, Sortable lists, Multi-container, Accessibility);
+- `US-082` completed the docs coverage: four more Concepts pages (Collision
+  detection, Sensors & activation, Modifiers, Auto-scroll) written against the
+  real engine API, an API Reference page (dartdoc + changelog links), and a
+  collapsible mobile docs menu so the section is navigable below the `lg`
+  breakpoint.
 
 ## Principle
 
@@ -35,6 +40,7 @@ Doc-alignment and website work in this phase must:
 | --- | --- | --- |
 | **US-080** | Add the website `/docs` Getting Started page (jaspr_router) and align root/package READMEs + website docs link with stable `0.4.0` | No ADR (docs/adoption work under the existing website and package-topology decisions) |
 | **US-081** | Expand `/docs` into a multi-page docs section: shared `DocsShell` (sidebar + TOC + pager), Flutter\|Jaspr `CodeTabs`, nine core pages | No ADR (unified single docs tree with per-snippet adapter tabs, under the existing website decisions) |
+| **US-082** | Complete docs coverage: four Concepts pages (collision, sensors, modifiers, auto-scroll), an API Reference page, and a mobile docs menu | No ADR (docs content + responsive nav under the existing website decisions) |
 
 ## Validation Ladder
 

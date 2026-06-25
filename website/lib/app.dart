@@ -2,13 +2,18 @@ import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_router/jaspr_router.dart';
 
 import 'docs/pages/accessibility_page.dart';
+import 'docs/pages/autoscroll_page.dart';
+import 'docs/pages/collision_page.dart';
 import 'docs/pages/draggable_page.dart';
 import 'docs/pages/droppable_page.dart';
 import 'docs/pages/install_page.dart';
+import 'docs/pages/modifiers_page.dart';
 import 'docs/pages/multi_container_page.dart';
 import 'docs/pages/overlay_page.dart';
 import 'docs/pages/overview_page.dart';
 import 'docs/pages/quickstart_page.dart';
+import 'docs/pages/reference_page.dart';
+import 'docs/pages/sensors_page.dart';
 import 'docs/pages/sortable_page.dart';
 import 'site.dart';
 
@@ -54,6 +59,26 @@ class App extends StatelessComponent {
           builder: (context, state) => const OverlayPage(),
         ),
         Route(
+          path: '/docs/collision',
+          title: 'Collision detection · dnd_kit',
+          builder: (context, state) => const CollisionPage(),
+        ),
+        Route(
+          path: '/docs/sensors',
+          title: 'Sensors & activation · dnd_kit',
+          builder: (context, state) => const SensorsPage(),
+        ),
+        Route(
+          path: '/docs/modifiers',
+          title: 'Modifiers · dnd_kit',
+          builder: (context, state) => const ModifiersPage(),
+        ),
+        Route(
+          path: '/docs/auto-scroll',
+          title: 'Auto-scroll · dnd_kit',
+          builder: (context, state) => const AutoscrollPage(),
+        ),
+        Route(
           path: '/docs/sortable',
           title: 'Sortable lists · dnd_kit',
           builder: (context, state) => const SortablePage(),
@@ -67,6 +92,11 @@ class App extends StatelessComponent {
           path: '/docs/accessibility',
           title: 'Accessibility · dnd_kit',
           builder: (context, state) => const AccessibilityPage(),
+        ),
+        Route(
+          path: '/docs/reference',
+          title: 'API reference · dnd_kit',
+          builder: (context, state) => const ReferencePage(),
         ),
       ],
     );

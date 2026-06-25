@@ -90,6 +90,30 @@ const docGroups = <DocGroup>[
         title: 'Drag overlay',
         group: 'Concepts',
       ),
+      DocEntry(
+        slug: 'collision',
+        navLabel: 'Collision detection',
+        title: 'Collision detection',
+        group: 'Concepts',
+      ),
+      DocEntry(
+        slug: 'sensors',
+        navLabel: 'Sensors & activation',
+        title: 'Sensors & activation',
+        group: 'Concepts',
+      ),
+      DocEntry(
+        slug: 'modifiers',
+        navLabel: 'Modifiers',
+        title: 'Modifiers',
+        group: 'Concepts',
+      ),
+      DocEntry(
+        slug: 'auto-scroll',
+        navLabel: 'Auto-scroll',
+        title: 'Auto-scroll',
+        group: 'Concepts',
+      ),
     ],
   ),
   DocGroup(
@@ -117,6 +141,17 @@ const docGroups = <DocGroup>[
         navLabel: 'Accessibility',
         title: 'Accessibility',
         group: 'Accessibility',
+      ),
+    ],
+  ),
+  DocGroup(
+    label: 'Reference',
+    entries: [
+      DocEntry(
+        slug: 'reference',
+        navLabel: 'API reference',
+        title: 'API reference',
+        group: 'Reference',
       ),
     ],
   ),
