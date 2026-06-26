@@ -26,6 +26,7 @@ class Footer extends StatelessComponent {
             ]),
           ]),
           div(classes: 'flex flex-wrap items-center gap-5 text-sm', [
+            _link('Showcase', SiteLinks.showcase),
             _link('GitHub', SiteLinks.github, external: true),
             _link('pub.dev', SiteLinks.pubKit, external: true),
             _link('Docs', SiteLinks.docs),

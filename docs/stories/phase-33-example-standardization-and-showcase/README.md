@@ -26,10 +26,11 @@ This phase standardizes the examples, then builds the showcase page on top.
 | **US-085** | Parity for `collision` + `sensors`: add both demos to both galleries | No ADR (demo content under the examples standard) |
 | **US-086** | Bring the Flutter gallery to the full catalog: add `modifiers`, `auto-scroll`, `sortable`, `accessibility` | No ADR (demo content under the examples standard) |
 | **US-087** | Add the `multi-container` demo to the Jaspr gallery — completing Flutter/Jaspr catalog parity | No ADR (demo content under the examples standard) |
-| US-088+ | Add the website showcase page presenting Flutter and Jaspr demos | TBD (Flutter-on-web delivery decided in that story) |
+| **US-088** | Add the website showcase page: live Jaspr demos plus the Flutter gallery built for web and embedded via iframe | No ADR (website page under existing website decisions; Flutter-on-web delivery = embedded iframe) |
 
-Catalog parity is complete (US-083–US-087). The showcase story is the remaining
-placeholder.
+The phase is complete (US-083–US-088): the examples are standardized and at
+full Flutter/Jaspr parity, and the website hosts a dedicated showcase page that
+runs the Jaspr demos live and embeds the Flutter gallery as a real web build.
 
 ## Validation Ladder
 

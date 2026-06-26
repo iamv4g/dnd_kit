@@ -74,6 +74,14 @@ class _MobileNavState extends State<MobileNav> {
               ),
             div(classes: 'my-1 h-px bg-line', const []),
             a(
+              href: SiteLinks.showcase,
+              classes:
+                  'block rounded-xl px-3 py-2 text-sm font-medium text-ink '
+                  'transition-colors hover:bg-raised',
+              events: _navTo(SiteLinks.showcase),
+              [.text('Showcase')],
+            ),
+            a(
               href: SiteLinks.github,
               target: Target.blank,
               attributes: const {'rel': 'noreferrer'},

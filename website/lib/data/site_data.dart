@@ -15,11 +15,18 @@ class SiteLinks {
   /// it resolves against the document `<base href>` on both the project Pages
   /// subpath (`/dnd_kit/docs/`) and a local server root (`/docs/`).
   static const docs = 'docs/';
+
+  /// The showcase page (`/showcase` route): live Jaspr demos plus the embedded
+  /// Flutter gallery. Relative for the same base-href reason as [docs].
+  static const showcase = 'showcase/';
+
+  /// The Flutter example gallery, built for web and hosted under the site at
+  /// `flutter/` (embedded in the showcase page).
+  static const flutterGallery = 'flutter/';
 }
 
 /// In-page nav targets (also the reorderable nav pills).
 const navItems = <({String label, String href})>[
-  (label: 'Showcase', href: '#showcase'),
   (label: 'Code', href: '#code'),
   (label: 'Features', href: '#features'),
   (label: 'Packages', href: '#packages'),

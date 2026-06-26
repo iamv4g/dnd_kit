@@ -15,6 +15,7 @@ import 'docs/pages/quickstart_page.dart';
 import 'docs/pages/reference_page.dart';
 import 'docs/pages/sensors_page.dart';
 import 'docs/pages/sortable_page.dart';
+import 'showcase/showcase_page.dart';
 import 'site.dart';
 
 /// Top-level routing. In static (SSG) mode jaspr generates one HTML file per
@@ -28,6 +29,11 @@ class App extends StatelessComponent {
     return Router(
       routes: [
         Route(path: '/', builder: (context, state) => const Site()),
+        Route(
+          path: '/showcase',
+          title: 'Showcase · dnd_kit',
+          builder: (context, state) => const ShowcasePage(),
+        ),
         Route(
           path: '/docs',
           title: 'Documentation · dnd_kit',

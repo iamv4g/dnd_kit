@@ -8,7 +8,6 @@ import 'layout/nav_bar.dart';
 import 'sections/code_sample.dart';
 import 'sections/features.dart';
 import 'sections/hero.dart';
-import 'sections/kanban_showcase.dart';
 import 'sections/packages.dart';
 import 'sections/playground.dart';
 
@@ -25,17 +24,6 @@ class Site extends StatelessComponent {
         tag: 'main',
         children: [
           const Hero(),
-          _section(
-            id: 'showcase',
-            tag: 'Showcase',
-            title: 'A board you can actually move',
-            desc:
-                'A cross-column Kanban built on the supported Jaspr '
-                'multi-container surface. Drag a card by its handle within a '
-                'column or across to another — the engine resolves move intent, '
-                'the board owns the data.',
-            child: const KanbanShowcase(),
-          ),
           _section(
             id: 'code',
             tag: 'Code',

@@ -69,6 +69,7 @@ jobs:
           ls -la
           test -f index.html || { echo "ERROR: index.html not found"; exit 1; }
           test -f docs/index.html || { echo "ERROR: docs page not found"; exit 1; }
+          test -f showcase/index.html || { echo "ERROR: showcase page not found"; exit 1; }
           test -f main.client.dart.js || { echo "ERROR: client bundle not found"; exit 1; }
           echo "Build output OK"
 
@@ -85,6 +86,24 @@ jobs:
           grep -q '<base href="/dnd_kit/"/>' index.html
           grep -q '<base href="/dnd_kit/"/>' docs/index.html
           touch .nojekyll
+
+      # The showcase page embeds the Flutter example gallery in an iframe. Build
+      # it for the web under the same /dnd_kit/ Pages subpath and bundle it into
+      # the artifact at flutter/, so the iframe's relative `flutter/` src
+      # resolves against the site base href.
+      - name: Build Flutter example gallery for web
+        working-directory: examples/flutter_example_gallery
+        run: flutter build web --release --base-href /dnd_kit/flutter/
+
+      - name: Bundle the Flutter gallery into the Pages output
+        run: |
+          set -e
+          mkdir -p website/build/jaspr/flutter
+          # rsync (not cp -r): the Flutter web output contains a self-referential
+          # `dnd_kit.flutter -> .` symlink that makes `cp -r` choke on a cycle.
+          rsync -a --exclude='dnd_kit.flutter' \
+            examples/flutter_example_gallery/build/web/ website/build/jaspr/flutter/
+          test -f website/build/jaspr/flutter/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

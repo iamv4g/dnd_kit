@@ -19,6 +19,11 @@ drag state as you go.
   `SortableMultiItem`) with app-owned state mutation. The nav pills and feature
   grid use the single-container `SortableScope` preset; the hero chips and
   playground use generic drop zones.
+- **Showcase page.** `lib/showcase/showcase_page.dart` (`/showcase` route) runs
+  the Kanban and playground live on `dnd_kit_jaspr`, then embeds the
+  `flutter_example_gallery` — built with `flutter build web` and bundled into the
+  Pages output at `flutter/` by the deploy workflow — in an iframe, so the same
+  demos show on both adapters.
 - **Telemetry HUD** (`lib/drag/telemetry_hud.dart`) is the signature element: a
   shared `DragBus` collects every island's controller state into one live
   readout.
