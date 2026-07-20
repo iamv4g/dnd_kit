@@ -27,6 +27,7 @@ final class SortableItemDetails {
     required this.isOver,
     required this.overId,
     required this.session,
+    this.displacement = DndPoint.zero,
   });
 
   /// The stable sortable item id.
@@ -55,6 +56,14 @@ final class SortableItemDetails {
 
   /// The active session for this item, when available.
   final DndDragSession? session;
+
+  /// The live offset this item should shift by while another item in the
+  /// scope drags past it.
+  ///
+  /// Computed by the scope's `displacementStrategy`; [DndPoint.zero] when the
+  /// item rests at its measured position (including for the active item,
+  /// which follows [session] instead).
+  final DndPoint displacement;
 }
 
 /// Registers a child as a sortable item in the nearest [SortableScope].
@@ -136,7 +145,24 @@ class SortableItem extends StatelessComponent {
       isOver: controller.overId == id,
       overId: controller.overId,
       session: controller.activeSession,
+      displacement: _displacementFor(scope, controller),
     );
+  }
+
+  DndPoint _displacementFor(SortableScopeData scope, DndController controller) {
+    final activeSession = controller.activeSession;
+    if (activeSession == null || activeSession.activeId == id) {
+      return DndPoint.zero;
+    }
+
+    final displacements = scope.displacementsFor(
+      activeId: activeSession.activeId,
+      transform: activeSession.transform,
+      itemRects: controller.measuring.droppableRects,
+      activeRect: controller.activeRect,
+    );
+
+    return displacements[id] ?? DndPoint.zero;
   }
 
   @override

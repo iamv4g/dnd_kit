@@ -403,5 +403,48 @@ void main() {
 
       expect(moves, isEmpty);
     });
+
+    testWidgets('exposes live displacement to sibling builders during a drag', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      final displacements = <DndId, DndPoint>{};
+
+      Widget item(String id) {
+        return SortableItem(
+          id: DndId(id),
+          builder: (context, details, child) {
+            displacements[details.id] = details.displacement;
+            return child;
+          },
+          child: const SizedBox(width: 80, height: 40),
+        );
+      }
+
+      await tester.pumpWidget(
+        SortableScope(
+          controller: controller,
+          itemIds: const <DndId>[DndId('item-1'), DndId('item-2')],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[item('item-1'), item('item-2')],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(SortableItem).first),
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.moveBy(const Offset(0, 45));
+      await tester.pump();
+
+      expect(displacements[const DndId('item-2')], const DndPoint(0, -40));
+
+      await gesture.up();
+      await tester.pump();
+
+      expect(displacements[const DndId('item-2')], DndPoint.zero);
+    });
   });
 }

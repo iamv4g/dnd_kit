@@ -150,6 +150,162 @@ final class SortableStrategyInput {
   }
 }
 
+/// Computes live per-item displacement offsets during an active sortable drag.
+///
+/// Returns an offset for every item that should shift out of the active
+/// item's way at the current drag position; items absent from the map rest
+/// at their measured position.
+typedef SortableDisplacementStrategy = Map<DndId, DndPoint> Function(
+  SortableDisplacementInput input,
+);
+
+/// Input passed to a [SortableDisplacementStrategy].
+@immutable
+final class SortableDisplacementInput {
+  /// Creates sortable displacement input.
+  SortableDisplacementInput({
+    required this.activeId,
+    required Iterable<DndId> itemIds,
+    required Map<DndId, DndRect> itemRects,
+    required this.fromIndex,
+    this.activeRect,
+    this.activeTranslatedRect,
+  })  : itemIds = List<DndId>.unmodifiable(itemIds),
+        itemRects = Map<DndId, DndRect>.unmodifiable(itemRects);
+
+  /// The sortable item being moved.
+  final DndId activeId;
+
+  /// The application-owned item order.
+  final List<DndId> itemIds;
+
+  /// Measured item rectangles keyed by sortable item id.
+  final Map<DndId, DndRect> itemRects;
+
+  /// The active item's index before the move.
+  final int fromIndex;
+
+  /// The measured active rectangle before translation, when known.
+  final DndRect? activeRect;
+
+  /// The measured active rectangle after drag translation, when known.
+  final DndRect? activeTranslatedRect;
+}
+
+/// Built-in sortable displacement strategies.
+///
+/// Displacement is the live counterpart of a [SortableStrategy]: the strategy
+/// computes the reorder intent at drag end, while the displacement strategy
+/// computes which sibling items should visually shift out of the way at the
+/// current drag position. Both share the same insertion-index math, so the
+/// preview always matches the committed move.
+abstract final class SortableDisplacements {
+  /// Live vertical-list displacement.
+  ///
+  /// Sibling items between the active item's original slot and its current
+  /// insertion index shift into their neighbour's measured slot. Works with a
+  /// partially-measured set the same way as [SortableStrategies.verticalList]:
+  /// items without a measured neighbour rest in place.
+  static Map<DndId, DndPoint> verticalList(SortableDisplacementInput input) {
+    return _listDisplacement(input, vertical: true);
+  }
+
+  /// Live horizontal-list displacement.
+  ///
+  /// The horizontal counterpart of [verticalList].
+  static Map<DndId, DndPoint> horizontalList(SortableDisplacementInput input) {
+    return _listDisplacement(input, vertical: false);
+  }
+
+  static Map<DndId, DndPoint> _listDisplacement(
+    SortableDisplacementInput input, {
+    required bool vertical,
+  }) {
+    final activeRect = input.activeRect;
+    final activeTranslatedRect = input.activeTranslatedRect;
+    if (activeRect == null ||
+        activeTranslatedRect == null ||
+        input.fromIndex < 0 ||
+        input.fromIndex >= input.itemIds.length) {
+      return const <DndId, DndPoint>{};
+    }
+
+    final measuredItems = _collectMeasuredItems(
+      itemIds: input.itemIds,
+      itemRects: input.itemRects,
+      activeId: input.activeId,
+    );
+    if (measuredItems.isEmpty) {
+      return const <DndId, DndPoint>{};
+    }
+
+    final activeCenter = activeTranslatedRect.center;
+    final separated = vertical
+        ? _hasVerticalSeparation(measuredItems, activeCenterY: activeCenter.y)
+        : _hasHorizontalSeparation(measuredItems, activeCenterX: activeCenter.x);
+    if (!separated) {
+      return const <DndId, DndPoint>{};
+    }
+
+    measuredItems.sort(vertical ? _compareVerticalItems : _compareHorizontalItems);
+    final boundary = vertical
+        ? _verticalInsertionIndex(
+            activeCenterY: activeCenter.y,
+            measuredItems: measuredItems,
+          )
+        : _horizontalInsertionIndex(
+            activeCenterX: activeCenter.x,
+            measuredItems: measuredItems,
+          );
+    final toIndex = SortableStrategies._resolveToIndex(
+      measuredItems,
+      boundary,
+      input.fromIndex,
+    );
+    if (toIndex == input.fromIndex) {
+      return const <DndId, DndPoint>{};
+    }
+
+    DndRect? rectAt(int index) {
+      if (index == input.fromIndex) {
+        return activeRect;
+      }
+      if (index < 0 || index >= input.itemIds.length) {
+        return null;
+      }
+
+      return input.itemRects[input.itemIds[index]];
+    }
+
+    double mainStart(DndRect rect) => vertical ? rect.top : rect.left;
+
+    final displacements = <DndId, DndPoint>{};
+    void displaceInto(int index, int neighborIndex) {
+      final own = rectAt(index);
+      final neighbor = rectAt(neighborIndex);
+      if (own == null || neighbor == null) {
+        return;
+      }
+
+      final delta = mainStart(neighbor) - mainStart(own);
+      displacements[input.itemIds[index]] =
+          vertical ? DndPoint(0, delta) : DndPoint(delta, 0);
+    }
+
+    if (input.fromIndex < toIndex) {
+      for (var index = input.fromIndex + 1; index <= toIndex; index += 1) {
+        displaceInto(index, index - 1);
+      }
+    } else {
+      for (var index = toIndex; index < input.fromIndex; index += 1) {
+        displaceInto(index, index + 1);
+      }
+    }
+
+    return Map<DndId, DndPoint>.unmodifiable(displacements);
+  }
+}
+
 /// Built-in sortable strategies.
 abstract final class SortableStrategies {
   /// Computes same-container vertical list movement from measured item centers.
@@ -301,22 +457,11 @@ abstract final class SortableStrategies {
   ///
   /// Unmeasured (off-screen) items are skipped instead of forcing a fallback.
   static List<_MeasuredSortableItem> _measuredItems(SortableStrategyInput input) {
-    final measuredItems = <_MeasuredSortableItem>[];
-    for (var index = 0; index < input.itemIds.length; index += 1) {
-      final id = input.itemIds[index];
-      if (id == input.activeId) {
-        continue;
-      }
-
-      final rect = input.itemRects[id];
-      if (rect == null) {
-        continue;
-      }
-
-      measuredItems.add(_MeasuredSortableItem(id: id, index: index, rect: rect));
-    }
-
-    return measuredItems;
+    return _collectMeasuredItems(
+      itemIds: input.itemIds,
+      itemRects: input.itemRects,
+      activeId: input.activeId,
+    );
   }
 
   /// Maps an insertion [boundary] in measured-subset space to a full list index.
@@ -336,6 +481,33 @@ abstract final class SortableStrategies {
 
     return insertBeforeIndex - (fromIndex < insertBeforeIndex ? 1 : 0);
   }
+}
+
+/// Builds the measured, non-active items with their full list index.
+///
+/// Shared by [SortableStrategies] and [SortableDisplacements] so the drag-end
+/// intent and the live displacement preview see the same measured set.
+List<_MeasuredSortableItem> _collectMeasuredItems({
+  required List<DndId> itemIds,
+  required Map<DndId, DndRect> itemRects,
+  required DndId activeId,
+}) {
+  final measuredItems = <_MeasuredSortableItem>[];
+  for (var index = 0; index < itemIds.length; index += 1) {
+    final id = itemIds[index];
+    if (id == activeId) {
+      continue;
+    }
+
+    final rect = itemRects[id];
+    if (rect == null) {
+      continue;
+    }
+
+    measuredItems.add(_MeasuredSortableItem(id: id, index: index, rect: rect));
+  }
+
+  return measuredItems;
 }
 
 final class _MeasuredSortableItem {

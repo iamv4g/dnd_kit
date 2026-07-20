@@ -18,6 +18,7 @@ class SortableScope extends StatelessComponent {
     this.controller,
     this.containerId,
     this.strategy = SortableStrategies.verticalList,
+    this.displacementStrategy = SortableDisplacements.verticalList,
     required Iterable<DndId> itemIds,
     this.onMove,
     required this.child,
@@ -34,6 +35,9 @@ class SortableScope extends StatelessComponent {
 
   /// Computes reorder intent from the drag end event and measured item layout.
   final SortableStrategy strategy;
+
+  /// Computes live per-item displacement offsets during an active drag.
+  final SortableDisplacementStrategy displacementStrategy;
 
   /// The application-owned item order.
   final List<DndId> itemIds;
@@ -66,6 +70,7 @@ class SortableScope extends StatelessComponent {
         data: SortableScopeData(
           containerId: containerId,
           strategy: strategy,
+          displacementStrategy: displacementStrategy,
           itemIds: itemIds,
           onMove: onMove,
         ),
@@ -81,6 +86,7 @@ final class SortableScopeData {
   SortableScopeData({
     required Iterable<DndId> itemIds,
     this.strategy = SortableStrategies.verticalList,
+    this.displacementStrategy = SortableDisplacements.verticalList,
     this.containerId,
     this.onMove,
   }) : itemIds = List<DndId>.unmodifiable(itemIds);
@@ -91,6 +97,9 @@ final class SortableScopeData {
   /// Computes reorder intent from the drag end event and measured item layout.
   final SortableStrategy strategy;
 
+  /// Computes live per-item displacement offsets during an active drag.
+  final SortableDisplacementStrategy displacementStrategy;
+
   /// The application-owned item order.
   final List<DndId> itemIds;
 
@@ -99,6 +108,32 @@ final class SortableScopeData {
 
   /// Returns the current index for [id], or -1 when the item is outside this scope.
   int indexOf(DndId id) => itemIds.indexOf(id);
+
+  /// Computes live per-item displacement offsets for the active drag session.
+  ///
+  /// Items absent from the returned map rest at their measured position.
+  Map<DndId, DndPoint> displacementsFor({
+    required DndId activeId,
+    required DndTransform transform,
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+  }) {
+    final fromIndex = indexOf(activeId);
+    if (fromIndex < 0) {
+      return const <DndId, DndPoint>{};
+    }
+
+    return displacementStrategy(
+      SortableDisplacementInput(
+        activeId: activeId,
+        itemIds: itemIds,
+        itemRects: itemRects,
+        fromIndex: fromIndex,
+        activeRect: activeRect,
+        activeTranslatedRect: activeRect?.translate(transform.offset),
+      ),
+    );
+  }
 
   /// Builds move intent details for [event], when the drop is a same-scope move.
   SortableMoveDetails? moveDetailsFor(
@@ -139,6 +174,7 @@ final class SortableScopeData {
         _listEquals(other.itemIds, itemIds) &&
         other.containerId == containerId &&
         other.strategy == strategy &&
+        other.displacementStrategy == displacementStrategy &&
         other.onMove == onMove;
   }
 
@@ -147,6 +183,7 @@ final class SortableScopeData {
         Object.hashAll(itemIds),
         containerId,
         strategy,
+        displacementStrategy,
         onMove,
       );
 
