@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Adds `DndCollisionInput.activeId`: the id of the draggable being moved is now
+  passed to collision detectors, so a custom detector can scope candidates to
+  the active item's kind (e.g. two nested sortable contexts sharing one
+  controller that must ignore each other's droppables).
+
+
 ## 0.4.0
 
 - Graduates multi-container from a helper-only contract into a supported shared
