@@ -225,6 +225,7 @@ class DndRuntime {
         activeRect: activeRect.translate(session.transform.offset),
         droppableRects: droppableRects,
         pointer: session.currentPointer,
+        activeId: session.activeId,
       ),
     );
     _setOverId(result.firstOrNull?.id);

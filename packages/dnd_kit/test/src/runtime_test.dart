@@ -150,6 +150,36 @@ void main() {
       expect(runtime.overId, const DndId('column-1'));
     });
 
+    test('passes the active draggable id to the collision detector', () {
+      DndCollisionInput? captured;
+      final runtime = DndRuntime(
+        collisionDetector: (input) {
+          captured = input;
+          return DndCollisionDetectors.closestCenter(input);
+        },
+      );
+
+      runtime.registry.registerDroppable(
+        const DndDroppableRegistration(id: DndId('column-1')),
+      );
+      runtime.measuring.updateDroppableRect(
+        const DndId('column-1'),
+        const DndRect(left: 100, top: 0, width: 80, height: 80),
+      );
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(20, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 40, height: 40),
+      );
+      runtime.startDrag();
+      runtime.moveDrag(const DndPoint(120, 20));
+
+      expect(captured?.activeId, const DndId('task-1'));
+    });
+
     test('refreshes dirty measurements before collision detection', () {
       final runtime = DndRuntime();
 

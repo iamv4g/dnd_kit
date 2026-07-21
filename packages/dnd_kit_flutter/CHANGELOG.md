@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- Depends on `dnd_kit: ^0.5.0` (`DndCollisionInput.activeId`).
+
+
 ## 0.4.0
 
 - Depends on `dnd_kit: ^0.4.0`.
