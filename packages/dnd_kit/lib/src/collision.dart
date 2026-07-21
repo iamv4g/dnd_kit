@@ -13,6 +13,7 @@ final class DndCollisionInput {
     required this.activeRect,
     required this.droppableRects,
     this.pointer,
+    this.activeId,
   });
 
   /// The current active draggable rectangle.
@@ -24,21 +25,30 @@ final class DndCollisionInput {
   /// The current pointer position, when pointer-based detection is available.
   final DndPoint? pointer;
 
+  /// The id of the draggable being moved, when a drag session is active.
+  ///
+  /// Lets a custom detector scope candidates to the active item's kind — e.g.
+  /// two nested sortable contexts sharing one controller can each ignore the
+  /// other's droppables by comparing [activeId] against candidate ids.
+  final DndId? activeId;
+
   @override
   bool operator ==(Object other) {
     return other is DndCollisionInput &&
         other.activeRect == activeRect &&
         _mapEquals(other.droppableRects, droppableRects) &&
-        other.pointer == pointer;
+        other.pointer == pointer &&
+        other.activeId == activeId;
   }
 
   @override
-  int get hashCode => Object.hash(activeRect, _mapHash(droppableRects), pointer);
+  int get hashCode => Object.hash(activeRect, _mapHash(droppableRects), pointer, activeId);
 
   @override
   String toString() {
     return 'DndCollisionInput(activeRect: $activeRect, '
-        'droppableRects: $droppableRects, pointer: $pointer)';
+        'droppableRects: $droppableRects, pointer: $pointer, '
+        'activeId: $activeId)';
   }
 }
 
