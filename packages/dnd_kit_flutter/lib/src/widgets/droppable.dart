@@ -30,6 +30,12 @@ final class DndDroppableDetails {
   final bool disabled;
 
   /// Whether this droppable is the current collision target.
+  ///
+  /// This tracks the collision detector's result, which is not necessarily the
+  /// move a sortable strategy will commit: the geometric strategies resolve
+  /// from the active rect center instead. Use
+  /// `SortableStrategies.dropOnOver` when the drop must land exactly where
+  /// this highlight is.
   final bool isOver;
 
   /// The active draggable id, when a drag is pending, active, dropping, or cancelled.

@@ -49,6 +49,9 @@ final class SortableItemDetails {
   final bool isDropping;
 
   /// Whether the active drag is currently over this item.
+  ///
+  /// This is the collision result, not the move the scope's strategy will
+  /// commit; see [SortableStrategies.dropOnOver] to make them agree.
   final bool isOver;
 
   /// The sortable item currently under the active drag, when one exists.

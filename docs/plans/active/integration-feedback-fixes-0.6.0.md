@@ -187,7 +187,12 @@ the overlay child still renders at its drag-start size.
       `markAllDirty` + `moveDrag(currentPointer)` so overId tracks content
       moving under a stationary pointer; core 139 / flutter 106 / jaspr VM 37
       tests green).
-- [ ] Group 3 — `SortableStrategies.dropOnOver` + tests + strategy docs.
+- [x] Group 3 — `SortableStrategies.dropOnOver` + tests + strategy docs
+      (new strategy delegating to `fallbackMoveDetails`; center-crossing
+      caveat documented on the three geometric strategies; `isOver` documented
+      as collision-driven on Flutter `DndDroppableDetails` /
+      `SortableItemDetails` and Jaspr `DndDroppableDetails`; core 142 /
+      flutter 106 / jaspr VM 37 tests green).
 - [ ] Group 4 — overlay drag-start sizing + tests.
 - [ ] Group 5 — recipes, API docs, ADR, changelogs, version bump to 0.6.0.
 - [ ] Full validation lane green; plan moved to `docs/plans/completed/`.

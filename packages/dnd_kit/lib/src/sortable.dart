@@ -126,7 +126,16 @@ final class SortableStrategyInput {
   /// The measured active rectangle after drag translation, when known.
   final DndRect? activeTranslatedRect;
 
-  /// Builds the previous drop-over move intent for fallback strategies.
+  /// Builds move intent that lands the active item at the drop-over target.
+  ///
+  /// Returns the move that places [activeId] at [overId]'s index, or at
+  /// [toIndex] when given. Geometric strategies call this as their fallback
+  /// when measurements cannot anchor a decision; [SortableStrategies.dropOnOver]
+  /// uses it as its whole implementation, and custom strategies can build on
+  /// it the same way.
+  ///
+  /// Returns null when there is no drop-over target, the target is the active
+  /// item itself, or the active item's index is unknown.
   SortableMoveDetails? fallbackMoveDetails({int? toIndex}) {
     final overId = this.overId;
     if (overId == null || overId == activeId || fromIndex < 0) {
@@ -152,7 +161,28 @@ final class SortableStrategyInput {
 
 /// Built-in sortable strategies.
 abstract final class SortableStrategies {
+  /// Lands the move at the item currently under the drag.
+  ///
+  /// The drop commits wherever the collision result points, so the committed
+  /// move always matches the `isOver` highlight. Use this when the UI shows a
+  /// drop-target highlight or a placeholder gap and the drop must agree with
+  /// it.
+  ///
+  /// The geometric strategies ([verticalList], [horizontalList], [grid])
+  /// instead recompute the target from the active rect center, so they can
+  /// resolve to a different index than the highlighted one — or to no move at
+  /// all while the center has not yet crossed a neighbour's center.
+  static SortableMoveDetails? dropOnOver(SortableStrategyInput input) {
+    return input.fallbackMoveDetails();
+  }
+
   /// Computes same-container vertical list movement from measured item centers.
+  ///
+  /// The target index comes from the active translated rect's **center**, not
+  /// from the drop-over id: no move is reported until that center crosses a
+  /// neighbour's center, so the committed move can lag a drop-target highlight
+  /// driven by collision. Use [dropOnOver] when the drop must land exactly
+  /// where the highlight is.
   ///
   /// Works with a partially-measured set: in a lazy `ListView.builder` only the
   /// visible items are measured, so off-screen items are skipped and the
@@ -200,8 +230,9 @@ abstract final class SortableStrategies {
 
   /// Computes same-container horizontal list movement from measured item centers.
   ///
-  /// Supports a partially-measured (visible-only) set the same way as
-  /// [verticalList].
+  /// Resolves from the active rect center rather than the drop-over id, with
+  /// the same highlight-versus-drop caveat as [verticalList]. Supports a
+  /// partially-measured (visible-only) set the same way.
   static SortableMoveDetails? horizontalList(SortableStrategyInput input) {
     final fallback = input.fallbackMoveDetails();
     if (fallback == null) {
@@ -245,8 +276,9 @@ abstract final class SortableStrategies {
 
   /// Computes same-container grid movement from measured item centers.
   ///
-  /// Supports a partially-measured (visible-only) set the same way as
-  /// [verticalList].
+  /// Resolves from the active rect center rather than the drop-over id, with
+  /// the same highlight-versus-drop caveat as [verticalList]. Supports a
+  /// partially-measured (visible-only) set the same way.
   static SortableMoveDetails? grid(SortableStrategyInput input) {
     final fallback = input.fallbackMoveDetails();
     if (fallback == null) {

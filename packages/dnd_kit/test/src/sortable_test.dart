@@ -2,6 +2,74 @@ import 'package:dnd_kit/dnd_kit.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('SortableStrategies.dropOnOver', () {
+    test('lands at the drop-over index regardless of the active center', () {
+      // The active center has not crossed item-3's center, so the geometric
+      // strategy reports no move while dropOnOver commits at the highlight.
+      final input = _input(
+        activeId: const DndId('item-1'),
+        overId: const DndId('item-3'),
+        fromIndex: 0,
+        activeTranslatedRect: _rect(top: 30),
+        itemRects: <DndId, DndRect>{
+          const DndId('item-1'): _rect(top: 0),
+          const DndId('item-2'): _rect(top: 60),
+          const DndId('item-3'): _rect(top: 120),
+        },
+      );
+
+      final details = SortableStrategies.dropOnOver(input);
+
+      expect(details?.activeId, const DndId('item-1'));
+      expect(details?.overId, const DndId('item-3'));
+      expect(details?.fromIndex, 0);
+      expect(details?.toIndex, 2);
+      expect(SortableStrategies.verticalList(input), isNull);
+    });
+
+    test('reports moves without any measured rects', () {
+      final details = SortableStrategies.dropOnOver(
+        _input(
+          activeId: const DndId('item-3'),
+          overId: const DndId('item-1'),
+          fromIndex: 2,
+          activeTranslatedRect: _rect(top: 0),
+          itemRects: const <DndId, DndRect>{},
+        ),
+      );
+
+      expect(details?.toIndex, 0);
+    });
+
+    test('does not report same-item or targetless drops', () {
+      expect(
+        SortableStrategies.dropOnOver(
+          _input(
+            activeId: const DndId('item-1'),
+            overId: const DndId('item-1'),
+            fromIndex: 0,
+            activeTranslatedRect: _rect(top: 0),
+            itemRects: <DndId, DndRect>{const DndId('item-1'): _rect(top: 0)},
+          ),
+        ),
+        isNull,
+      );
+
+      expect(
+        SortableStrategies.dropOnOver(
+          _input(
+            activeId: const DndId('item-1'),
+            overId: null,
+            fromIndex: 0,
+            activeTranslatedRect: _rect(top: 0),
+            itemRects: <DndId, DndRect>{const DndId('item-1'): _rect(top: 0)},
+          ),
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('SortableStrategies.verticalList', () {
     test('computes new index from the active translated center', () {
       final details = SortableStrategies.verticalList(
