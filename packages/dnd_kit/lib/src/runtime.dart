@@ -103,6 +103,13 @@ class DndRuntime {
 
   /// Starts pending activation for [event].
   void beginDrag(DndSensorActivationEvent event, {DndRect? activeRect}) {
+    // Ancestor scrolling moves registered widgets without relayout, so cached
+    // rects can be stale by the full scroll offset. Invalidate everything at
+    // drag start; the next refresh re-measures before any collision runs.
+    measuring.markAllDirty();
+    if (activeRect == null) {
+      measuring.refreshDirty();
+    }
     _activeRect = activeRect ?? measuring.draggableRect(event.activeId);
     _overId = null;
     _setState(

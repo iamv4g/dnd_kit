@@ -262,6 +262,36 @@ void main() {
       expect(scrollController.offset, scrollController.position.maxScrollExtent);
     });
 
+    testWidgets('re-measures droppables and updates overId on auto-scroll ticks', (tester) async {
+      final controller = DndController();
+      final scrollController = ScrollController();
+      addTearDown(controller.dispose);
+      addTearDown(scrollController.dispose);
+
+      await tester.pumpWidget(
+        _AutoScrollHarness(
+          controller: controller,
+          scrollController: scrollController,
+          droppableItems: true,
+        ),
+      );
+      await tester.pump();
+
+      final pointer = _pointNearTrailingEdge(tester, DndScrollAxis.vertical);
+      _startDrag(controller, pointer);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final offset = scrollController.offset;
+      expect(offset, greaterThan(0));
+
+      // Items are 50 tall; the stationary pointer must resolve to the item
+      // that scrolled under it, not the one measured before scrolling.
+      final expectedIndex = ((offset + pointer.y) / 50).floor();
+      expect(controller.overId, DndId('item-$expectedIndex'));
+    });
+
     testWidgets(
         'keeps the explicit horizontal controller when nested vertical auto-scrollables emit metrics',
         (tester) async {
@@ -345,6 +375,7 @@ class _AutoScrollHarness extends StatelessWidget {
     this.enabled = true,
     this.axis = DndScrollAxis.vertical,
     this.useExplicitScrollController = true,
+    this.droppableItems = false,
   });
 
   final DndController controller;
@@ -352,6 +383,7 @@ class _AutoScrollHarness extends StatelessWidget {
   final bool enabled;
   final DndScrollAxis axis;
   final bool useExplicitScrollController;
+  final bool droppableItems;
 
   @override
   Widget build(BuildContext context) {
@@ -376,7 +408,14 @@ class _AutoScrollHarness extends StatelessWidget {
               itemExtent: 50,
               itemCount: 20,
               itemBuilder: (context, index) {
-                return Text('item-$index');
+                if (!droppableItems) {
+                  return Text('item-$index');
+                }
+
+                return DndDroppable(
+                  id: DndId('item-$index'),
+                  child: Text('item-$index'),
+                );
               },
             ),
           ),

@@ -180,7 +180,13 @@ the overlay child still renders at its drag-start size.
       (`_updateCollision` skips `session.activeId`; doc on
       `DndCollisionInput.droppableRects`; 2 new runtime tests; core 137 /
       flutter 105 / jaspr VM 37 tests green).
-- [ ] Group 2 — drag-start re-measure + auto-scroll invalidation + tests.
+- [x] Group 2 — drag-start re-measure + auto-scroll invalidation + tests
+      (`beginDrag` marks all measurements dirty and refreshes when it must
+      resolve the active rect itself; `DndAutoScrollController.onScrolled`
+      fires after each tick and `DndAutoScroll` wires it to
+      `markAllDirty` + `moveDrag(currentPointer)` so overId tracks content
+      moving under a stationary pointer; core 139 / flutter 106 / jaspr VM 37
+      tests green).
 - [ ] Group 3 — `SortableStrategies.dropOnOver` + tests + strategy docs.
 - [ ] Group 4 — overlay drag-start sizing + tests.
 - [ ] Group 5 — recipes, API docs, ADR, changelogs, version bump to 0.6.0.
@@ -194,9 +200,11 @@ the overlay child still renders at its drag-start size.
   3.7 becomes a documentation task, 3.9 is dropped.
 - 2026-07-22: Placeholder/animated sortable (3.5) deferred out of 0.6.0; it
   needs a design pass and should not block the four correctness fixes.
-- Open (decide before Group 2 implementation): how `DndAutoScrollController`
-  reaches the measuring registry — direct `DndController` reference vs.
-  `onScrolled` callback. Prefer the callback if it keeps layering cleaner.
+- 2026-07-22: `DndAutoScrollController` stays decoupled from the controller
+  via an `onScrolled` callback; `DndAutoScroll` wires it. The tick handler
+  also re-runs `moveDrag(currentPointer)` because auto-scroll moves content
+  under a stationary pointer — invalidating rects alone would leave `overId`
+  stale until the next pointer move.
 - Open (decide before Group 4 implementation): exact name/shape of the
   drag-start rect on the runtime and `DndDragOverlayDetails`
   (`initialActiveRect` vs. exposing size only).

@@ -256,6 +256,58 @@ void main() {
       expect(endEvent?.overId, const DndId('task-2'));
     });
 
+    test('remeasures stale droppables at drag start', () {
+      final runtime = DndRuntime();
+
+      // The droppable was measured before an ancestor scrolled: the cache is
+      // clean but the stored rect no longer matches the widget's position.
+      var measuredRect = const DndRect(left: 0, top: 200, width: 100, height: 40);
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('column-1')));
+      runtime.measuring.markDroppableDirty(
+        const DndId('column-1'),
+        measure: () => measuredRect,
+      );
+      runtime.measuring.refreshDirty();
+      measuredRect = const DndRect(left: 0, top: 40, width: 100, height: 40);
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+      runtime.moveDrag(const DndPoint(50, 60));
+
+      expect(
+        runtime.overId,
+        const DndId('column-1'),
+        reason: 'collision must use the post-scroll rect, not the stale cache',
+      );
+    });
+
+    test('remeasures a stale active rect at drag start when none is provided', () {
+      final runtime = DndRuntime();
+
+      var measuredRect = const DndRect(left: 0, top: 200, width: 100, height: 40);
+      runtime.measuring.markDraggableDirty(
+        const DndId('task-1'),
+        measure: () => measuredRect,
+      );
+      runtime.measuring.refreshDirty();
+      measuredRect = const DndRect(left: 0, top: 40, width: 100, height: 40);
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 60),
+        ),
+      );
+
+      expect(runtime.activeRect, const DndRect(left: 0, top: 40, width: 100, height: 40));
+    });
+
     test('refreshes dirty measurements before collision detection', () {
       final runtime = DndRuntime();
 
