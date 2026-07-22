@@ -1,13 +1,5 @@
 # Agent Instructions
 
-Project-specific authority:
-
-- `README.md` and `docs/product/` define current product behavior.
-- `docs/ARCHITECTURE.md` and `docs/decisions/` define package boundaries and
-  lasting technical choices.
-- Use the focused package tests during development and the Melos validation
-  lanes documented in `README.md` before claiming repository-wide proof.
-
 <!-- HARNESS:BEGIN -->
 ## Harness
 

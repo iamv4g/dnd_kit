@@ -1,340 +1,165 @@
 # Harness
 
-The project goal is to provide a reusable operating harness that lets humans and
-agents turn a future product spec into safe, validated work.
+Harness makes this repository legible and operable to coding agents while
+keeping `dnd_kit` product truth in the repository itself. The installed core is
+based on upstream `repository-harness` release `harness-v0.1.4`.
 
-The app is what users touch. The harness is what agents touch.
+The canonical task flow is in `docs/WORKFLOW.md`.
 
 ## Mental Model
 
 ```text
-------------------+
-| Human intent    |
-+------------------+
-         |
-         v
-+------------------+
-| Feature intake   |
-+------------------+
-         |
-         v
-+------------------+
-| Story packet     |
-+------------------+
-         |
-         v
-+------------------+
-| Agent work loop  |
-+------------------+
-         |
-         v
-+------------------+
-| Product delta    |
-+------------------+
-         |
-         v
-+------------------+
-| Validation proof |
-+------------------+
-         |
-         v
-+------------------+
-| Harness delta    |
-+------------------+
-         |
-         v
-+------------------+
-| Next intent      |
-+------------------+
+human intent
+  -> compact repository map
+  -> relevant product and architecture truth
+  -> implementation inside documented boundaries
+  -> executable or observable validation
+  -> Git-visible result and lasting decisions when warranted
 ```
 
-Every task has two possible outputs:
+The goal is reliable execution with minimal process overhead. A Harness record
+is useful only when it improves understanding, coordination, proof, or
+recovery.
 
-1. Product delta: app code, tests, API shape, data model, or product docs.
-2. Harness delta: docs, templates, validation expectations, backlog items, or
-   decision records that make the next task easier.
+## Core Responsibilities
 
-## Harness v0 Scope
+### Repository Map
 
-Harness v0 includes:
+`AGENTS.md` is the stable entrypoint. It points to the workflow and
+project-specific authority without duplicating the full repository manual.
 
-- Agent entrypoint.
-- Empty product documentation structure.
-- Feature intake and risk lanes.
-- Story templates.
-- Decision log template.
-- Validation report template.
-- Test matrix placeholder.
-- Harness growth backlog.
-- Durable layer: SQLite database and CLI for operational records.
+### Repository Knowledge
 
-Harness v0 deliberately excludes:
+Retrieve knowledge progressively:
 
-- A project-specific `SPEC.md`.
-- Pre-sliced product domains.
-- A locked application stack.
-- App source scaffolding.
-- Package scripts.
-- Test runner config.
-- CI workflows.
+- current product behavior: `README.md` and `docs/product/`;
+- package boundaries: `docs/ARCHITECTURE.md`;
+- lasting choices: `docs/decisions/`;
+- complex work in progress or retained history: `docs/plans/`;
+- implementation truth: packages, examples, website, tests, CI, and runtime
+  signals; and
+- maintenance commands: `scripts/README.md`.
 
-Those should arrive only when a selected story needs them.
+Historical specifications and story packets can explain why code exists, but
+current product docs and executable behavior take precedence when they differ.
 
-## Durable Layer
+### Application Legibility
 
-Policy documents describe how to work. The durable layer stores what happened.
+Validation should exercise the actual affected behavior. Use focused Dart,
+Flutter, or Jaspr tests while developing and the Melos validation lanes for
+workspace-wide claims. Do not invent generic commands or treat manually filled
+process fields as product proof.
 
-Operational data — intake classifications, story status, decision outcomes,
-backlog items, and execution traces — lives in a SQLite database (`harness.db`)
-managed by the Rust Harness CLI at `scripts/bin/harness-cli`. Agents and humans
-should use that binary for Harness work. The database is local to each project
-instance and `.gitignore`d. The schema is version-controlled under
-`scripts/schema/`.
+### Mechanical Invariants
 
-This separation keeps policy docs stable and human-readable while giving agents
-a structured, queryable record of operational state. It also prepares the
-harness for future observability and automated evolution without adding more
-markdown files.
+Keep important repeatable boundaries in code, tests, analyzers, and CI. In this
+repository those include the pure-Dart core boundary, peer Flutter/Jaspr
+adapters, framework-free shared contracts, package API tests, and release
+validation.
 
-Initialize the database if it does not exist:
+### Durable Planning
 
-```bash
-scripts/bin/harness-cli init
-```
+Bounded single-session work uses an ephemeral plan. Create one evolving file
+under `docs/plans/active/` when work spans sessions, coordinates contributors,
+has meaningful ordering or dependencies, needs explicit recovery, or would be
+unsafe to resume from a final diff alone.
 
-Common commands:
+Keep progress, task-local decisions, risks, recovery, and validation in that
+one file. Move it to `docs/plans/completed/` only after recording the verified
+result. Promote a choice into `docs/decisions/` only when future work must
+inherit it independently.
 
-```bash
-scripts/bin/harness-cli intake  --type <type> --summary <text> --lane <lane>
-scripts/bin/harness-cli story   add --id <id> --title <text> --lane <lane>
-scripts/bin/harness-cli story   update --id <id> --status <status>
-scripts/bin/harness-cli story   update --id <id> --unit 1 --integration 1 --e2e 0 --platform 0
-scripts/bin/harness-cli story   verify <id>
-scripts/bin/harness-cli decision add --id <id> --title <text> --doc docs/decisions/<file>.md
-scripts/bin/harness-cli trace   --summary <text> --outcome <outcome>
-scripts/bin/harness-cli score-trace
-scripts/bin/harness-cli query   matrix
-scripts/bin/harness-cli query   matrix --numeric
-scripts/bin/harness-cli query   backlog
-scripts/bin/harness-cli query   stats
-scripts/bin/harness-cli --version
-```
+## Default Request Flows
+
+### Read-Only
+
+Answers, explanations, reviews, diagnoses, plans, and status reports inspect
+only the material needed for an evidence-backed response. Discovery does not
+authorize repository or Harness mutation.
+
+### Bounded Change
+
+Restate the observable outcome, inspect relevant truth and existing proof, make
+the smallest coherent change, run behavior-appropriate validation, and report
+the result. No database, intake row, story row, proof flag, or trace is
+required.
+
+### Durable Planned Change
+
+Create or resume one active plan, update it as evidence changes the approach,
+implement in coherent groups, validate the outcome, promote lasting decisions,
+and move the completed plan to history.
+
+### Human Judgment
+
+Pause before edits when externally observable policy lacks repository
+authority, materially different product choices remain open, the action is
+difficult to recover, validation would be weakened, or the request does not
+authorize the needed action.
 
 ## Source Hierarchy
 
 ```text
-User-provided spec or prompt
-  input material for first buildout or future changes
-
-docs/product/*
-  current product contract derived from accepted input
-
-docs/stories/*
-  story-sized work packets and historical evidence
-
-scripts/bin/harness-cli query matrix
-  behavior-to-proof control panel backed by the durable layer
-
-docs/decisions/*
-  why the contract changed
+explicit user intent and accepted product direction
+  -> current product contract
+  -> current architecture and durable decisions
+  -> active execution plan for complex work
+  -> implementation, tests, CI, and observable runtime behavior
+  -> completed plans, stories, and historical evidence
 ```
 
-Before implementation, product docs describe intent. After implementation,
-product docs plus executable tests become the living contract.
+When sources conflict, prefer current accepted behavior and executable evidence
+over historical planning material. Correct or clearly demote stale material
+instead of creating another parallel source of truth.
 
-## Spec Lifecycle
+## Core Maintenance
 
-Harness v0 starts without a tracked project spec. When the human provides a
-specification, treat it as input material, not as a permanent operating manual.
-Use it to populate product docs, story packets, architecture decisions, and
-validation expectations during the first buildout.
-
-After the specification has been decomposed, do not keep extending it as the
-living product plan. Ongoing work should update the smaller product docs,
-stories, durable proof records, and decision records.
-
-Ongoing work should enter the harness as one of these input types:
-
-- New spec: a project specification that needs to become product docs and
-  initial story candidates.
-- Spec slice: a selected behavior from the provided spec.
-- Change request: a bounded behavior change, bug fix, or product refinement.
-- New initiative: a larger product area that needs multiple stories.
-- Maintenance request: dependency, architecture, performance, security, or
-  operational work.
-- Harness improvement: a process, template, proof, or agent-instruction change.
-
-The spec-to-work loop is:
-
-```text
-human intent or supplied spec
-  -> classify input type
-  -> update or create product contract
-  -> create story packet or initiative notes when needed
-  -> define validation proof
-  -> implement or document the blocker
-  -> update product docs, stories, durable proof records, and decisions
-  -> capture harness friction
-```
-
-Large product areas should use scoped initiative notes instead of a second
-monolithic specification. An initiative should explain the goal, affected
-product docs, candidate stories, validation shape, open decisions, and exit
-criteria. If initiative work becomes a repeated pattern, add a template or
-record the proposal with `scripts/bin/harness-cli backlog add`.
-
-## Growth Rule
-
-The harness grows from friction.
-
-When an agent is confused, repeats manual reasoning, needs a new validation
-command, discovers a missing rule, or sees a recurring failure pattern, it must
-either improve the harness directly or record the friction:
+The repository tracks core provenance and the exact upstream base under
+`.harness-core/`. The local platform binary at `scripts/bin/harness` supports:
 
 ```bash
-scripts/bin/harness-cli backlog add --title "<short name>" --pain "<what was hard>"
+scripts/bin/harness --version
+scripts/bin/harness status
+scripts/bin/harness doctor
+scripts/bin/harness update --dry-run
+scripts/bin/harness update
 ```
 
-Use the backlog outcome loop for improvements that are expected to change agent
-behavior or validation results:
+Core updates use a three-way merge between the installed upstream base,
+consumer changes, and the new upstream payload. They stop without writes on
+conflict and create recovery backups before activation. Re-run the reviewed,
+immutable upstream installer to replace the maintenance binary when adopting a
+new release.
 
-1. When creating the backlog item, fill `--predicted` with the measurable
-   impact expected from the improvement.
-2. When closing the item, fill `--outcome` with the actual measured result or
-   review evidence.
-3. Use `scripts/bin/harness-cli query backlog --open` to review proposed and accepted
-   items, and `scripts/bin/harness-cli query backlog --closed` to compare predictions
-   with outcomes after implementation.
+## Optional Compatibility Material
 
-The `harness_friction` field on traces also captures per-task friction so
-patterns can be queried later:
+The earlier SQLite control plane is retained for historical state and for an
+external orchestrator that explicitly selects it. Its references include:
 
-```bash
-scripts/bin/harness-cli query friction
-```
+- `docs/FEATURE_INTAKE.md`;
+- `docs/CONTEXT_RULES.md`;
+- `docs/TEST_MATRIX.md`;
+- `docs/TRACE_SPEC.md`;
+- `docs/HARNESS_BACKLOG.md`;
+- `docs/HARNESS_COMPONENTS.md`;
+- `docs/HARNESS_MATURITY.md`;
+- `docs/stories/`; and
+- `scripts/schema/`.
 
-Backlog risk uses the same lane vocabulary as intake and stories:
-`tiny`, `normal`, or `high-risk`. Use `--risk tiny` for low-risk follow-up
-items; `low` is not a valid lane.
+Those documents do not make SQLite intake, story, matrix, trace, score, audit,
+or proposal operations mandatory. The default core profile deliberately does
+not install `scripts/bin/harness-cli` or initialize `harness.db`.
 
-## Task Loop
+## Completion
 
-For every task:
+A change is complete only when the requested result exists or the blocker is
+explicit, relevant repository truth remains current, behavior-appropriate proof
+has passed or its absence is disclosed, and any required active plan records
+the outcome. Final reports separate verified facts, limitations, and work not
+attempted.
 
-1. Classify the request with `docs/FEATURE_INTAKE.md`.
-2. Record the classification with `scripts/bin/harness-cli intake`.
-3. Locate the affected product docs and story files.
-4. Check proof status with `scripts/bin/harness-cli query matrix`.
-5. Work only inside the selected lane: tiny, normal, or high-risk.
-6. Before finishing, ask whether product truth, validation expectations,
-   architecture rules, repeated failure patterns, or next-agent instructions
-   changed.
-7. Record a trace with `scripts/bin/harness-cli trace`, using
-   `docs/TRACE_SPEC.md` for the expected trace tier and field depth.
-8. Review the trace score printed by `scripts/bin/harness-cli trace`; use
-   `scripts/bin/harness-cli score-trace --id <id>` only when re-checking a
-   specific historical trace.
-9. If harness friction was found, either fix it directly or record it with
-   `scripts/bin/harness-cli backlog add`.
+## Consumer Boundary
 
-## Story Verification
-
-Stories may carry a mechanical proof command:
-
-```bash
-scripts/bin/harness-cli story add --id US-012 --title "Story verification" --lane normal --verify "cargo test --workspace"
-scripts/bin/harness-cli story update --id US-012 --verify "cargo test --workspace"
-scripts/bin/harness-cli story verify US-012
-```
-
-`story verify` runs the command from the repository root, records
-`last_verified_at` and `last_verified_result`, and exits 0 on pass or 1 on fail.
-When `trace --story <id>` links to a story whose verification command has never
-passed, the trace still records but prints an advisory warning before close.
-
-`story verify` accepts only the story id. Configure the command with
-`story add --verify` or `story update --verify`. Record proof booleans with
-`story update`, using numeric values: `1` means yes and `0` means no. The Rust
-CLI rejects text values such as `yes` and `no`.
-
-Use `scripts/bin/harness-cli query matrix --numeric` when copying proof values
-back into `story update`. The default matrix output is human-readable
-`yes`/`no`; the numeric output mirrors CLI input.
-
-## Decision Records
-
-High-risk work needs durable decisions when it changes behavior or architecture.
-For auth, authorization, data ownership, API shape, audit/security, or
-validation changes, record the decision in both places:
-
-1. Add a markdown file under `docs/decisions/` from
-   `docs/templates/decision.md`.
-2. Add or refresh the durable record:
-
-```bash
-scripts/bin/harness-cli decision add \
-  --id 0008-auth-boundary \
-  --title "Auth Boundary" \
-  --doc docs/decisions/0008-auth-boundary.md \
-  --notes "Accepted during T4 authentication work."
-```
-
-The trace `--decisions` field is useful evidence, but it is not the decision
-log. Do not treat decision text in a trace as satisfying the durable decision
-record requirement.
-
-## Harness Change Policy
-
-Agents may update directly:
-
-- Story status and evidence via `scripts/bin/harness-cli story update`.
-- Test matrix rows via `scripts/bin/harness-cli story add` and
-  `scripts/bin/harness-cli story update`.
-- Links from story packets to product docs.
-- Validation notes and reports.
-- Small clarifications tied to the current task.
-- Intake records, traces, and backlog items via `scripts/bin/harness-cli`.
-
-Agents should ask for human confirmation before:
-
-- Changing architecture direction.
-- Removing validation requirements.
-- Changing the source-of-truth hierarchy.
-- Changing risk classification rules.
-- Replacing the feature workflow.
-
-## Done Definition
-
-A task is done only when:
-
-- The requested change is completed or the blocker is documented.
-- Relevant docs, stories, and test matrix entries remain current.
-- Validation commands were run when they exist.
-- A trace has been recorded with `scripts/bin/harness-cli trace`.
-- Missing harness capabilities were recorded with
-  `scripts/bin/harness-cli backlog add`.
-- The final response says what changed and what was not attempted.
-
-## Future Validation Ladder
-
-No validation scripts exist yet. When implementation begins, the expected ladder
-is:
-
-```text
-validate:quick
-  format, lint, typecheck, unit tests, architecture check
-
-test:integration
-  backend, database, provider, or service checks as the stack requires
-
-test:e2e
-  user-visible end-to-end flows
-
-test:platform
-  shell, mobile, desktop, or deployment smoke checks as the stack requires
-
-test:release
-  full suite, log checks, and performance smoke
-```
-
-Agents must not claim these commands pass until they exist and have been run.
+Harness does not choose the application stack or replace consumer-owned truth.
+The `dnd_kit` package architecture, product contract, validation commands, and
+historical decisions remain owned by this repository.

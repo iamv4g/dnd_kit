@@ -4,7 +4,9 @@ Date: 2026-05-23
 
 ## Status
 
-Accepted, amended 2026-05-31
+Superseded for the default workflow by
+`0023-repository-centered-harness-workflow.md`; retained as optional
+compatibility history.
 
 ## Context
 

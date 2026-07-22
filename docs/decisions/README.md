@@ -1,28 +1,21 @@
 # Decisions
 
-Decision records explain why important product, architecture, or harness choices
-were made.
+Decision records preserve lasting product, architecture, data, security,
+compatibility, and validation choices that future work must inherit.
 
 Use `docs/templates/decision.md` when adding a new decision.
-
-After adding or updating a markdown decision file, also add or refresh the
-durable decision row:
-
-```bash
-scripts/bin/harness-cli decision add \
-  --id 0008-auth-boundary \
-  --title "Auth Boundary" \
-  --doc docs/decisions/0008-auth-boundary.md
-```
-
-Trace fields such as `--decisions` summarize task-level choices. They do not
-count as the Harness decision log.
 
 Add a decision when:
 
 - A locked technical choice changes.
 - A product rule changes meaningfully.
 - A validation requirement is added, removed, or weakened.
-- A high-risk feature chooses one design over another.
 - Auth, authorization, data ownership, audit/security, or API behavior changes.
 - The source-of-truth hierarchy changes.
+
+Keep task-local choices in the active execution plan. The optional SQLite
+compatibility layer is not required to make a Markdown decision durable.
+
+The current Harness workflow transition is recorded in
+`0023-repository-centered-harness-workflow.md`. Earlier Harness decisions remain
+useful migration history; product and package decisions continue from `0007`.

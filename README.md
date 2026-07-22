@@ -85,15 +85,29 @@ production-ready multi-container graduation and website showcase through
 `dnd_kit_flutter`, `dnd_kit_jaspr`) through `US-079`.
 
 The living source of truth is split from historical [SPEC.md](SPEC.md) input
-material into product docs, story packets, validation expectations, and decision
-records under `docs/`. Use `scripts/bin/harness-cli query matrix` for durable
-story proof status.
+material into product docs, architecture and decision records, executable
+tests, and completed delivery evidence under `docs/`.
 
 ## Harness
 
-This repo uses Harness for agent-ready implementation work. Before changing
-code, read [AGENTS.md](AGENTS.md) and use `scripts/bin/harness-cli` for intake,
-story, proof, decision, and trace records.
+This repo uses the repository-centered Harness core. Start with
+[AGENTS.md](AGENTS.md), follow [docs/WORKFLOW.md](docs/WORKFLOW.md), and retrieve
+only the product, architecture, plan, code, and validation material relevant to
+the requested outcome.
+
+Bounded work does not require a local database, intake row, story row, or trace.
+Complex work that needs durable memory uses one evolving file under
+`docs/plans/active/`, then moves it to `docs/plans/completed/` after validation.
+The existing story packets and SQLite-era documents remain historical or
+optional compatibility material; they are not the default workflow.
+
+Harness core maintenance is available through:
+
+```bash
+scripts/bin/harness status
+scripts/bin/harness doctor
+scripts/bin/harness update --dry-run
+```
 
 For verification, keep two lanes:
 

@@ -25,6 +25,9 @@ dist/
 scripts/bin/harness-cli
 scripts/bin/harness-cli.exe
 
+# Local Harness install/update recovery backups.
+.harness-backup/
+
 # IntelliJ related
 .idea/
 *.iml
@@ -69,3 +72,7 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Harness core maintenance binary
+scripts/bin/harness
+scripts/bin/harness.exe
