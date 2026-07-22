@@ -107,7 +107,8 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    await gesture.moveTo(tester.getCenter(thirdRow));
+    final thirdRowCenter = tester.getCenter(thirdRow);
+    await gesture.moveTo(thirdRowCenter);
     await tester.pumpAndSettle();
 
     // The third row has slid up to make room for the row being dragged onto it.
@@ -115,6 +116,22 @@ void main() {
       tester.getTopLeft(thirdRow).dy,
       lessThan(restingTop),
       reason: 'the live gap should shift the displaced row upward',
+    );
+
+    // The dragged row is rendered twice while dragging: the dimmed source and
+    // the overlay copy that follows the pointer. Without the overlay the row
+    // would appear frozen in place.
+    final draggedLabels = tester.widgetList<Text>(firstRow).toList();
+    expect(draggedLabels, hasLength(2), reason: 'source row plus drag overlay');
+    final overlayFollowsPointer = draggedLabels.any((label) {
+      final center = tester.getCenter(find.byWidget(label));
+      return (center.dy - thirdRowCenter.dy).abs() < 30;
+    });
+    expect(
+      overlayFollowsPointer,
+      isTrue,
+      reason:
+          'the drag overlay should track the pointer, not stay at the source slot',
     );
 
     await gesture.up();
