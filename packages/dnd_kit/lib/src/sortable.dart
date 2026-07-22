@@ -179,6 +179,68 @@ final class SortableDragContext {
 /// `input.context.phase` when the two must behave differently.
 typedef SortableStrategy = SortableMoveDetails? Function(SortableStrategyInput input);
 
+/// Where the active sortable item would land if the drag were released now.
+///
+/// Resolution is lazy and memoized. The first read after the drag changes
+/// resolves once; every later read within the same move returns the cached
+/// result, no matter how many items ask. An application that never reads a
+/// preview never pays to compute one.
+///
+/// The resolution runs the same strategy the drop will, so the index reported
+/// here is the index the move will commit to.
+final class SortablePreview {
+  /// Creates a preview that always reports nothing.
+  ///
+  /// Used where no sortable scope is driving resolution, so consumers can read
+  /// preview state unconditionally without null checks on the preview itself.
+  SortablePreview.inactive() : _resolve = null;
+
+  /// Creates a preview backed by [resolve].
+  ///
+  /// [resolve] should return null when no drag is active or the drag would not
+  /// move anything. It is called at most once per [invalidate].
+  SortablePreview.resolvedBy(SortableMoveDetails? Function() resolve) : _resolve = resolve;
+
+  final SortableMoveDetails? Function()? _resolve;
+  SortableMoveDetails? _cached;
+  bool _dirty = true;
+
+  /// The move intent the active drag would produce, or null when there is none.
+  SortableMoveDetails? get details {
+    final resolve = _resolve;
+    if (resolve == null) {
+      return null;
+    }
+
+    if (_dirty) {
+      _cached = resolve();
+      _dirty = false;
+    }
+
+    return _cached;
+  }
+
+  /// The index the active item would land at, when a move is in progress.
+  int? get index => details?.toIndex;
+
+  /// The container the active item would land in, when known.
+  DndId? get containerId => details?.toContainerId;
+
+  /// The item the active drag is currently over, when one exists.
+  DndId? get overId => details?.overId;
+
+  /// Whether a move is currently previewed.
+  bool get isActive => details != null;
+
+  /// Discards the cached resolution so the next read resolves again.
+  ///
+  /// Adapters call this whenever drag state changes.
+  void invalidate() {
+    _dirty = true;
+    _cached = null;
+  }
+}
+
 /// Input passed to a [SortableStrategy].
 @immutable
 final class SortableStrategyInput {

@@ -27,6 +27,7 @@ final class SortableItemDetails {
     required this.isOver,
     required this.overId,
     required this.session,
+    this.preview,
   });
 
   /// The stable sortable item id.
@@ -55,6 +56,23 @@ final class SortableItemDetails {
 
   /// The active session for this item, when available.
   final DndDragSession? session;
+
+  /// The scope's live preview, when a sortable scope is driving one.
+  ///
+  /// Reading [previewIndex] or [previewContainerId] resolves it once per move
+  /// and shares that result with every other item, so it is safe to read from
+  /// each item's builder.
+  final SortablePreview? preview;
+
+  /// The index the active item would land at if released now.
+  ///
+  /// Null when no drag is active or the drag would not move anything. Unlike
+  /// [isOver], which reports the raw collision result, this is the index the
+  /// scope's strategy will actually commit to.
+  int? get previewIndex => preview?.index;
+
+  /// The container the active item would land in if released now.
+  DndId? get previewContainerId => preview?.containerId;
 }
 
 /// Registers a child as a sortable item in the nearest [SortableScope].
@@ -136,6 +154,7 @@ class SortableItem extends StatelessComponent {
       isOver: controller.overId == id,
       overId: controller.overId,
       session: controller.activeSession,
+      preview: scope.preview,
     );
   }
 

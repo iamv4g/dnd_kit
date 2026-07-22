@@ -62,15 +62,105 @@ class SortableScope extends StatelessComponent {
   Component build(BuildContext context) {
     return DndScope(
       controller: controller,
-      child: _SortableScopeProvider(
-        data: SortableScopeData(
-          containerId: containerId,
-          strategy: strategy,
-          itemIds: itemIds,
-          onMove: onMove,
-        ),
+      child: _SortablePreviewHost(
+        containerId: containerId,
+        strategy: strategy,
+        itemIds: itemIds,
+        onMove: onMove,
         child: child,
       ),
+    );
+  }
+}
+
+/// Owns the scope's [SortablePreview] and keeps it in step with the controller.
+///
+/// This lives below [DndScope] so it can reach the controller that scope may
+/// have created, and it is stateful so the preview instance — and therefore its
+/// cache — survives rebuilds.
+class _SortablePreviewHost extends StatefulComponent {
+  const _SortablePreviewHost({
+    required this.containerId,
+    required this.strategy,
+    required this.itemIds,
+    required this.onMove,
+    required this.child,
+  });
+
+  final DndId? containerId;
+  final SortableStrategy strategy;
+  final List<DndId> itemIds;
+  final SortableMoveCallback? onMove;
+  final Component child;
+
+  @override
+  State<_SortablePreviewHost> createState() => _SortablePreviewHostState();
+}
+
+class _SortablePreviewHostState extends State<_SortablePreviewHost> {
+  late final SortablePreview _preview = SortablePreview.resolvedBy(_resolvePreview);
+  DndController? _controller;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = DndScope.of(context);
+    if (identical(_controller, controller)) {
+      return;
+    }
+
+    _controller?.removeListener(_preview.invalidate);
+    _controller = controller;
+    _controller?.addListener(_preview.invalidate);
+    _preview.invalidate();
+  }
+
+  @override
+  void didUpdateComponent(_SortablePreviewHost oldComponent) {
+    super.didUpdateComponent(oldComponent);
+    // Item order and strategy feed the resolution, so a change to either makes
+    // the cached preview stale even when the drag itself has not moved.
+    if (oldComponent.strategy != component.strategy ||
+        !_listEquals(oldComponent.itemIds, component.itemIds)) {
+      _preview.invalidate();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_preview.invalidate);
+    super.dispose();
+  }
+
+  SortableScopeData _data() {
+    return SortableScopeData(
+      containerId: component.containerId,
+      strategy: component.strategy,
+      itemIds: component.itemIds,
+      onMove: component.onMove,
+      preview: _preview,
+    );
+  }
+
+  SortableMoveDetails? _resolvePreview() {
+    final controller = _controller;
+    final session = controller?.activeSession;
+    if (controller == null || session == null || !controller.isDragging) {
+      return null;
+    }
+
+    return _data().resolveDetails(
+      SortableDragContext.preview(session: session, overId: controller.overId),
+      itemRects: controller.measuring.droppableRects,
+      activeRect: controller.activeRect,
+    );
+  }
+
+  @override
+  Component build(BuildContext context) {
+    return _SortableScopeProvider(
+      data: _data(),
+      child: component.child,
     );
   }
 }
@@ -83,7 +173,19 @@ final class SortableScopeData {
     this.strategy = SortableStrategies.verticalList,
     this.containerId,
     this.onMove,
-  }) : itemIds = List<DndId>.unmodifiable(itemIds);
+    SortablePreview? preview,
+  })  : itemIds = List<DndId>.unmodifiable(itemIds),
+        preview = preview ?? SortablePreview.inactive();
+
+  /// Where the active item would land if the drag were released now.
+  ///
+  /// Resolved lazily and cached per move, so reading it from many items costs
+  /// one resolution. Reports nothing when no drag is active.
+  ///
+  /// Deliberately excluded from [operator ==]: this is live drag state, not
+  /// part of the scope's identity, and the instance is stable for the lifetime
+  /// of the scope.
+  final SortablePreview preview;
 
   /// Optional sortable container id for future multi-container APIs.
   final DndId? containerId;

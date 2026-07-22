@@ -189,6 +189,17 @@ extension; roadmap alignment.
   measure a large list before and after with the existing gallery; if the cost
   is material, narrow notification so only items whose offset actually changed
   rebuild. Treat a regression here as blocking, not cosmetic.
+- **Unexplained Jaspr browser flake.** During Group 2 the browser suite failed
+  `auto_scroll_browser_test.dart` ("resolves horizontal collision against a
+  target scrolled into view") four runs in a row, and a worktree at the Group 1
+  commit passed the same command — which looked like a Group 2 regression. On
+  byte-identical source restored from a stash, the same command then passed
+  nine consecutive times, including three under deliberate CPU load, so the
+  bisect result did not reproduce. The most consistent explanation is a stale
+  compiled bundle before the stash/pop rewrote the files, but that is unproven.
+  The same test also flaked once during 0.6.0. Watch it in CI; do not treat a
+  single red run here as proof of a regression, and do not treat this note as
+  proof it is healthy.
 - **Jaspr transform/measurement coupling.** CSS transforms do affect
   `getBoundingClientRect`. Safety depends on the offset being applied to a
   descendant of the measured node, which the current component structure gives
@@ -218,7 +229,18 @@ extension; roadmap alignment.
       `resolveDetails` added beside `moveDetailsFor` on both adapters' scope
       data; core 149 / flutter 107 / jaspr VM 37 tests green and the full
       melos gate passes).
-- [ ] Group 2 — lazy cached live preview + the preview-equals-commit invariant.
+- [x] Group 2 — lazy cached live preview + the preview-equals-commit invariant
+      (`SortablePreview` in core; a stateful preview host below `DndScope` on
+      both adapters owns the instance and invalidates it on controller change;
+      `SortableScopeData.preview` and `SortableItemDetails.previewIndex` /
+      `previewContainerId`; core 149 / flutter 112 / jaspr VM 37 green, full
+      melos gate green, Jaspr browser suites 23 green).
+      Single-container only; multi-container preview is still open (see below).
+- [ ] Group 2b — multi-container preview. `SortableMultiScope` resolution needs
+      the **active item's** container strategy, but strategies live on each
+      `SortableMultiContainerArea` widget rather than centrally, so the scope
+      cannot look one up today. Needs an area→strategy registry on the scope
+      host before decision 4's "preview for both scopes" can land.
 - [ ] Group 3 — `SortableOffsetResolver` + built-ins + unit tests.
 - [ ] Group 4 — adapter exposure, perf measurement, demo, docs, ADR, changelog
       extension, roadmap alignment.
@@ -270,6 +292,17 @@ extension; roadmap alignment.
   gain `resolveDetails(SortableDragContext)`, with the former delegating to the
   latter. Existing call sites and consumer code keep working, and the commit
   path provably runs the same resolution the preview path will.
+
+- 2026-07-22 (Group 2): the preview instance is owned by a stateful host placed
+  *below* `DndScope`, not by `SortableScope` itself, because an uncontrolled
+  scope only has a controller below that point. `SortableScopeData.preview` is
+  excluded from `==` so live drag state cannot churn `InheritedWidget`
+  notifications; the instance is stable for the scope's lifetime.
+- 2026-07-22 (Group 2): decision 4's multi-container preview did not land with
+  the single-container case. Multi resolution needs the active item's container
+  strategy, which lives on the area widgets rather than the scope, so it needs
+  a registry the scope does not have yet. Sequenced as Group 2b rather than
+  dropped.
 
 Promote the preview/offset contract and the "offsets are output, never input"
 rule into `docs/decisions/` when Group 3 lands.
