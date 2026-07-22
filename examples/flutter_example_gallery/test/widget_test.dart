@@ -87,4 +87,41 @@ void main() {
       expect(tester.takeException(), isNull, reason: '$label demo threw');
     }
   });
+
+  testWidgets('the sortable demo opens a gap while dragging', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const ExampleGalleryApp());
+    await tester.tap(find.text('Sortable').first);
+    await tester.pumpAndSettle();
+
+    final firstRow = find.text('Write the launch brief');
+    final thirdRow = find.text('Wire the drag engine');
+    final restingTop = tester.getTopLeft(thirdRow).dy;
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(firstRow),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await gesture.moveTo(tester.getCenter(thirdRow));
+    await tester.pumpAndSettle();
+
+    // The third row has slid up to make room for the row being dragged onto it.
+    expect(
+      tester.getTopLeft(thirdRow).dy,
+      lessThan(restingTop),
+      reason: 'the live gap should shift the displaced row upward',
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // Dropping commits the move the gap was previewing.
+    expect(tester.getTopLeft(firstRow).dy,
+        greaterThan(tester.getTopLeft(thirdRow).dy));
+  });
 }

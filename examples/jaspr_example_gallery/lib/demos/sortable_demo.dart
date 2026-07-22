@@ -52,7 +52,11 @@ class _SortableDemoState extends State<SortableDemo> {
 
     return SortableScope(
       controller: _controller,
-      strategy: SortableStrategies.verticalList,
+      // dropOnOver keeps the committed move in step with the gap the offsets
+      // open; the geometric strategies resolve from the dragged rect center
+      // instead and would disagree with it.
+      strategy: SortableStrategies.dropOnOver,
+      offsetResolver: SortableOffsets.verticalList,
       itemIds: _tracks.map((track) => track.id),
       onMove: _handleMove,
       child: DemoPanel(
@@ -60,10 +64,13 @@ class _SortableDemoState extends State<SortableDemo> {
           const DemoIntro(
             title: 'Sortable list',
             description:
-                'Drag a row by its handle to reorder the playlist. Reorder intent '
-                'comes from the shared engine strategy, so the same math drives '
-                'Flutter and Jaspr. Keyboard works too: focus a handle, press '
-                'space to pick up, arrow up/down to move, space to drop.',
+                'Drag a row by its handle to reorder the playlist. The rows '
+                'slide aside to open a gap where the dragged row will land: '
+                'dnd_kit reports each row an offset and this demo animates it. '
+                'Reorder intent comes from the shared engine strategy, so the '
+                'same math drives Flutter and Jaspr. Keyboard works too: focus '
+                'a handle, press space to pick up, arrow up/down to move, space '
+                'to drop.',
           ),
           StatusBar(
             children: [
@@ -141,7 +148,12 @@ class _SortableDemoState extends State<SortableDemo> {
         : over
         ? cAccentSoft
         : cCardBg;
+    final offset = itemState.offset;
     return div(
+      // The offset is applied here, inside the item builder, so the transform
+      // lands on a child of the measured element and cannot feed back into
+      // collision detection. dnd_kit reports the distance; this demo chooses
+      // the transition.
       styles: Styles(
         border: .all(
           color: over ? cAccentBright : cBorder,
@@ -150,7 +162,12 @@ class _SortableDemoState extends State<SortableDemo> {
         radius: .circular(18.px),
         opacity: isActive ? 0.55 : 1,
         backgroundColor: background,
-        raw: const {'transition': 'background 120ms ease'},
+        transform: offset == DndPoint.zero
+            ? Transform.none
+            : Transform.translate(x: offset.x.px, y: offset.y.px),
+        raw: const {
+          'transition': 'background 120ms ease, transform 150ms ease',
+        },
       ),
       attributes: <String, String>{
         'data-track-id': track.id.value,

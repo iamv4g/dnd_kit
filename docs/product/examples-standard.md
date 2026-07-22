@@ -60,7 +60,7 @@ each demo pairs with a docs page and can later back its live embed.
 | `sensors`         | Sensors         | sensors                | activation distance and press-delay constraints          |
 | `modifiers`       | Modifiers       | modifiers              | axis lock, snap-to-grid, boundary clamp                  |
 | `auto-scroll`     | Auto-scroll     | auto-scroll            | edge-driven scrolling in a bounded list                  |
-| `sortable`        | Sortable        | sortable               | reorder a list; vertical / horizontal / grid strategies  |
+| `sortable`        | Sortable        | sortable               | reorder a list; strategies, and live offsets opening a placeholder gap |
 | `multi-container` | Multi-container | multi-container        | move cards within and across columns (Kanban shape)      |
 | `accessibility`   | Accessibility   | accessibility          | keyboard drag plus live-region announcements             |
 

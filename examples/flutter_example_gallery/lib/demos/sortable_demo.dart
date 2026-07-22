@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 
 /// The `sortable` catalog demo: SortableScope + SortableItem turn a list into a
 /// reorderable one. dnd_kit reports from/to indices; the list owns its order.
+///
+/// The live-gap toggle shows the offset plug-in: with a resolver configured,
+/// each item builder receives an `offset` and this demo animates it, so a gap
+/// opens where the row will land. dnd_kit computes the geometry and never
+/// animates — the `AnimatedSlide` below is the demo's own choice.
 class SortableDemo extends StatefulWidget {
   const SortableDemo({super.key});
 
@@ -18,6 +23,10 @@ class _SortableDemoState extends State<SortableDemo> {
     const _Track('track-4', 'Add keyboard support'),
     const _Track('track-5', 'Ship the release'),
   ];
+
+  static const double _rowExtent = 62;
+
+  bool _liveGap = true;
 
   void _handleMove(SortableMoveDetails details) {
     setState(() {
@@ -40,10 +49,28 @@ class _SortableDemoState extends State<SortableDemo> {
               'dnd_kit reports the move as from/to indices; the list owns its '
               'order.',
             ),
-            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _liveGap,
+              onChanged: (value) => setState(() => _liveGap = value),
+              title: const Text('Open a gap while dragging'),
+              subtitle: const Text(
+                'Uses SortableOffsets.verticalList and drops where the '
+                'highlight is.',
+              ),
+            ),
+            const SizedBox(height: 8),
             Expanded(
               child: SortableScope(
-                strategy: SortableStrategies.verticalList,
+                // dropOnOver keeps the committed move in step with the gap the
+                // offsets open; the geometric strategies resolve from the
+                // dragged rect center instead and would disagree with it.
+                strategy: _liveGap
+                    ? SortableStrategies.dropOnOver
+                    : SortableStrategies.verticalList,
+                offsetResolver: _liveGap
+                    ? SortableOffsets.verticalList
+                    : SortableOffsets.none,
                 itemIds: <DndId>[for (final track in _tracks) DndId(track.id)],
                 onMove: _handleMove,
                 child: ListView(
@@ -54,10 +81,20 @@ class _SortableDemoState extends State<SortableDemo> {
                         padding: const EdgeInsets.only(bottom: 10),
                         child: SortableItem(
                           id: DndId(track.id),
-                          builder: (context, details, child) => Opacity(
-                            opacity: details.isDragging ? 0.4 : 1,
-                            child: child,
-                          ),
+                          builder: (context, details, child) {
+                            // Applied inside the builder so the shift stays
+                            // below the measured box and cannot feed back into
+                            // collision detection.
+                            return AnimatedSlide(
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeOut,
+                              offset: Offset(0, details.offset.y / _rowExtent),
+                              child: Opacity(
+                                opacity: details.isDragging ? 0.4 : 1,
+                                child: child,
+                              ),
+                            );
+                          },
                           child: _TrackRow(label: track.label),
                         ),
                       ),

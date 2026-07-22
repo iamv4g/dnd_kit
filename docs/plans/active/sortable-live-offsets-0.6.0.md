@@ -265,9 +265,12 @@ extension; roadmap alignment.
       ADR 0025; 0.6.0 changelogs extended; Flutter README and the website
       placeholder recipe rewritten around the resolver; roadmap Phase 34 added
       and its stale "Current State" corrected).
-- [ ] Gallery demo showing a real placeholder gap on both adapters — the one
-      Group 4 item not done. The recipe and README carry the usage guidance,
-      but no runnable demo exercises offsets end to end yet.
+- [x] Gallery demo showing a real placeholder gap on both adapters (the
+      existing `sortable` catalog demo now uses `SortableOffsets.verticalList`
+      with `dropOnOver`; Flutter adds a toggle so both modes are visible side by
+      side, Jaspr animates the offset with a CSS transition). A gallery widget
+      test drives a real drag and asserts the displaced row moves up and that
+      the drop commits the move the gap previewed.
 - [ ] Full validation lane green; branch merged into `release/0.6.0`; plan moved
       to `docs/plans/completed/`.
 
@@ -343,6 +346,11 @@ extension; roadmap alignment.
   neighbour's slot is only correct for uniform sizes; the dragged-extent rule
   reproduces the true post-move layout for variable heights too, which the
   tests pin.
+- 2026-07-23 (Group 4): the gallery demo extends the existing `sortable`
+  catalog entry rather than adding a new one. `docs/product/examples-standard.md`
+  requires a demo slug to equal its docs concept slug, and offsets have no
+  concept page of their own — they are part of sortable. Only that entry's
+  "Demonstrates" cell changed.
 - 2026-07-22 (Group 3): the plan's "unmeasured items get no offset" rule was
   narrowed to what it was protecting against. A displaced item's offset does
   not depend on its own rectangle, so an off-screen item can be offset
