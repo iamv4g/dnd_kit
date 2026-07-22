@@ -184,11 +184,14 @@ extension; roadmap alignment.
   performance principle. Mitigation is structural, not incidental: lazy,
   cached-per-move resolution (Group 2). Add a test that proves it resolves once
   per move regardless of how many items read it.
-- **Rebuild cost per move.** Every sortable item with a builder already rebuilds
-  on each controller notification; offsets add per-item work on top. Mitigation:
-  measure a large list before and after with the existing gallery; if the cost
-  is material, narrow notification so only items whose offset actually changed
-  rebuild. Treat a regression here as blocking, not cosmetic.
+- **Rebuild cost per move.** Measured, not assumed: a widget test drives 40
+  moves over a 200-item lazy list and reports `none` 152ms versus
+  `verticalList` 105ms. Same cost class; the offsets run measured second and so
+  benefits from warm-up, which is why the conclusion is "no change in cost
+  class" rather than "faster". The resolver runs once per move regardless of
+  how many items read it, which is what keeps it flat. The check lives in
+  `performance_smoke_test.dart` so a future regression fails a test rather than
+  a review.
 - **Environment-sensitive Jaspr browser test.** `auto_scroll_browser_test.dart`
   ("resolves horizontal collision against a target scrolled into view") asserts
   `controller.overId` is still null immediately after a pointermove, before
@@ -254,8 +257,17 @@ extension; roadmap alignment.
       tests including variable heights, list gaps, lazy lists, and a
       strategy-fed case that pins the index space; core 163 tests green, full
       melos gate green).
-- [ ] Group 4 — adapter exposure, perf measurement, demo, docs, ADR, changelog
-      extension, roadmap alignment.
+- [x] Group 4 — adapter exposure, perf measurement, docs, ADR, changelog
+      extension, roadmap alignment (`SortableScope.offsetResolver` and
+      `SortableItemDetails.offset` on both adapters; offsets share the preview
+      cache; Flutter widget tests plus a Jaspr browser test pin that measured
+      rects stay put and `overId` does not oscillate while offsets are applied;
+      ADR 0025; 0.6.0 changelogs extended; Flutter README and the website
+      placeholder recipe rewritten around the resolver; roadmap Phase 34 added
+      and its stale "Current State" corrected).
+- [ ] Gallery demo showing a real placeholder gap on both adapters — the one
+      Group 4 item not done. The recipe and README carry the usage guidance,
+      but no runnable demo exercises offsets end to end yet.
 - [ ] Full validation lane green; branch merged into `release/0.6.0`; plan moved
       to `docs/plans/completed/`.
 

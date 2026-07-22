@@ -11,6 +11,17 @@
   `DndDragOverlayDetails` gains a required `initialActiveRect` alongside the
   live `activeRect`.
 - `DndController` exposes `initialActiveRect`.
+- Adds live sortable feedback: `SortableScopeData.preview` and
+  `SortableMultiScopeData.preview` report where the active item would land, and
+  `SortableItemDetails` gains `previewIndex`, `previewContainerId`, and
+  `offset`.
+- `SortableScope` takes an `offsetResolver` (default `SortableOffsets.none`).
+  Set `SortableOffsets.verticalList` and apply `details.offset` inside your
+  `SortableItem.builder` as a CSS transform to open a placeholder gap. Apply it
+  inside the builder, not on the item, so the transform stays below the
+  measured element.
+- `SortableMultiContainerArea` is now a `StatefulComponent` so it can publish
+  its strategy to the scope. Its constructor is unchanged.
 
 
 ## 0.5.0

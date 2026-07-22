@@ -357,7 +357,28 @@ Converge the example apps so the website can host a Flutter/Jaspr showcase page:
 Phase README:
 `docs/stories/phase-33-example-standardization-and-showcase/README.md`.
 
+## Phase 34 - Drag Defaults And Live Sortable Feedback (0.6.0)
+
+Close the defects a production integration reported against 0.5.0, then give
+applications the live state they were re-deriving by hand:
+
+- exclude the active draggable from collision candidates, re-measure at drag
+  start and on auto-scroll ticks, add `SortableStrategies.dropOnOver`, and size
+  the drag preview from the drag-start rect
+  (`docs/decisions/0024-drag-defaults-match-what-users-see.md`);
+- make sortable resolution phase-aware, publish a live preview, and add an
+  opt-in offset plug-in so apps can open a placeholder gap without
+  reimplementing collision, direction, and measurement
+  (`docs/decisions/0025-sortable-live-preview-and-offsets.md`).
+
+Plans: `docs/plans/completed/integration-feedback-fixes-0.6.0.md` and
+`docs/plans/active/sortable-live-offsets-0.6.0.md`.
+
 ## Current State
+
+Phase 34 is the current line, prepared as `0.6.0` and not yet published. It
+carries the ADR 0024 default fixes and the ADR 0025 live preview / offset
+surface. Everything below describes the published history up to `0.5.0`.
 
 The repository has implemented work through `US-079`. The Flutter adapter, the
 pure Dart engine, and the Jaspr adapter share the `dnd_kit` brand family under

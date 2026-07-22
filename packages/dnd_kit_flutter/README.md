@@ -111,6 +111,42 @@ highlights the drop target or opens a placeholder gap, use
 `SortableStrategies.dropOnOver` instead: it lands the move on the item the
 drag is currently over, which is exactly what `isOver` reports.
 
+## Live sortable feedback
+
+During a drag, `SortableItemDetails` reports where the item would land
+(`previewIndex`, `previewContainerId`) and how far each item should move to
+make room (`offset`). Set an `offsetResolver` to enable the offsets:
+
+```dart
+SortableScope(
+  itemIds: order,
+  strategy: SortableStrategies.dropOnOver,
+  offsetResolver: SortableOffsets.verticalList,
+  onMove: _onMove,
+  child: ListView(
+    children: [
+      for (final id in order)
+        SortableItem(
+          id: id,
+          builder: (context, details, child) => AnimatedSlide(
+            duration: const Duration(milliseconds: 150),
+            offset: Offset(0, details.offset.y / itemHeight),
+            child: child,
+          ),
+          child: CardTile(id),
+        ),
+    ],
+  ),
+)
+```
+
+The library reports geometry and never animates; you choose the animation. The
+default is `SortableOffsets.none`, so nothing moves unless you ask.
+
+Apply the offset **inside** the builder rather than around the `SortableItem`:
+the builder's output sits below the measured box, so the shift cannot change a
+measured rectangle and feed back into collision detection.
+
 ## Customization
 
 Core behavior is intentionally open:

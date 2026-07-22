@@ -112,31 +112,48 @@ class RecipesPage extends StatelessComponent {
           id: 'placeholder',
           title: 'A placeholder gap',
           children: [
-            docProse(
-              'dnd_kit does not shift neighbours or draw a gap for you: it '
-              'reports what is happening and your app renders it. The gap is '
-              'three small pieces.',
-            ),
-            docBullets(const [
-              'Collapse the source slot for the item being dragged, so the '
-                  'list closes up behind it.',
-              'Insert a keyed spacer next to the current drop target — below '
-                  'it when dragging downward, above it when dragging upward.',
-              'Pair it with dropOnOver so the item lands in the gap the user '
-                  'is looking at.',
-            ]),
             docProseRich([
               docText(
-                'The drag preview is sized from the rectangle measured '
-                'at drag start (',
+                'dnd_kit computes the geometry; your app renders it. Set '
+                'an ',
+              ),
+              inlineCode('offsetResolver'),
+              docText(' on the scope and each item builder receives an '),
+              inlineCode('offset'),
+              docText(
+                ' telling it how far to move so the dragged item has '
+                'somewhere to land. The library never animates: you choose '
+                'the animation, or none.',
+              ),
+            ]),
+            docBullets(const [
+              'Apply the offset inside the item builder, not around the item. '
+                  'The builder sits below the measured box, so the shift '
+                  'cannot move a measured rectangle and feed back into '
+                  'collision.',
+              'Pair it with dropOnOver so the item lands in the gap the user '
+                  'is looking at.',
+              'Read previewIndex when you want the landing index itself — for '
+                  'a label, a counter, or an announcement.',
+            ]),
+            const CodeTabs(
+              flutterFile: 'placeholder_gap.dart',
+              jasprFile: 'placeholder_gap.dart',
+              flutter: _placeholderFlutter,
+              jaspr: _placeholderJaspr,
+            ),
+            docProseRich([
+              docText(
+                'Collapsing the dragged item\'s own slot is optional and '
+                'still app-owned. It is safe to do: the drag preview is '
+                'sized from the rectangle measured at drag start (',
               ),
               inlineCode('initialActiveRect'),
               docText(
                 '), not the live one, so collapsing the source cannot '
-                'shrink it away.',
+                'shrink the preview away.',
               ),
             ]),
-            docCodeBlock('placeholder_gap.dart', _placeholderFlutter),
           ],
         ),
         docSection(
@@ -222,34 +239,56 @@ const _dropOnOverJaspr = '''SortableScope(
   child: div(sectionCards),
 )''';
 
-const _placeholderFlutter = '''ListenableBuilder(
-  listenable: controller,
-  builder: (context, _) {
-    final activeId = controller.activeId;
-    final overId = controller.overId;
+const _placeholderFlutter = '''SortableScope(
+  itemIds: items.map((item) => DndId(item.id)),
+  strategy: SortableStrategies.dropOnOver,
+  offsetResolver: SortableOffsets.verticalList,
+  onMove: applyMove,
+  child: ListView(
+    children: [
+      for (final item in items)
+        SortableItem(
+          id: DndId(item.id),
+          builder: (context, details, child) {
+            // Applied inside the builder, so the shift stays below the
+            // measured box.
+            return AnimatedSlide(
+              duration: const Duration(milliseconds: 150),
+              offset: Offset(
+                details.offset.x / itemWidth,
+                details.offset.y / itemHeight,
+              ),
+              child: child,
+            );
+          },
+          child: ItemCard(item),
+        ),
+    ],
+  ),
+)''';
 
-    return Column(
-      children: [
-        for (final item in items) ...[
-          // The gap opens above the target when dragging upward.
-          if (overId == DndId(item.id) && draggingUpward)
-            SizedBox(key: const ValueKey('gap'), height: gapHeight),
-
-          // The dragged item's own slot collapses.
-          AnimatedSize(
-            duration: const Duration(milliseconds: 150),
-            child: SizedBox(
-              height: activeId == DndId(item.id) ? 0 : null,
-              child: ItemCard(item),
+const _placeholderJaspr = '''SortableScope(
+  itemIds: items.map((item) => DndId(item.id)),
+  strategy: SortableStrategies.dropOnOver,
+  offsetResolver: SortableOffsets.verticalList,
+  onMove: applyMove,
+  child: div([
+    for (final item in items)
+      SortableItem(
+        id: DndId(item.id),
+        builder: (context, details, child) => div(
+          styles: Styles(
+            transform: Transform.translate(
+              x: details.offset.x.px,
+              y: details.offset.y.px,
             ),
+            transition: Transition('transform', duration: 150),
           ),
-
-          if (overId == DndId(item.id) && !draggingUpward)
-            SizedBox(key: const ValueKey('gap'), height: gapHeight),
-        ],
-      ],
-    );
-  },
+          [child],
+        ),
+        child: itemCard(item),
+      ),
+  ]),
 )''';
 
 const _nestedFlutter = '''// One controller, shared by both scopes.

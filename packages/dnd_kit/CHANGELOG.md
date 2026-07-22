@@ -21,6 +21,25 @@ Fixes four defaults reported by a production integration; see
   start and fixed for the session, so drag previews survive a collapsed source
   slot.
 
+Live sortable feedback, added in the same line; see
+`docs/decisions/0025-sortable-live-preview-and-offsets.md`.
+
+- Adds `SortableDragContext` and `SortableResolutionPhase`, so a sortable
+  strategy runs both while a drag moves (preview) and when it ends (commit)
+  through one code path. The preview a UI shows and the move that is finally
+  reported are therefore the same computation.
+- **Deprecated:** `SortableStrategyInput.event` and
+  `SortableMultiMoveInput.event`. Both are now getters that return null during
+  a preview; use `context` instead. They will be removed in a future release.
+- Adds `SortablePreview`, which reports where the active item would land if
+  released now. It resolves lazily and caches per move, so reading it from
+  every item in a list costs one resolution.
+- Adds `SortableOffsetResolver`, `SortableOffsetInput`, and the
+  `SortableOffsets.verticalList` / `horizontalList` / `none` built-ins, which
+  report how far each item a move displaces should shift. `none` is the
+  default: the library reports geometry and the application decides whether to
+  animate it.
+
 
 ## 0.5.0
 

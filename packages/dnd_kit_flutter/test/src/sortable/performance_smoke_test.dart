@@ -121,5 +121,82 @@ void main() {
       expect(moves.last.toIndex, 12);
       expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
     });
+
+    testWidgets('live offsets do not change the per-move cost class', (tester) async {
+      final itemIds = List<DndId>.generate(200, (index) => DndId('item-$index'));
+
+      Future<Duration> measure({required SortableOffsetResolver resolver}) async {
+        final controller = DndController();
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: SortableScope(
+              controller: controller,
+              itemIds: itemIds,
+              strategy: SortableStrategies.dropOnOver,
+              offsetResolver: resolver,
+              child: ListView.builder(
+                itemCount: itemIds.length,
+                itemExtent: 40,
+                itemBuilder: (context, index) {
+                  return SortableItem(
+                    id: itemIds[index],
+                    builder: (context, details, child) {
+                      return Transform.translate(
+                        offset: Offset(details.offset.x, details.offset.y),
+                        child: child,
+                      );
+                    },
+                    child: SizedBox(
+                      key: ValueKey<String>(itemIds[index].value),
+                      height: 40,
+                      child: Text(itemIds[index].value),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey<String>('item-0'))),
+          kind: PointerDeviceKind.mouse,
+        );
+        await tester.pump();
+
+        final stopwatch = Stopwatch()..start();
+        for (var step = 1; step <= 40; step += 1) {
+          await gesture.moveBy(const Offset(0, 4));
+          await tester.pump();
+        }
+        stopwatch.stop();
+
+        await gesture.up();
+        await tester.pump();
+        return stopwatch.elapsed;
+      }
+
+      final withoutOffsets = await measure(resolver: SortableOffsets.none);
+      final withOffsets = await measure(resolver: SortableOffsets.verticalList);
+
+      debugPrint(
+        'sortable live offsets baseline: 40 moves over ${itemIds.length} items — '
+        'none ${withoutOffsets.inMilliseconds}ms, '
+        'verticalList ${withOffsets.inMilliseconds}ms',
+      );
+
+      // The resolver runs once per move and returns a small map, so enabling
+      // offsets must stay in the same cost class rather than scaling with the
+      // number of items that read them.
+      expect(
+        withOffsets.inMicroseconds,
+        lessThan(withoutOffsets.inMicroseconds * 3 + 200000),
+        reason: 'offsets must not change the per-move cost class',
+      );
+    });
   });
 }
