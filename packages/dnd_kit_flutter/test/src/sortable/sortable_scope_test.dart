@@ -3,6 +3,51 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('SortableScopeData.resolveDetails', () {
+    final scope = SortableScopeData(
+      containerId: const DndId('list-1'),
+      strategy: SortableStrategies.verticalList,
+      itemIds: const <DndId>[DndId('item-1'), DndId('item-2'), DndId('item-3')],
+    );
+    final itemRects = <DndId, DndRect>{
+      const DndId('item-1'): const DndRect(left: 0, top: 0, width: 100, height: 40),
+      const DndId('item-2'): const DndRect(left: 0, top: 40, width: 100, height: 40),
+      const DndId('item-3'): const DndRect(left: 0, top: 80, width: 100, height: 40),
+    };
+    final session = DndDragSession.start(
+      activeId: const DndId('item-1'),
+      initialPointer: const DndPoint(50, 20),
+    ).moveTo(const DndPoint(50, 105));
+
+    test('resolves a preview identically to the committed move', () {
+      final preview = scope.resolveDetails(
+        SortableDragContext.preview(session: session, overId: const DndId('item-3')),
+        itemRects: itemRects,
+        activeRect: itemRects[const DndId('item-1')],
+      );
+      final commit = scope.moveDetailsFor(
+        DndDragEndEvent(session: session, overId: const DndId('item-3')),
+        itemRects: itemRects,
+        activeRect: itemRects[const DndId('item-1')],
+      );
+
+      expect(preview?.toIndex, commit?.toIndex);
+      expect(preview?.fromIndex, commit?.fromIndex);
+      expect(preview?.overId, commit?.overId);
+      expect(preview?.event, isNull);
+      expect(commit?.event, isNotNull);
+    });
+
+    test('reports no preview when the drag is over itself', () {
+      final preview = scope.resolveDetails(
+        SortableDragContext.preview(session: session, overId: const DndId('item-1')),
+        itemRects: itemRects,
+      );
+
+      expect(preview, isNull);
+    });
+  });
+
   group('SortableScope', () {
     testWidgets('provides immutable item order and the underlying controller', (tester) async {
       final controller = DndController();

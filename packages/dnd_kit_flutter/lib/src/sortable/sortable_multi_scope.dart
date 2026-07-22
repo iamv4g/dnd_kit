@@ -190,8 +190,26 @@ final class SortableMultiScopeData {
     Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
     DndRect? activeRect,
   }) {
+    return resolveDetails(
+      SortableDragContext.commit(event),
+      container: container,
+      itemRects: itemRects,
+      activeRect: activeRect,
+    );
+  }
+
+  /// Resolves move intent for [context].
+  ///
+  /// Serves both drag phases: a preview context reports where the item would
+  /// land right now, a commit context reports the move to apply.
+  SortableMoveDetails? resolveDetails(
+    SortableDragContext context, {
+    required SortableMultiContainerAreaData container,
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+  }) {
     final input = SortableMultiMoveInput(
-      event: event,
+      context: context,
       containers: containers,
       itemRects: itemRects,
       activeRect: activeRect,

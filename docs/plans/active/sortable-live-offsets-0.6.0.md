@@ -211,7 +211,13 @@ extension; roadmap alignment.
 
 - [x] Branch `feat/sortable-live-offsets` created from `release/0.6.0`.
 - [x] Open decisions 1–4 resolved (see below).
-- [ ] Group 1 — `SortableDragContext` + parity tests.
+- [x] Group 1 — `SortableDragContext` + parity tests (`SortableDragContext`,
+      `SortableResolutionPhase`, and `.commit`/`.preview` factories in core;
+      `SortableStrategyInput.context` and `SortableMultiMoveInput.context`
+      added with `event` demoted to a deprecated nullable getter;
+      `resolveDetails` added beside `moveDetailsFor` on both adapters' scope
+      data; core 149 / flutter 107 / jaspr VM 37 tests green and the full
+      melos gate passes).
 - [ ] Group 2 — lazy cached live preview + the preview-equals-commit invariant.
 - [ ] Group 3 — `SortableOffsetResolver` + built-ins + unit tests.
 - [ ] Group 4 — adapter exposure, perf measurement, demo, docs, ADR, changelog
@@ -254,6 +260,16 @@ extension; roadmap alignment.
   only.** The board gets correct preview state for labels and announcements at
   almost no cost, while cross-container shifting geometry stays out of this
   line.
+
+- 2026-07-22 (Group 1): `SortableDragContext` carries drag facts only —
+  session, phase, `overId`, and the end event — not measured geometry, even
+  though the plan sketch mentioned item rects. Rectangles already live on
+  `SortableStrategyInput` and `SortableMultiMoveInput`; holding them in two
+  places would create two sources of truth for the same layout.
+- 2026-07-22 (Group 1): the adapters keep `moveDetailsFor(DndDragEndEvent)` and
+  gain `resolveDetails(SortableDragContext)`, with the former delegating to the
+  latter. Existing call sites and consumer code keep working, and the commit
+  path provably runs the same resolution the preview path will.
 
 Promote the preview/offset contract and the "offsets are output, never input"
 rule into `docs/decisions/` when Group 3 lands.

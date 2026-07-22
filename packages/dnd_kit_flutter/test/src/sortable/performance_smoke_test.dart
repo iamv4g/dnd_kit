@@ -26,7 +26,7 @@ void main() {
         ).moveTo(const DndPoint(20, 12000)),
         overId: itemIds.last,
       );
-      final input = SortableStrategyInput(
+      final input = SortableStrategyInput.fromDragEnd(
         activeId: itemIds.first,
         overId: itemIds.last,
         itemIds: itemIds,

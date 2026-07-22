@@ -61,7 +61,7 @@ enum SortableMultiInsertionStrategy {
 final class SortableMultiMoveInput {
   /// Creates multi-container move input.
   SortableMultiMoveInput({
-    required this.event,
+    required this.context,
     required Iterable<SortableContainer> containers,
     this.itemRects = const <DndId, DndRect>{},
     this.activeRect,
@@ -69,8 +69,38 @@ final class SortableMultiMoveInput {
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
   }) : containers = List<SortableContainer>.unmodifiable(containers);
 
+  /// Creates multi-container input for a drag that has ended.
+  factory SortableMultiMoveInput.fromDragEnd({
+    required DndDragEndEvent event,
+    required Iterable<SortableContainer> containers,
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+    SortableStrategy strategy = SortableStrategies.verticalList,
+    SortableMultiInsertionStrategy crossContainerInsertion =
+        SortableMultiInsertionStrategy.adaptive,
+  }) {
+    return SortableMultiMoveInput(
+      context: SortableDragContext.commit(event),
+      containers: containers,
+      itemRects: itemRects,
+      activeRect: activeRect,
+      strategy: strategy,
+      crossContainerInsertion: crossContainerInsertion,
+    );
+  }
+
+  /// The drag to resolve, and which phase it is in.
+  final SortableDragContext context;
+
   /// The drag end event to resolve.
-  final DndDragEndEvent event;
+  ///
+  /// Null while a drag is still active, because a preview has no end event
+  /// yet.
+  @Deprecated(
+    'Use context (SortableDragContext) instead. This getter is null during '
+    'preview resolutions and will be removed in a future release.',
+  )
+  DndDragEndEvent? get event => context.endEvent;
 
   /// The application-owned container order and item membership.
   final List<SortableContainer> containers;
@@ -94,7 +124,7 @@ final class SortableMultiMoveInput {
       return null;
     }
 
-    return activeRect.translate(event.session.transform.offset);
+    return activeRect.translate(context.transform.offset);
   }
 }
 
@@ -150,7 +180,7 @@ abstract final class SortableMultiContainer {
         SortableMultiInsertionStrategy.adaptive,
   }) {
     return resolveMove(
-      SortableMultiMoveInput(
+      SortableMultiMoveInput.fromDragEnd(
         event: event,
         containers: containers,
         itemRects: itemRects,
@@ -163,19 +193,19 @@ abstract final class SortableMultiContainer {
 
   /// Resolves move intent for [input].
   static SortableMoveDetails? resolveMove(SortableMultiMoveInput input) {
-    final event = input.event;
-    final overId = event.overId;
-    if (overId == null || overId == event.activeId) {
+    final context = input.context;
+    final overId = context.overId;
+    if (overId == null || overId == context.activeId) {
       return null;
     }
 
-    final fromContainer = _containerContaining(input.containers, event.activeId);
+    final fromContainer = _containerContaining(input.containers, context.activeId);
     final target = _targetFor(input.containers, overId);
     if (fromContainer == null || target == null) {
       return null;
     }
 
-    final fromIndex = fromContainer.indexOf(event.activeId);
+    final fromIndex = fromContainer.indexOf(context.activeId);
     if (fromIndex < 0) {
       return null;
     }
@@ -184,14 +214,14 @@ abstract final class SortableMultiContainer {
     if (fromContainer.id == toContainer.id && !target.overContainer) {
       return input.strategy(
         SortableStrategyInput(
-          activeId: event.activeId,
+          activeId: context.activeId,
           overId: overId,
           itemIds: toContainer.itemIds,
           itemRects: input.itemRects,
           fromIndex: fromIndex,
           fromContainerId: fromContainer.id,
           toContainerId: toContainer.id,
-          event: event,
+          context: context,
           activeRect: input.activeRect,
           activeTranslatedRect: input.activeTranslatedRect,
         ),
@@ -210,13 +240,13 @@ abstract final class SortableMultiContainer {
     }
 
     return SortableMoveDetails(
-      activeId: event.activeId,
+      activeId: context.activeId,
       overId: overId,
       fromContainerId: fromContainer.id,
       toContainerId: toContainer.id,
       fromIndex: fromIndex,
       toIndex: toIndex,
-      event: event,
+      event: context.endEvent,
     );
   }
 
@@ -297,7 +327,7 @@ abstract final class SortableMultiContainer {
         return baseIndex + 1;
       case SortableMultiInsertionStrategy.adaptive:
         final activeTranslatedRect = input.activeTranslatedRect;
-        final overId = input.event.overId;
+        final overId = input.context.overId;
         final overRect = overId == null ? null : input.itemRects[overId];
         if (activeTranslatedRect == null || overRect == null) {
           return baseIndex;

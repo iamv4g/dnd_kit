@@ -106,12 +106,30 @@ final class SortableScopeData {
     Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
     DndRect? activeRect,
   }) {
-    final overId = event.overId;
-    if (overId == null || overId == event.activeId) {
+    return resolveDetails(
+      SortableDragContext.commit(event),
+      itemRects: itemRects,
+      activeRect: activeRect,
+    );
+  }
+
+  /// Resolves same-scope move intent for [context].
+  ///
+  /// Serves both drag phases: a preview context reports where the item would
+  /// land right now, a commit context reports the move to apply. Both run the
+  /// same [strategy] over the same input, so a preview and the move that
+  /// follows it cannot disagree.
+  SortableMoveDetails? resolveDetails(
+    SortableDragContext context, {
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+  }) {
+    final overId = context.overId;
+    if (overId == null || overId == context.activeId) {
       return null;
     }
 
-    final fromIndex = indexOf(event.activeId);
+    final fromIndex = indexOf(context.activeId);
     final toIndex = indexOf(overId);
     if (fromIndex < 0 || toIndex < 0) {
       return null;
@@ -119,16 +137,16 @@ final class SortableScopeData {
 
     return strategy(
       SortableStrategyInput(
-        activeId: event.activeId,
+        activeId: context.activeId,
         overId: overId,
         itemIds: itemIds,
         itemRects: itemRects,
         fromIndex: fromIndex,
         fromContainerId: containerId,
         toContainerId: containerId,
-        event: event,
+        context: context,
         activeRect: activeRect,
-        activeTranslatedRect: activeRect?.translate(event.session.transform.offset),
+        activeTranslatedRect: activeRect?.translate(context.transform.offset),
       ),
     );
   }
