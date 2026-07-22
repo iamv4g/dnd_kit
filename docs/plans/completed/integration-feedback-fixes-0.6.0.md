@@ -4,7 +4,7 @@ Date: 2026-07-22
 
 ## Status
 
-Active
+Completed
 
 ## Outcome
 
@@ -203,7 +203,7 @@ the overlay child still renders at its drag-start size.
       documents `dropOnOver`; new `/docs/recipes` website page covering the
       four recipes, linked from the collision and sortable pages; website
       analyze clean and the SSG build generates the page).
-- [ ] Full validation lane green; plan moved to `docs/plans/completed/`.
+- [x] Full validation lane green; plan moved to `docs/plans/completed/`.
 
 ## Decisions
 
@@ -238,4 +238,44 @@ the overlay child still renders at its drag-start size.
 
 ## Result
 
-Complete after implementation.
+All five groups landed on `release/0.6.0`, one commit per group. The four
+must-have defects from `INTEGRATION_FEEDBACK.md` are fixed at the default and
+the family is versioned 0.6.0.
+
+Verified:
+
+- `dart run melos run validate` (full release gate) is green across all six
+  workspace packages: `dnd_kit`, `dnd_kit_flutter`, `dnd_kit_jaspr`,
+  `dnd_kit_website`, `flutter_example_gallery`, `jaspr_example_gallery`.
+- Focused suites: core 143 tests, Flutter 107, Jaspr VM 37 — all passing, with
+  8 new tests covering active-id exclusion, drag-start re-measure, auto-scroll
+  invalidation, `dropOnOver`, and drag-start overlay sizing.
+- Jaspr browser suites (`@TestOn('browser')`, not part of the melos lane) pass
+  under `-p chrome`: 23 tests across the five browser test files.
+- The website SSG build generates `/docs/recipes` and the page renders its four
+  sections.
+
+Limitations and risks:
+
+- One flaky failure was observed once in the Jaspr browser suite
+  (`auto_scroll_browser_test.dart`, "resolves horizontal collision against a
+  target scrolled into view"). It did not reproduce in seven subsequent runs of
+  the same command, and four baseline runs on `main` also passed, so the cause
+  is unproven. The test polls with a timeout while auto-scroll runs, so it is
+  timing-sensitive; worth watching in CI.
+- Forcing the whole Jaspr suite onto Chrome (`dart test -p chrome`) fails 14
+  VM-oriented tests with `TestRenderFragment is not a subtype of
+  DomRenderObject`. This is pre-existing — `main` fails the same 14 — and is
+  not addressed here.
+- The behavior changes are breaking for consumers who relied on `overId`
+  equalling `activeId`, on receiving the active item as a collision candidate,
+  or on overlays tracking a live source resize. `DndDragOverlayDetails` also
+  gains a required `initialActiveRect`. All are recorded in ADR 0024 and the
+  changelogs.
+- No interactive end-to-end pass was run against the examples; proof is the
+  automated suites plus the website build.
+
+Unattempted, tracked in ADR 0024 follow-up and this plan's out-of-scope list:
+opt-in animated sortable / placeholder API with a preview insert index, making
+`isOver` reflect the strategy decision, a programmatic drag API for tests, and
+scroll-listener-driven re-measurement for mid-drag manual scrolling.
