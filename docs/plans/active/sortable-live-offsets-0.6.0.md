@@ -189,17 +189,23 @@ extension; roadmap alignment.
   measure a large list before and after with the existing gallery; if the cost
   is material, narrow notification so only items whose offset actually changed
   rebuild. Treat a regression here as blocking, not cosmetic.
-- **Unexplained Jaspr browser flake.** During Group 2 the browser suite failed
-  `auto_scroll_browser_test.dart` ("resolves horizontal collision against a
-  target scrolled into view") four runs in a row, and a worktree at the Group 1
-  commit passed the same command — which looked like a Group 2 regression. On
-  byte-identical source restored from a stash, the same command then passed
-  nine consecutive times, including three under deliberate CPU load, so the
-  bisect result did not reproduce. The most consistent explanation is a stale
-  compiled bundle before the stash/pop rewrote the files, but that is unproven.
-  The same test also flaked once during 0.6.0. Watch it in CI; do not treat a
-  single red run here as proof of a regression, and do not treat this note as
-  proof it is healthy.
+- **Environment-sensitive Jaspr browser test.** `auto_scroll_browser_test.dart`
+  ("resolves horizontal collision against a target scrolled into view") asserts
+  `controller.overId` is still null immediately after a pointermove, before
+  auto-scroll brings the target into view. It fails with
+  `Expected: null / Actual: DndId(drop-zone)`, meaning the target is already
+  under the pointer — a layout/viewport condition, not drag logic.
+
+  Established by control runs rather than inference: the same command fails 3/3
+  on the current work, 3/3 on the Group 2 commit, and 3/3 on the untouched
+  `release/0.6.0` baseline — yet all of those passed earlier the same day (the
+  0.6.0 baseline 7/8, the Group 2 commit 9/9 including three under deliberate
+  CPU load). The code is not the variable; the browser environment is. Earlier
+  speculation in this plan about a stale compiled bundle was wrong.
+
+  Not a blocker for this line, but the test encodes an assumption about the
+  browser viewport that it does not control. It should either set an explicit
+  viewport or drop the pre-scroll assertion.
 - **Jaspr transform/measurement coupling.** CSS transforms do affect
   `getBoundingClientRect`. Safety depends on the offset being applied to a
   descendant of the measured node, which the current component structure gives
@@ -236,11 +242,12 @@ extension; roadmap alignment.
       `previewContainerId`; core 149 / flutter 112 / jaspr VM 37 green, full
       melos gate green, Jaspr browser suites 23 green).
       Single-container only; multi-container preview is still open (see below).
-- [ ] Group 2b — multi-container preview. `SortableMultiScope` resolution needs
-      the **active item's** container strategy, but strategies live on each
-      `SortableMultiContainerArea` widget rather than centrally, so the scope
-      cannot look one up today. Needs an area→strategy registry on the scope
-      host before decision 4's "preview for both scopes" can land.
+- [x] Group 2b — multi-container preview (owner-aware area→strategy registry on
+      the multi scope state; `SortableMultiContainerArea` is now stateful and
+      publishes its strategy; preview resolves with the **source** container's
+      strategy and is exposed through `SortableMultiScopeData.preview` and the
+      same `SortableItemDetails.previewIndex`; flutter 115 tests green, full
+      melos gate green). Decision 4 is now fully delivered.
 - [ ] Group 3 — `SortableOffsetResolver` + built-ins + unit tests.
 - [ ] Group 4 — adapter exposure, perf measurement, demo, docs, ADR, changelog
       extension, roadmap alignment.
@@ -303,6 +310,16 @@ extension; roadmap alignment.
   strategy, which lives on the area widgets rather than the scope, so it needs
   a registry the scope does not have yet. Sequenced as Group 2b rather than
   dropped.
+- 2026-07-22 (Group 2b): container areas publish their strategy to the scope
+  through an owner-aware registry, mirroring how `DndRegistry` handles
+  ownership, so a rebuilt area cannot unregister an entry a newer area already
+  took over. The preview resolves with the strategy of the container the
+  dragged item *came from*, not the one being hovered — that is the container
+  whose ordering rules the move is subject to.
+- 2026-07-22 (Group 2b): the multi scope needed no separate preview host; its
+  state already owns the controller for both the controlled and uncontrolled
+  cases, unlike `SortableScope`, which only reaches a controller below
+  `DndScope`.
 
 Promote the preview/offset contract and the "offsets are output, never input"
 rule into `docs/decisions/` when Group 3 lands.

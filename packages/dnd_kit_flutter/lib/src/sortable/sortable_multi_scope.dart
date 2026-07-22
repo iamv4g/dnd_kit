@@ -78,8 +78,22 @@ class SortableMultiScope extends StatefulWidget {
   State<SortableMultiScope> createState() => _SortableMultiScopeState();
 }
 
+/// A container area's registered reorder strategy and the widget that owns it.
+typedef _AreaStrategy = ({Object owner, SortableStrategy strategy});
+
 class _SortableMultiScopeState extends State<SortableMultiScope> {
   DndController? _internalController;
+  DndController? _listeningTo;
+  late final SortablePreview _preview = SortablePreview.resolvedBy(_resolvePreview);
+
+  /// Reorder strategies published by the container areas in this scope.
+  ///
+  /// Resolving a preview needs the strategy of the container holding the item
+  /// being dragged, but strategies are configured on each
+  /// [SortableMultiContainerArea] rather than on the scope, so the areas
+  /// register them here. Registration is owner-aware so a rebuilt area cannot
+  /// remove an entry a newer area already took over.
+  final Map<DndId, _AreaStrategy> _strategies = <DndId, _AreaStrategy>{};
 
   DndController get _controller => widget.controller ?? _internalController!;
 
@@ -98,6 +112,7 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
         collisionDetector: _effectiveCollisionDetector,
       );
     }
+    _bindController();
   }
 
   @override
@@ -107,28 +122,105 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
     if (oldWidget.controller == null && widget.controller != null) {
       _internalController?.dispose();
       _internalController = null;
-      return;
-    }
-
-    if (oldWidget.controller != null && widget.controller == null) {
+    } else if (oldWidget.controller != null && widget.controller == null) {
       _internalController = DndController(
         collisionDetector: _effectiveCollisionDetector,
       );
-      return;
-    }
-
-    if (widget.controller == null && oldWidget.collisionDetector != widget.collisionDetector) {
+    } else if (widget.controller == null &&
+        oldWidget.collisionDetector != widget.collisionDetector) {
       _internalController?.dispose();
       _internalController = DndController(
         collisionDetector: _effectiveCollisionDetector,
       );
     }
+
+    _bindController();
+    // Container membership feeds the resolution, so a change makes the cached
+    // preview stale even when the drag itself has not moved.
+    if (!_containersEqual(oldWidget.containers, widget.containers)) {
+      _preview.invalidate();
+    }
   }
 
   @override
   void dispose() {
+    _listeningTo?.removeListener(_preview.invalidate);
     _internalController?.dispose();
     super.dispose();
+  }
+
+  void _bindController() {
+    final next = _controller;
+    if (identical(_listeningTo, next)) {
+      return;
+    }
+
+    _listeningTo?.removeListener(_preview.invalidate);
+    _listeningTo = next;
+    next.addListener(_preview.invalidate);
+    _preview.invalidate();
+  }
+
+  void _registerStrategy(DndId id, SortableStrategy strategy, Object owner) {
+    final existing = _strategies[id];
+    if (existing != null && existing.owner == owner && existing.strategy == strategy) {
+      return;
+    }
+
+    _strategies[id] = (owner: owner, strategy: strategy);
+    _preview.invalidate();
+  }
+
+  void _unregisterStrategy(DndId id, Object owner) {
+    if (_strategies[id]?.owner != owner) {
+      return;
+    }
+
+    _strategies.remove(id);
+    _preview.invalidate();
+  }
+
+  SortableMoveDetails? _resolvePreview() {
+    final controller = _controller;
+    final session = controller.activeSession;
+    if (session == null || !controller.isDragging) {
+      return null;
+    }
+
+    // The strategy that matters is the one configured on the container holding
+    // the item being dragged, not the container being hovered.
+    SortableContainer? sourceContainer;
+    for (final container in widget.containers) {
+      if (container.contains(session.activeId)) {
+        sourceContainer = container;
+        break;
+      }
+    }
+
+    if (sourceContainer == null) {
+      return null;
+    }
+
+    return _data().resolveDetails(
+      SortableDragContext.preview(session: session, overId: controller.overId),
+      container: SortableMultiContainerAreaData(
+        id: sourceContainer.id,
+        itemIds: sourceContainer.itemIds,
+        strategy: _strategies[sourceContainer.id]?.strategy ?? SortableStrategies.verticalList,
+      ),
+      itemRects: controller.measuring.droppableRects,
+      activeRect: controller.activeRect,
+    );
+  }
+
+  SortableMultiScopeData _data() {
+    return SortableMultiScopeData(
+      containers: widget.containers,
+      moveResolver: widget.moveResolver,
+      crossContainerInsertion: widget.crossContainerInsertion,
+      onMove: widget.onMove,
+      preview: _preview,
+    );
   }
 
   @override
@@ -137,17 +229,36 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
       controller: _controller,
       enableHapticFeedback: widget.enableHapticFeedback,
       announcements: widget.announcements,
-      child: _SortableMultiScopeProvider(
-        data: SortableMultiScopeData(
-          containers: widget.containers,
-          moveResolver: widget.moveResolver,
-          crossContainerInsertion: widget.crossContainerInsertion,
-          onMove: widget.onMove,
+      child: _SortableMultiStrategyScope(
+        state: this,
+        child: _SortableMultiScopeProvider(
+          data: _data(),
+          child: widget.child,
         ),
-        child: widget.child,
       ),
     );
   }
+}
+
+/// Gives descendant container areas a way to publish their reorder strategy.
+class _SortableMultiStrategyScope extends InheritedWidget {
+  const _SortableMultiStrategyScope({
+    required this.state,
+    required super.child,
+  });
+
+  final _SortableMultiScopeState state;
+
+  static _SortableMultiScopeState? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_SortableMultiStrategyScope>()?.state;
+  }
+
+  @override
+  bool updateShouldNotify(_SortableMultiStrategyScope oldWidget) => state != oldWidget.state;
+}
+
+bool _containersEqual(List<SortableContainer> a, List<SortableContainer> b) {
+  return _listEquals(a, b);
 }
 
 /// Immutable data exposed by [SortableMultiScope].
@@ -159,7 +270,20 @@ final class SortableMultiScopeData {
     required this.onMove,
     this.moveResolver,
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
-  }) : containers = List<SortableContainer>.unmodifiable(containers);
+    SortablePreview? preview,
+  })  : containers = List<SortableContainer>.unmodifiable(containers),
+        preview = preview ?? SortablePreview.inactive();
+
+  /// Where the active item would land if the drag were released now.
+  ///
+  /// Resolved lazily and cached per move, using the reorder strategy of the
+  /// container the dragged item came from. Reports nothing when no drag is
+  /// active.
+  ///
+  /// Deliberately excluded from [operator ==]: this is live drag state, not
+  /// part of the scope's identity, and the instance is stable for the lifetime
+  /// of the scope.
+  final SortablePreview preview;
 
   /// The application-owned container order and membership.
   final List<SortableContainer> containers;
@@ -239,7 +363,7 @@ final class SortableMultiScopeData {
 }
 
 /// Registers a sortable container area for the common multi-container case.
-class SortableMultiContainerArea extends StatelessWidget {
+class SortableMultiContainerArea extends StatefulWidget {
   /// Creates a multi-container area.
   SortableMultiContainerArea({
     super.key,
@@ -297,19 +421,52 @@ class SortableMultiContainerArea extends StatelessWidget {
   }
 
   @override
+  State<SortableMultiContainerArea> createState() => _SortableMultiContainerAreaState();
+}
+
+class _SortableMultiContainerAreaState extends State<SortableMultiContainerArea> {
+  _SortableMultiScopeState? _scope;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scope = _SortableMultiStrategyScope.maybeOf(context);
+    if (!identical(_scope, scope)) {
+      _scope?._unregisterStrategy(widget.id, this);
+      _scope = scope;
+    }
+    _scope?._registerStrategy(widget.id, widget.strategy, this);
+  }
+
+  @override
+  void didUpdateWidget(SortableMultiContainerArea oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) {
+      _scope?._unregisterStrategy(oldWidget.id, this);
+    }
+    _scope?._registerStrategy(widget.id, widget.strategy, this);
+  }
+
+  @override
+  void dispose() {
+    _scope?._unregisterStrategy(widget.id, this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DndDroppable(
-      id: id,
-      disabled: disabled,
-      data: data,
-      builder: builder,
+      id: widget.id,
+      disabled: widget.disabled,
+      data: widget.data,
+      builder: widget.builder,
       child: _SortableMultiContainerAreaProvider(
         data: SortableMultiContainerAreaData(
-          id: id,
-          itemIds: itemIds,
-          strategy: strategy,
+          id: widget.id,
+          itemIds: widget.itemIds,
+          strategy: widget.strategy,
         ),
-        child: child,
+        child: widget.child,
       ),
     );
   }
@@ -410,6 +567,7 @@ class SortableMultiItem extends StatelessWidget {
   }
 
   SortableItemDetails _detailsFor(
+    SortableMultiScopeData multiScope,
     SortableMultiContainerAreaData container,
     DndDraggableDetails draggable,
     DndController controller,
@@ -424,6 +582,7 @@ class SortableMultiItem extends StatelessWidget {
       isOver: controller.overId == id,
       overId: controller.overId,
       session: draggable.session,
+      preview: multiScope.preview,
     );
   }
 
@@ -451,7 +610,7 @@ class SortableMultiItem extends StatelessWidget {
             : (context, draggableDetails, child) {
                 return builder!(
                   context,
-                  _detailsFor(container, draggableDetails, controller),
+                  _detailsFor(multiScope, container, draggableDetails, controller),
                   child,
                 );
               },
