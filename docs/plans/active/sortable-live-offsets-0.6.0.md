@@ -248,7 +248,12 @@ extension; roadmap alignment.
       strategy and is exposed through `SortableMultiScopeData.preview` and the
       same `SortableItemDetails.previewIndex`; flutter 115 tests green, full
       melos gate green). Decision 4 is now fully delivered.
-- [ ] Group 3 — `SortableOffsetResolver` + built-ins + unit tests.
+- [x] Group 3 — `SortableOffsetResolver` + built-ins + unit tests
+      (`SortableOffsetInput`, `SortableOffsets.verticalList` /
+      `horizontalList` / `none` in `dnd_kit/src/sortable_offsets.dart`; 14 unit
+      tests including variable heights, list gaps, lazy lists, and a
+      strategy-fed case that pins the index space; core 163 tests green, full
+      melos gate green).
 - [ ] Group 4 — adapter exposure, perf measurement, demo, docs, ADR, changelog
       extension, roadmap alignment.
 - [ ] Full validation lane green; branch merged into `release/0.6.0`; plan moved
@@ -321,8 +326,19 @@ extension; roadmap alignment.
   cases, unlike `SortableScope`, which only reaches a controller below
   `DndScope`.
 
+- 2026-07-22 (Group 3): every displaced item shifts by the **dragged** item's
+  extent plus the list gap, not into its neighbour's slot. Shifting into the
+  neighbour's slot is only correct for uniform sizes; the dragged-extent rule
+  reproduces the true post-move layout for variable heights too, which the
+  tests pin.
+- 2026-07-22 (Group 3): the plan's "unmeasured items get no offset" rule was
+  narrowed to what it was protecting against. A displaced item's offset does
+  not depend on its own rectangle, so an off-screen item can be offset
+  correctly; what genuinely cannot be guessed is the **dragged** item's extent,
+  so a missing active rect yields no offsets at all.
+
 Promote the preview/offset contract and the "offsets are output, never input"
-rule into `docs/decisions/` when Group 3 lands.
+rule into `docs/decisions/` when Group 4 lands.
 
 ## Validation
 
