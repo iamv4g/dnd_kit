@@ -103,6 +103,13 @@ Stable strategies include:
 - `SortableStrategies.verticalList`
 - `SortableStrategies.horizontalList`
 - `SortableStrategies.grid`
+- `SortableStrategies.dropOnOver`
+
+The first three resolve the target index from the dragged rect's center, so a
+drop commits only once that center crosses a neighbour's center. If your UI
+highlights the drop target or opens a placeholder gap, use
+`SortableStrategies.dropOnOver` instead: it lands the move on the item the
+drag is currently over, which is exactly what `isOver` reports.
 
 ## Customization
 

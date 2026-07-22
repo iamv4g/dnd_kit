@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `dnd_kit: ^0.6.0`, inheriting the drag-default fixes: the active
+  item is no longer its own drop target, drag start re-measures droppables, and
+  `SortableStrategies.dropOnOver` lands the drop where the highlight is.
+- **Breaking behavior:** `DndAutoScroll` now invalidates measurements and
+  re-resolves collision on every auto-scroll tick, so `overId` follows content
+  moving under a stationary pointer. `DndAutoScrollController` takes an
+  `onScrolled` callback for direct use.
+- **Breaking behavior:** `DndDragOverlay` sizes the preview from the drag-start
+  rect instead of the live active rect, so collapsing the source slot to open a
+  placeholder gap no longer clips the preview to zero.
+  `DndDragOverlayDetails` gains a required `initialActiveRect` alongside the
+  live `activeRect`.
+- `DndController` exposes `initialActiveRect`.
+
+
 ## 0.5.0
 
 - Depends on `dnd_kit: ^0.5.0` (`DndCollisionInput.activeId`).

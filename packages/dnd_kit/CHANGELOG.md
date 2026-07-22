@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0
+
+Fixes four defaults reported by a production integration; see
+`docs/decisions/0024-drag-defaults-match-what-users-see.md`.
+
+- **Breaking behavior:** the active draggable is no longer a collision
+  candidate. `DndCollisionInput.droppableRects` excludes the active id, so
+  `overId` can never equal `activeId` and drops near the source slot commit
+  instead of silently resolving to no move. Custom detectors no longer need to
+  filter the active item themselves.
+- **Breaking behavior:** `beginDrag` marks all measurements dirty, so a drag
+  started in a scrolled viewport measures targets at their current positions
+  instead of reusing rects captured at registration.
+- Adds `SortableStrategies.dropOnOver`, which commits the move at the drop-over
+  target so the drop lands where the `isOver` highlight is. The geometric
+  strategies keep resolving from the dragged rect's center and now document
+  that they can disagree with the highlight.
+- Adds `DndRuntime.initialActiveRect`, the active rectangle measured at drag
+  start and fixed for the session, so drag previews survive a collapsed source
+  slot.
+
+
 ## 0.5.0
 
 - Adds `DndCollisionInput.activeId`: the id of the draggable being moved is now
