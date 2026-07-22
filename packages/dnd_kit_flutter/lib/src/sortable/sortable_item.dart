@@ -77,6 +77,14 @@ final class SortableItemDetails {
 
   /// The container the active item would land in if released now.
   DndId? get previewContainerId => preview?.containerId;
+
+  /// How far this item should move to make room for the previewed drop.
+  ///
+  /// [DndPoint.zero] unless the scope has an offset resolver configured and
+  /// this item is displaced by the move. Apply it inside the builder — for
+  /// example with `AnimatedSlide` or `Transform.translate` — so the shift stays
+  /// below the measured box and cannot feed back into collision.
+  DndPoint get offset => preview?.offsetFor(id) ?? DndPoint.zero;
 }
 
 /// Registers a child as a sortable item in the nearest [SortableScope].

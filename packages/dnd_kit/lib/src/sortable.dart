@@ -193,17 +193,30 @@ final class SortablePreview {
   ///
   /// Used where no sortable scope is driving resolution, so consumers can read
   /// preview state unconditionally without null checks on the preview itself.
-  SortablePreview.inactive() : _resolve = null;
+  SortablePreview.inactive()
+      : _resolve = null,
+        _resolveOffsets = null;
 
   /// Creates a preview backed by [resolve].
   ///
   /// [resolve] should return null when no drag is active or the drag would not
   /// move anything. It is called at most once per [invalidate].
-  SortablePreview.resolvedBy(SortableMoveDetails? Function() resolve) : _resolve = resolve;
+  ///
+  /// [resolveOffsets] optionally reports how far the items this move displaces
+  /// should shift. It shares this cache, so it is also called at most once per
+  /// [invalidate], and only if something actually reads [offsets].
+  SortablePreview.resolvedBy(
+    SortableMoveDetails? Function() resolve, {
+    Map<DndId, DndPoint> Function()? resolveOffsets,
+  })  : _resolve = resolve,
+        _resolveOffsets = resolveOffsets;
 
   final SortableMoveDetails? Function()? _resolve;
+  final Map<DndId, DndPoint> Function()? _resolveOffsets;
   SortableMoveDetails? _cached;
+  Map<DndId, DndPoint>? _cachedOffsets;
   bool _dirty = true;
+  bool _offsetsDirty = true;
 
   /// The move intent the active drag would produce, or null when there is none.
   SortableMoveDetails? get details {
@@ -232,12 +245,36 @@ final class SortablePreview {
   /// Whether a move is currently previewed.
   bool get isActive => details != null;
 
+  /// How far each item displaced by the previewed move should shift.
+  ///
+  /// Empty when no offset resolver is configured, which is the default: the
+  /// library reports the geometry and the application decides whether and how
+  /// to animate it.
+  Map<DndId, DndPoint> get offsets {
+    final resolve = _resolveOffsets;
+    if (resolve == null) {
+      return const <DndId, DndPoint>{};
+    }
+
+    if (_offsetsDirty) {
+      _cachedOffsets = resolve();
+      _offsetsDirty = false;
+    }
+
+    return _cachedOffsets ?? const <DndId, DndPoint>{};
+  }
+
+  /// The offset for [id], or [DndPoint.zero] when it is not displaced.
+  DndPoint offsetFor(DndId id) => offsets[id] ?? DndPoint.zero;
+
   /// Discards the cached resolution so the next read resolves again.
   ///
   /// Adapters call this whenever drag state changes.
   void invalidate() {
     _dirty = true;
     _cached = null;
+    _offsetsDirty = true;
+    _cachedOffsets = null;
   }
 }
 

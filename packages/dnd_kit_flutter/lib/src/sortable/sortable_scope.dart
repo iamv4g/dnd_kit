@@ -13,6 +13,7 @@ class SortableScope extends StatelessWidget {
     this.controller,
     this.containerId,
     this.strategy = SortableStrategies.verticalList,
+    this.offsetResolver = SortableOffsets.none,
     required Iterable<DndId> itemIds,
     this.onMove,
     required this.child,
@@ -29,6 +30,19 @@ class SortableScope extends StatelessWidget {
 
   /// Computes reorder intent from the drag end event and measured item layout.
   final SortableStrategy strategy;
+
+  /// Reports how far each item the previewed move displaces should shift.
+  ///
+  /// Defaults to [SortableOffsets.none], which moves nothing. Set
+  /// [SortableOffsets.verticalList] or [SortableOffsets.horizontalList] to get
+  /// live offsets, then apply `details.offset` inside your
+  /// [SortableItem.builder] — for example with `AnimatedSlide` or a
+  /// `Transform.translate`.
+  ///
+  /// Apply it *inside* the builder rather than around the [SortableItem]: the
+  /// builder's output sits below the measured box, so the offset cannot change
+  /// a measured rectangle and feed itself back into collision.
+  final SortableOffsetResolver offsetResolver;
 
   /// The application-owned item order.
   final List<DndId> itemIds;
@@ -69,6 +83,7 @@ class SortableScope extends StatelessWidget {
       child: _SortablePreviewHost(
         containerId: containerId,
         strategy: strategy,
+        offsetResolver: offsetResolver,
         itemIds: itemIds,
         onMove: onMove,
         child: child,
@@ -86,6 +101,7 @@ class _SortablePreviewHost extends StatefulWidget {
   const _SortablePreviewHost({
     required this.containerId,
     required this.strategy,
+    required this.offsetResolver,
     required this.itemIds,
     required this.onMove,
     required this.child,
@@ -93,6 +109,7 @@ class _SortablePreviewHost extends StatefulWidget {
 
   final DndId? containerId;
   final SortableStrategy strategy;
+  final SortableOffsetResolver offsetResolver;
   final List<DndId> itemIds;
   final SortableMoveCallback? onMove;
   final Widget child;
@@ -102,7 +119,10 @@ class _SortablePreviewHost extends StatefulWidget {
 }
 
 class _SortablePreviewHostState extends State<_SortablePreviewHost> {
-  late final SortablePreview _preview = SortablePreview.resolvedBy(_resolvePreview);
+  late final SortablePreview _preview = SortablePreview.resolvedBy(
+    _resolvePreview,
+    resolveOffsets: _resolveOffsets,
+  );
   DndController? _controller;
 
   @override
@@ -124,7 +144,9 @@ class _SortablePreviewHostState extends State<_SortablePreviewHost> {
     super.didUpdateWidget(oldWidget);
     // Item order and strategy feed the resolution, so a change to either makes
     // the cached preview stale even when the drag itself has not moved.
-    if (oldWidget.strategy != widget.strategy || !listEquals(oldWidget.itemIds, widget.itemIds)) {
+    if (oldWidget.strategy != widget.strategy ||
+        oldWidget.offsetResolver != widget.offsetResolver ||
+        !listEquals(oldWidget.itemIds, widget.itemIds)) {
       _preview.invalidate();
     }
   }
@@ -156,6 +178,24 @@ class _SortablePreviewHostState extends State<_SortablePreviewHost> {
       SortableDragContext.preview(session: session, overId: controller.overId),
       itemRects: controller.measuring.droppableRects,
       activeRect: controller.activeRect,
+    );
+  }
+
+  Map<DndId, DndPoint> _resolveOffsets() {
+    final details = _preview.details;
+    final controller = _controller;
+    if (details == null || controller == null) {
+      return const <DndId, DndPoint>{};
+    }
+
+    return widget.offsetResolver(
+      SortableOffsetInput(
+        activeId: details.activeId,
+        itemIds: widget.itemIds,
+        itemRects: controller.measuring.droppableRects,
+        fromIndex: details.fromIndex,
+        toIndex: details.toIndex,
+      ),
     );
   }
 
