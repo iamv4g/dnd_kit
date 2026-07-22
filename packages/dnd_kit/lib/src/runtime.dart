@@ -207,6 +207,13 @@ class DndRuntime {
 
     final droppableRects = <DndId, DndRect>{};
     for (final entry in measuring.droppableRects.entries) {
+      // An item can never be its own drop target; sortable items register the
+      // same id as draggable and droppable, so the active id must be excluded
+      // before detection or it wins its own overlap/pointer test.
+      if (entry.key == session.activeId) {
+        continue;
+      }
+
       final registration = registry.droppable(entry.key);
       if (registration == null || registration.disabled) {
         continue;

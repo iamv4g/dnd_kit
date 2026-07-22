@@ -176,7 +176,10 @@ the overlay child still renders at its drag-start size.
 ## Progress
 
 - [x] Branch `release/0.6.0` created from `main` (732f558).
-- [ ] Group 1 — active id excluded from collision candidates + tests.
+- [x] Group 1 — active id excluded from collision candidates + tests
+      (`_updateCollision` skips `session.activeId`; doc on
+      `DndCollisionInput.droppableRects`; 2 new runtime tests; core 137 /
+      flutter 105 / jaspr VM 37 tests green).
 - [ ] Group 2 — drag-start re-measure + auto-scroll invalidation + tests.
 - [ ] Group 3 — `SortableStrategies.dropOnOver` + tests + strategy docs.
 - [ ] Group 4 — overlay drag-start sizing + tests.

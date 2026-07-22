@@ -20,6 +20,10 @@ final class DndCollisionInput {
   final DndRect activeRect;
 
   /// Candidate droppable rectangles keyed by stable droppable id.
+  ///
+  /// The runtime excludes the active draggable's own droppable before invoking
+  /// the detector, so custom detectors never see the dragged item as a
+  /// candidate and do not need to filter [activeId] themselves.
   final Map<DndId, DndRect> droppableRects;
 
   /// The current pointer position, when pointer-based detection is available.

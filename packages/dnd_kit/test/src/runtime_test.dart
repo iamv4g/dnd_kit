@@ -180,6 +180,82 @@ void main() {
       expect(captured?.activeId, const DndId('task-1'));
     });
 
+    test('excludes the active draggable from collision candidates', () {
+      DndCollisionInput? captured;
+      final runtime = DndRuntime(
+        collisionDetector: (input) {
+          captured = input;
+          return DndCollisionDetectors.compose(
+            const <DndCollisionDetector>[
+              DndCollisionDetectors.pointerWithin,
+              DndCollisionDetectors.rectIntersection,
+            ],
+          )(input);
+        },
+      );
+
+      // Sortable-style setup: the active item registers the same id as
+      // draggable and droppable, sitting directly above a neighbouring item.
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-1')));
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-2')));
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-1'),
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-2'),
+        const DndRect(left: 0, top: 40, width: 100, height: 40),
+      );
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // The pointer is still inside the active item's own slot; without the
+      // exclusion the active would win its own pointer test and become overId.
+      runtime.moveDrag(const DndPoint(50, 30));
+
+      expect(captured?.droppableRects.containsKey(const DndId('task-1')), isFalse);
+      expect(captured?.droppableRects.containsKey(const DndId('task-2')), isTrue);
+      expect(runtime.overId, const DndId('task-2'));
+    });
+
+    test('resolves the neighbouring target without overshooting the source slot', () {
+      final runtime = DndRuntime();
+
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-1')));
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-2')));
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-1'),
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-2'),
+        const DndRect(left: 0, top: 40, width: 100, height: 40),
+      );
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // Pointer enters the neighbour: it must win immediately.
+      runtime.moveDrag(const DndPoint(50, 45));
+      expect(runtime.overId, const DndId('task-2'));
+
+      final endEvent = runtime.endDrag();
+      expect(endEvent?.overId, const DndId('task-2'));
+    });
+
     test('refreshes dirty measurements before collision detection', () {
       final runtime = DndRuntime();
 
