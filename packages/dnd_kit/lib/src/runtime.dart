@@ -54,6 +54,7 @@ class DndRuntime {
 
   DndState _state;
   DndRect? _activeRect;
+  DndRect? _initialActiveRect;
   DndId? _overId;
 
   /// Registered draggable and droppable metadata for this runtime.
@@ -75,7 +76,18 @@ class DndRuntime {
   DndId? get overId => _overId;
 
   /// The active draggable rectangle, anchored at drag start when one is known.
+  ///
+  /// The origin stays fixed for the session while the size follows the source
+  /// widget, so collision keeps working when a remeasure changes the item's
+  /// size mid-drag.
   DndRect? get activeRect => _activeRect;
+
+  /// The active draggable rectangle as measured at drag start.
+  ///
+  /// Unlike [activeRect] this never changes during a session. Drag previews
+  /// size themselves from it so collapsing the source slot — the usual way to
+  /// open a placeholder gap — cannot shrink the preview.
+  DndRect? get initialActiveRect => _initialActiveRect;
 
   /// Whether no drag is active or pending.
   bool get isIdle => _state is DndIdle;
@@ -111,6 +123,7 @@ class DndRuntime {
       measuring.refreshDirty();
     }
     _activeRect = activeRect ?? measuring.draggableRect(event.activeId);
+    _initialActiveRect = _activeRect;
     _overId = null;
     _setState(
       DndPending(
@@ -200,6 +213,7 @@ class DndRuntime {
     }
 
     _activeRect = null;
+    _initialActiveRect = null;
     _overId = null;
     _setState(const DndIdle());
   }

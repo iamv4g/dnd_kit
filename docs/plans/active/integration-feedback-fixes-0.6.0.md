@@ -193,7 +193,11 @@ the overlay child still renders at its drag-start size.
       as collision-driven on Flutter `DndDroppableDetails` /
       `SortableItemDetails` and Jaspr `DndDroppableDetails`; core 142 /
       flutter 106 / jaspr VM 37 tests green).
-- [ ] Group 4 — overlay drag-start sizing + tests.
+- [x] Group 4 — overlay drag-start sizing + tests (`DndRuntime.initialActiveRect`
+      captured at `beginDrag` and cleared at `reset`; exposed on both adapter
+      controllers and on `DndDragOverlayDetails`; Flutter and Jaspr overlays
+      size from it; core 143 / flutter 107 / jaspr VM 37 tests green, jaspr
+      analyze clean).
 - [ ] Group 5 — recipes, API docs, ADR, changelogs, version bump to 0.6.0.
 - [ ] Full validation lane green; plan moved to `docs/plans/completed/`.
 
@@ -210,9 +214,11 @@ the overlay child still renders at its drag-start size.
   also re-runs `moveDrag(currentPointer)` because auto-scroll moves content
   under a stationary pointer — invalidating rects alone would leave `overId`
   stale until the next pointer move.
-- Open (decide before Group 4 implementation): exact name/shape of the
-  drag-start rect on the runtime and `DndDragOverlayDetails`
-  (`initialActiveRect` vs. exposing size only).
+- 2026-07-22: The drag-start rect is a full `DndRect` named `initialActiveRect`
+  (not a size-only field), so the overlay derives both position and size from
+  one value and applications can reason about the original slot. The live
+  `activeRect` keeps its current semantics for collision. Both Flutter and
+  Jaspr overlays were fixed — the sizing defect was identical in each.
 
 ## Validation
 

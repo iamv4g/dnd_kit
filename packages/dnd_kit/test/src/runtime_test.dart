@@ -308,6 +308,37 @@ void main() {
       expect(runtime.activeRect, const DndRect(left: 0, top: 40, width: 100, height: 40));
     });
 
+    test('keeps the drag-start rect stable while the source collapses', () {
+      final runtime = DndRuntime();
+
+      const activeId = DndId('task-1');
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: activeId,
+          position: DndPoint(20, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // The application collapses the source slot to open a placeholder gap.
+      runtime.measuring.updateDraggableRect(
+        activeId,
+        const DndRect(left: 0, top: 0, width: 100, height: 0),
+      );
+      runtime.moveDrag(const DndPoint(20, 60));
+
+      expect(runtime.activeRect?.height, 0, reason: 'live rect follows the source');
+      expect(
+        runtime.initialActiveRect,
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+
+      runtime.endDrag();
+      runtime.reset();
+      expect(runtime.initialActiveRect, isNull);
+    });
+
     test('refreshes dirty measurements before collision detection', () {
       final runtime = DndRuntime();
 

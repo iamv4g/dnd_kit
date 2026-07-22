@@ -56,7 +56,13 @@ class DndController extends ChangeNotifier {
   DndId? get overId => _runtime.overId;
 
   /// The active draggable rectangle, anchored at drag start when one is known.
+  ///
+  /// The origin stays fixed for the session while the size follows the source
+  /// widget; see [initialActiveRect] for the unchanging drag-start rectangle.
   DndRect? get activeRect => _runtime.activeRect;
+
+  /// The active draggable rectangle as measured at drag start.
+  DndRect? get initialActiveRect => _runtime.initialActiveRect;
 
   /// Whether no drag is active or pending.
   bool get isIdle => _runtime.isIdle;

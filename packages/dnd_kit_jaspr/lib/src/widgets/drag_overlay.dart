@@ -17,14 +17,25 @@ final class DndDragOverlayDetails {
   const DndDragOverlayDetails({
     required this.session,
     required this.activeRect,
+    required this.initialActiveRect,
     required this.overId,
   });
 
   /// The active drag session.
   final DndDragSession session;
 
-  /// The active draggable rectangle, anchored at drag start.
+  /// The live active draggable rectangle.
+  ///
+  /// The origin is anchored at drag start; the size follows the source
+  /// element, so it collapses with the source when the application opens a
+  /// placeholder gap. The overlay itself is sized from [initialActiveRect].
   final DndRect activeRect;
+
+  /// The active draggable rectangle as measured at drag start.
+  ///
+  /// This is the size the overlay is laid out with, and it stays constant for
+  /// the whole session.
+  final DndRect initialActiveRect;
 
   /// The droppable currently under the active drag, when one exists.
   final DndId? overId;
@@ -115,13 +126,15 @@ class _DndDragOverlayState extends State<DndDragOverlay> {
     final controller = _effectiveController;
     final session = controller.activeSession;
     final activeRect = controller.activeRect;
-    if (session == null || activeRect == null) {
+    final initialActiveRect = controller.initialActiveRect ?? activeRect;
+    if (session == null || activeRect == null || initialActiveRect == null) {
       return const Component.empty();
     }
 
     final details = DndDragOverlayDetails(
       session: session,
       activeRect: activeRect,
+      initialActiveRect: initialActiveRect,
       overId: controller.overId,
     );
 
@@ -130,13 +143,15 @@ class _DndDragOverlayState extends State<DndDragOverlay> {
         'data-dnd-overlay': 'true',
         'aria-hidden': 'true',
       },
+      // Sized from the drag-start rect so collapsing the source slot to open a
+      // placeholder gap cannot shrink the drag preview to nothing.
       styles: Styles(
         position: Position.fixed(
-          left: activeRect.left.px,
-          top: activeRect.top.px,
+          left: initialActiveRect.left.px,
+          top: initialActiveRect.top.px,
         ),
-        width: activeRect.width.px,
-        height: activeRect.height.px,
+        width: initialActiveRect.width.px,
+        height: initialActiveRect.height.px,
         zIndex: const ZIndex(1),
         pointerEvents: component.ignoringPointer ? PointerEvents.none : PointerEvents.auto,
         transform: details.transform.isIdentity
