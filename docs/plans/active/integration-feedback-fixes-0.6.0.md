@@ -198,7 +198,11 @@ the overlay child still renders at its drag-start size.
       controllers and on `DndDragOverlayDetails`; Flutter and Jaspr overlays
       size from it; core 143 / flutter 107 / jaspr VM 37 tests green, jaspr
       analyze clean).
-- [ ] Group 5 — recipes, API docs, ADR, changelogs, version bump to 0.6.0.
+- [x] Group 5 — recipes, API docs, ADR, changelogs, version bump to 0.6.0
+      (ADR 0024; family bumped to 0.6.0 with changelogs; Flutter README
+      documents `dropOnOver`; new `/docs/recipes` website page covering the
+      four recipes, linked from the collision and sortable pages; website
+      analyze clean and the SSG build generates the page).
 - [ ] Full validation lane green; plan moved to `docs/plans/completed/`.
 
 ## Decisions

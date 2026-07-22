@@ -65,6 +65,18 @@ class SortablePage extends StatelessComponent {
               'verticalList — a stacked column of items.',
               'horizontalList — a row of items, e.g. tabs or nav pills.',
               'grid — a wrapping grid that reflows in two dimensions.',
+              'dropOnOver — lands the move on the item the drag is over, '
+                  'whatever the layout.',
+            ]),
+            docProseRich([
+              docText('The first three resolve the target from the dragged '
+                  'rectangle\'s center, so a move commits once that center '
+                  'crosses a neighbour\'s. If your UI highlights the target or '
+                  'opens a gap, prefer '),
+              inlineCode('dropOnOver'),
+              docText(' so the drop lands where the highlight is — see the '),
+              docLink('recipes', docHref('recipes')),
+              docText('.'),
             ]),
           ],
         ),
