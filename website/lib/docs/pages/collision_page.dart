@@ -49,13 +49,17 @@ class CollisionPage extends StatelessComponent {
                   'Precise, but needs a pointer (not keyboard) drag.',
             ]),
             docProseRich([
-              docText('Candidates never include the item being dragged, so a '
-                  'sortable item cannot win its own collision. The dragged id '
-                  'is still passed along as '),
+              docText(
+                'Candidates never include the item being dragged, so a '
+                'sortable item cannot win its own collision. The dragged id '
+                'is still passed along as ',
+              ),
               inlineCode('DndCollisionInput.activeId'),
-              docText(', which lets a custom detector scope candidates by '
-                  'kind when two sortable surfaces share one controller — see '
-                  'the '),
+              docText(
+                ', which lets a custom detector scope candidates by '
+                'kind when two sortable surfaces share one controller — see '
+                'the ',
+              ),
               docLink('recipes', docHref('recipes')),
               docText('.'),
             ]),

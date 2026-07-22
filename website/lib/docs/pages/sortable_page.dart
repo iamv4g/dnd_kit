@@ -69,10 +69,12 @@ class SortablePage extends StatelessComponent {
                   'whatever the layout.',
             ]),
             docProseRich([
-              docText('The first three resolve the target from the dragged '
-                  'rectangle\'s center, so a move commits once that center '
-                  'crosses a neighbour\'s. If your UI highlights the target or '
-                  'opens a gap, prefer '),
+              docText(
+                'The first three resolve the target from the dragged '
+                'rectangle\'s center, so a move commits once that center '
+                'crosses a neighbour\'s. If your UI highlights the target or '
+                'opens a gap, prefer ',
+              ),
               inlineCode('dropOnOver'),
               docText(' so the drop lands where the highlight is — see the '),
               docLink('recipes', docHref('recipes')),

@@ -50,12 +50,16 @@ class RecipesPage extends StatelessComponent {
                   'a stationary pointer.',
             ]),
             docProseRich([
-              docText('That leaves one thing for you: wrap the scrolling '
-                  'region in '),
+              docText(
+                'That leaves one thing for you: wrap the scrolling '
+                'region in ',
+              ),
               inlineCode('DndAutoScroll'),
-              docText(' so a drag can reach items that are off-screen. If you '
-                  'move the viewport yourself mid-drag — an outer page scroll, '
-                  'say — call '),
+              docText(
+                ' so a drag can reach items that are off-screen. If you '
+                'move the viewport yourself mid-drag — an outer page scroll, '
+                'say — call ',
+              ),
               inlineCode('controller.measuring.markAllDirty()'),
               docText(' afterwards.'),
             ]),
@@ -73,18 +77,22 @@ class RecipesPage extends StatelessComponent {
           children: [
             docProseRich([
               inlineCode('isOver'),
-              docText(' reports the collision result — the item the drag is '
-                  'over right now. The default strategies resolve the drop '
-                  'from the dragged rectangle\'s center instead, which does '
-                  'not commit until that center crosses a neighbour\'s center. '
-                  'If your UI lights up a target or opens a gap, those two '
-                  'signals will visibly disagree.'),
+              docText(
+                ' reports the collision result — the item the drag is '
+                'over right now. The default strategies resolve the drop '
+                'from the dragged rectangle\'s center instead, which does '
+                'not commit until that center crosses a neighbour\'s center. '
+                'If your UI lights up a target or opens a gap, those two '
+                'signals will visibly disagree.',
+              ),
             ]),
             docProseRich([
               docText('Use '),
               inlineCode('SortableStrategies.dropOnOver'),
-              docText(' to land the move on whatever is highlighted. On a '
-                  'multi-container board, set it per container area — '),
+              docText(
+                ' to land the move on whatever is highlighted. On a '
+                'multi-container board, set it per container area — ',
+              ),
               inlineCode('SortableMultiContainerArea'),
               docText(' takes a '),
               inlineCode('strategy'),
@@ -118,11 +126,15 @@ class RecipesPage extends StatelessComponent {
                   'is looking at.',
             ]),
             docProseRich([
-              docText('The drag preview is sized from the rectangle measured '
-                  'at drag start ('),
+              docText(
+                'The drag preview is sized from the rectangle measured '
+                'at drag start (',
+              ),
               inlineCode('initialActiveRect'),
-              docText('), not the live one, so collapsing the source cannot '
-                  'shrink it away.'),
+              docText(
+                '), not the live one, so collapsing the source cannot '
+                'shrink it away.',
+              ),
             ]),
             docCodeBlock('placeholder_gap.dart', _placeholderFlutter),
           ],
@@ -146,9 +158,11 @@ class RecipesPage extends StatelessComponent {
             docProseRich([
               docText('The detector gets the dragged item as '),
               inlineCode('DndCollisionInput.activeId'),
-              docText(', which is what makes kind-scoping possible. The active '
-                  'item is already excluded from the candidates, so you only '
-                  'filter for kind.'),
+              docText(
+                ', which is what makes kind-scoping possible. The active '
+                'item is already excluded from the candidates, so you only '
+                'filter for kind.',
+              ),
             ]),
             docCodeBlock('nested_scopes.dart', _nestedFlutter),
           ],
