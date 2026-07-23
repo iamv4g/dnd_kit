@@ -146,16 +146,20 @@ class RecipesPage extends StatelessComponent {
               jaspr: _placeholderJaspr,
             ),
             docProseRich([
-              docText('Hide the source row rather than collapsing its height. '
-                  'The offsets shift the neighbours by the row\'s full extent '
-                  'to reclaim its slot; if you also collapsed the slot, the '
-                  'layout would reclaim that space a second time and the rows '
-                  'would overshoot. If you are building a gap by hand without '
-                  'the offset resolver and do collapse the source, the drag '
-                  'preview is sized from '),
+              docText(
+                'Hide the source row rather than collapsing its height. '
+                'The offsets shift the neighbours by the row\'s full extent '
+                'to reclaim its slot; if you also collapsed the slot, the '
+                'layout would reclaim that space a second time and the rows '
+                'would overshoot. If you are building a gap by hand without '
+                'the offset resolver and do collapse the source, the drag '
+                'preview is sized from ',
+              ),
               inlineCode('initialActiveRect'),
-              docText(', the drag-start rectangle, so the floating copy still '
-                  'survives the collapse.'),
+              docText(
+                ', the drag-start rectangle, so the floating copy still '
+                'survives the collapse.',
+              ),
             ]),
           ],
         ),
