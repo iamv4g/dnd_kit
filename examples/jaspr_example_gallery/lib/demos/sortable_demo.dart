@@ -159,10 +159,10 @@ class _SortableDemoState extends State<SortableDemo> {
       // keeping its slot: the neighbours slide over that slot, leaving one
       // clean gap that follows the pointer.
       styles: Styles(
-        border: .all(
-          color: over ? cAccentBright : cBorder,
-          width: over ? 2.px : 1.px,
-        ),
+        // The live gap already shows where the row will land, so the per-row
+        // over border is redundant. Keeping the border constant also avoids a
+        // width change that would perturb the item's measured size mid-drag.
+        border: .all(color: cBorder, width: 1.px),
         radius: .circular(18.px),
         opacity: isActive ? 0 : 1,
         backgroundColor: background,
