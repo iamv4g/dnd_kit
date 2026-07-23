@@ -110,11 +110,13 @@ class _SortableDemoState extends State<SortableDemo> {
           DndDragOverlay(
             builder: (context, overlayDetails) {
               final track = _trackFor(overlayDetails.activeId);
+              // Mirror the in-list row's box exactly — _TrackContent already
+              // carries the padding, and the border stays 1px — so the floating
+              // copy matches the source size. The accent border colour and the
+              // shadow lift it without enlarging it.
               return div(
                 styles: Styles(
-                  display: .flex,
-                  padding: .symmetric(vertical: 14.px, horizontal: 18.px),
-                  border: .all(color: cAccentBright, width: 2.px),
+                  border: .all(color: cAccentBright, width: 1.px),
                   radius: .circular(18.px),
                   shadow: BoxShadow(
                     offsetX: 0.px,
@@ -122,8 +124,6 @@ class _SortableDemoState extends State<SortableDemo> {
                     blur: 36.px,
                     color: .rgba(154, 52, 18, 0.22),
                   ),
-                  alignItems: .center,
-                  gap: .all(14.px),
                   backgroundColor: cCardBg,
                 ),
                 [_TrackContent(track: track, dragging: true)],
