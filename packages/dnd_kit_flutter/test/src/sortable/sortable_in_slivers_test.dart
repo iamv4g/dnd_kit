@@ -3,11 +3,11 @@ import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Sortables inside a CustomScrollView / slivers — the layout that motivated the
-// drag-start re-measure fix. Without re-measuring on drag start, a drag begun
-// after scrolling would aim at stale (pre-scroll) target positions, so the drop
-// would resolve to the wrong item. These tests scroll first, then drop, and
-// assert the move lands on the target actually under the pointer.
+// Sortables inside a CustomScrollView / slivers. Without re-measuring on drag
+// start, a drag begun after scrolling would aim at stale (pre-scroll) target
+// positions, so the drop would resolve to the wrong item. These tests scroll
+// first, then drop, and assert the move lands on the target actually under the
+// pointer.
 void main() {
   group('Sortable inside CustomScrollView', () {
     testWidgets('single-container drop lands on the correct target after scrolling',
@@ -82,8 +82,7 @@ void main() {
       final scrollController = ScrollController();
       addTearDown(scrollController.dispose);
 
-      // Two sections stacked vertically in one CustomScrollView — the day-list
-      // shape from the integration report.
+      // Two sections stacked vertically in one CustomScrollView.
       final sectionA = <DndId>[for (var i = 0; i < 5; i += 1) DndId('a$i')];
       final sectionB = <DndId>[for (var i = 0; i < 5; i += 1) DndId('b$i')];
       final containers = <SortableContainer>[

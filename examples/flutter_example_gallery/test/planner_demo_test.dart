@@ -83,12 +83,39 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('picking an item up and dropping in place keeps the order',
+        (tester) async {
+      await pumpPlanner(tester);
+
+      final brief = find.text('Write the brief');
+      final wireframe = find.text('Wireframe the flow');
+      // Morning: brief above wireframe.
+      expect(tester.getTopLeft(brief).dy,
+          lessThan(tester.getTopLeft(wireframe).dy));
+
+      // Press to enter drag, then release without moving.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey('item-handle:i-brief'))),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 30));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      // Nothing moved: the two items keep their original order.
+      expect(
+        tester.getTopLeft(brief).dy,
+        lessThan(tester.getTopLeft(wireframe).dy),
+        reason: 'a pick-up with no movement must not reorder',
+      );
+    });
+
     testWidgets('the target section grows to hold an incoming item',
         (tester) async {
       await pumpPlanner(tester);
 
-      final afternoon =
-          find.byKey(const ValueKey('section-card:s-afternoon'));
+      final afternoon = find.byKey(const ValueKey('section-card:s-afternoon'));
       final restingHeight = tester.getSize(afternoon).height;
 
       // Start dragging the brief (from Morning) over the Afternoon section.

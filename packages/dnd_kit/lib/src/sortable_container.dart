@@ -203,6 +203,18 @@ abstract final class SortableMultiContainer {
       return null;
     }
 
+    // While the pointer is still inside the dragged item's own slot, resolve to
+    // no move. The active item is excluded from the droppable set, so its
+    // vacated slot otherwise resolves to the nearest neighbour: in preview this
+    // shifts the neighbour the instant the item is picked up, and on commit it
+    // would swap them even though the pointer never left the slot. The active
+    // rect keeps its original position for the whole drag, so it marks exactly
+    // that slot; dropping back onto it is a no-op.
+    final originRect = input.activeRect;
+    if (originRect != null && originRect.containsPoint(context.session.currentPointer)) {
+      return null;
+    }
+
     final fromContainer = _containerContaining(input.containers, context.activeId);
     final target = _targetFor(input.containers, overId);
     if (fromContainer == null || target == null) {

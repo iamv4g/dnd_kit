@@ -334,6 +334,64 @@ void main() {
       expect(result.firstOrNull?.id, const DndId('task-4'));
     });
   });
+
+  group('SortableMultiContainer.resolveMove (preview)', () {
+    // task-1's original slot is (0,0,100,20). The active item is excluded from
+    // the droppable set, so a pointer still resting in that slot resolves over
+    // the neighbour task-2 — but nothing should move until the pointer leaves.
+    SortableMultiMoveInput previewOver(DndPoint pointer) {
+      return SortableMultiMoveInput(
+        context: SortableDragContext.preview(
+          session: DndDragSession(
+            activeId: const DndId('task-1'),
+            initialPointer: const DndPoint(10, 10),
+            currentPointer: pointer,
+          ),
+          overId: const DndId('task-2'),
+        ),
+        containers: containers,
+        itemRects: itemRects,
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 20),
+        strategy: SortableStrategies.dropOnOver,
+      );
+    }
+
+    test('reports no move while the pointer is still inside the active slot', () {
+      expect(
+        SortableMultiContainer.resolveMove(previewOver(const DndPoint(10, 12))),
+        isNull,
+        reason: 'picking an item up must not shift its neighbours',
+      );
+    });
+
+    test('reports the move once the pointer leaves the active slot', () {
+      final details = SortableMultiContainer.resolveMove(previewOver(const DndPoint(10, 40)));
+      expect(details?.fromIndex, 0);
+      expect(details?.toIndex, 1);
+    });
+
+    test('a drop still inside the active slot is a no-op', () {
+      // Press-hold to drag, release without moving: the drop point is still in
+      // task-1's own slot, so committing must not swap it with the neighbour.
+      final input = SortableMultiMoveInput(
+        context: SortableDragContext.commit(
+          DndDragEndEvent(
+            session: DndDragSession(
+              activeId: const DndId('task-1'),
+              initialPointer: const DndPoint(10, 10),
+              currentPointer: const DndPoint(10, 12),
+            ),
+            overId: const DndId('task-2'),
+          ),
+        ),
+        containers: containers,
+        itemRects: itemRects,
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 20),
+        strategy: SortableStrategies.dropOnOver,
+      );
+      expect(SortableMultiContainer.resolveMove(input), isNull);
+    });
+  });
 }
 
 DndDragEndEvent _event({
