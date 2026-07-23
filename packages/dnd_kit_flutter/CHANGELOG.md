@@ -29,6 +29,16 @@
 - `SortableMultiScope` takes an `offsetResolver` (default
   `SortableMultiOffsets.none`), so a board can open a live gap within and across
   columns. Apply `details.offset` inside your `SortableMultiItem` builder.
+- `DndController` takes an optional `collisionDetector` and exposes it as a
+  settable property.
+- `SortableMultiScope` takes an optional `collisionDetector` and installs its
+  effective detector on whatever controller it is given — including one the
+  application created and passed in — so a board wired to an external controller
+  ranks collisions correctly with no manual setup.
+- Inherits the core multi-container refinements: cross-container insertion
+  tracks the pointer within the hovered card, the gap between cards (and the
+  space below the last card) resolves to the nearest card, and picking an item
+  up or dropping it back in place no longer reorders.
 
 
 ## 0.5.0

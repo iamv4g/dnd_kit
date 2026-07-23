@@ -45,6 +45,22 @@ Live sortable feedback, added in the same line; see
   cross-container move closes the source column and opens the target column.
   See `docs/decisions/0026-cross-container-sortable-offsets.md`.
 
+Multi-container refinements from live testing.
+
+- `DndRuntime.collisionDetector` is now settable (was final), and its
+  constructor argument is optional. `_updateCollision` reads it on every move,
+  so a surface such as `SortableMultiScope` can install its board detector on a
+  controller the application created.
+- `SortableMultiContainer.collisionDetector` decides before/after an item from
+  the pointer's position within the hovered card, not the dragged rect's
+  center, so cross-container insertion no longer flips with the grab offset. The
+  gap between two cards, and the trailing space below the last card, resolve to
+  the nearest card instead of to the whole column.
+- `SortableMultiContainer.resolveMove` reports no move while the pointer is
+  still inside the dragged item's own original slot (which stays fixed for the
+  drag). Picking an item up no longer shifts its neighbours, and releasing
+  without leaving the slot no longer reorders — in both preview and commit.
+
 
 ## 0.5.0
 
