@@ -285,6 +285,54 @@ void main() {
 
       expect(result.firstOrNull?.id, const DndId('empty'));
     });
+
+    test('resolves the gap between two cards to the nearest card', () {
+      final detector = SortableMultiContainer.collisionDetector(
+        containers: () => containers,
+      );
+
+      // task-3 at y 0-20, task-4 at y 30-50; pointer at y 26 sits in the gap
+      // between them, inside the 'done' column but over no card. It is nearer
+      // task-4 (center 40) than task-3 (center 10).
+      final result = detector(
+        DndCollisionInput(
+          activeRect: const DndRect(left: 5, top: 20, width: 80, height: 20),
+          pointer: const DndPoint(20, 26),
+          droppableRects: <DndId, DndRect>{
+            const DndId('done'): const DndRect(left: 0, top: 0, width: 200, height: 200),
+            const DndId('task-3'): const DndRect(left: 0, top: 0, width: 100, height: 20),
+            const DndId('task-4'): const DndRect(left: 0, top: 30, width: 100, height: 20),
+          },
+        ),
+      );
+
+      expect(
+        result.firstOrNull?.id,
+        const DndId('task-4'),
+        reason: 'the inter-card gap resolves to the nearest card, not the column',
+      );
+    });
+
+    test('resolves trailing space below the last card to the last card', () {
+      final detector = SortableMultiContainer.collisionDetector(
+        containers: () => containers,
+      );
+
+      // Pointer well below both cards but still inside the tall 'done' column.
+      final result = detector(
+        DndCollisionInput(
+          activeRect: const DndRect(left: 5, top: 100, width: 80, height: 20),
+          pointer: const DndPoint(20, 150),
+          droppableRects: <DndId, DndRect>{
+            const DndId('done'): const DndRect(left: 0, top: 0, width: 200, height: 200),
+            const DndId('task-3'): const DndRect(left: 0, top: 0, width: 100, height: 20),
+            const DndId('task-4'): const DndRect(left: 0, top: 30, width: 100, height: 20),
+          },
+        ),
+      );
+
+      expect(result.firstOrNull?.id, const DndId('task-4'));
+    });
   });
 }
 

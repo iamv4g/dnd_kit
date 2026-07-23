@@ -139,8 +139,12 @@ abstract final class SortableMultiContainer {
   ///
   /// Pointer hits prefer item droppables over container droppables so a card
   /// dropped inside a populated column resolves to the card it is over, not the
-  /// whole column behind it. When the pointer is not inside any droppable, the
-  /// [fallback] detector decides the ranking.
+  /// whole column behind it. When the pointer is inside a populated column but
+  /// over no card — the gap between two cards, or the trailing space — it
+  /// resolves to the nearest card so a gap opens next to it, rather than the
+  /// whole column (which would append at the end). An empty column still
+  /// resolves to the container. When the pointer is not inside any droppable,
+  /// the [fallback] detector decides the ranking.
   static DndCollisionDetector collisionDetector({
     required Iterable<SortableContainer> Function() containers,
     DndCollisionDetector fallback = DndCollisionDetectors.closestCenter,
@@ -150,7 +154,7 @@ abstract final class SortableMultiContainer {
     return (input) {
       final snapshot = List<SortableContainer>.unmodifiable(containers());
       final pointerWithin = DndCollisionDetectors.pointerWithin(input);
-      final prioritizedPointer = _prioritizePointerCollisions(pointerWithin, snapshot);
+      final prioritizedPointer = _prioritizePointerCollisions(input, pointerWithin, snapshot);
       if (prioritizedPointer.isNotEmpty) {
         return prioritizedPointer;
       }
@@ -288,6 +292,7 @@ abstract final class SortableMultiContainer {
   }
 
   static DndCollisionResult _prioritizePointerCollisions(
+    DndCollisionInput input,
     DndCollisionResult result,
     List<SortableContainer> containers,
   ) {
@@ -305,14 +310,58 @@ abstract final class SortableMultiContainer {
       return DndCollisionResult(itemCollisions);
     }
 
-    final containerCollisions = result.collisions.where(
-      (collision) => containerIds.contains(collision.id),
-    );
-    if (containerCollisions.isNotEmpty) {
-      return DndCollisionResult(containerCollisions);
+    final containerCollisions =
+        result.collisions.where((collision) => containerIds.contains(collision.id)).toList();
+    if (containerCollisions.isEmpty) {
+      return result;
     }
 
-    return result;
+    // The pointer is inside a column but over no card (the gap between cards or
+    // the trailing space). Resolve to the nearest card in a hovered column so
+    // the gap opens next to it; keep the column only when it has no measured
+    // cards (an empty column), where appending is the right target.
+    final nearestCard = _nearestCardInHoveredContainers(input, containerCollisions, containers);
+    if (nearestCard != null) {
+      return DndCollisionResult(<DndCollision>[nearestCard]);
+    }
+
+    return DndCollisionResult(containerCollisions);
+  }
+
+  static DndCollision? _nearestCardInHoveredContainers(
+    DndCollisionInput input,
+    List<DndCollision> containerCollisions,
+    List<SortableContainer> containers,
+  ) {
+    final pointer = input.pointer;
+    if (pointer == null) {
+      return null;
+    }
+
+    DndId? nearestId;
+    var nearestDistance = double.infinity;
+    for (final collision in containerCollisions) {
+      for (final container in containers) {
+        if (container.id != collision.id) {
+          continue;
+        }
+        for (final itemId in container.itemIds) {
+          final rect = input.droppableRects[itemId];
+          if (rect == null) {
+            continue;
+          }
+          final dx = pointer.x - rect.center.x;
+          final dy = pointer.y - rect.center.y;
+          final distance = dx * dx + dy * dy;
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestId = itemId;
+          }
+        }
+      }
+    }
+
+    return nearestId == null ? null : DndCollision(id: nearestId, score: nearestDistance);
   }
 
   static int _crossContainerIndex(
