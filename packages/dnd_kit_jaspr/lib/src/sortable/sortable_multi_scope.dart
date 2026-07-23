@@ -16,6 +16,7 @@ class SortableMultiScope extends StatefulComponent {
     required Iterable<SortableContainer> containers,
     this.moveResolver,
     this.collisionDetector,
+    this.offsetResolver = SortableMultiOffsets.none,
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
     required this.onMove,
     required this.child,
@@ -36,6 +37,16 @@ class SortableMultiScope extends StatefulComponent {
 
   /// Optional override for collision ranking.
   final DndCollisionDetector? collisionDetector;
+
+  /// Reports how far each item a previewed move displaces should shift.
+  ///
+  /// Defaults to [SortableMultiOffsets.none], which moves nothing. Set
+  /// [SortableMultiOffsets.verticalLists] (or `horizontalLists`) to open a live
+  /// gap within and across columns, then apply `details.offset` inside your
+  /// [SortableMultiItem] builder as a CSS transform. Apply it inside the
+  /// builder so the transform stays below the measured element and cannot feed
+  /// back into collision.
+  final SortableMultiOffsetResolver offsetResolver;
 
   /// How cross-container drops resolve around an over-item target.
   final SortableMultiInsertionStrategy crossContainerInsertion;
@@ -68,7 +79,10 @@ typedef _AreaStrategy = ({Object owner, SortableStrategy strategy});
 class _SortableMultiScopeState extends State<SortableMultiScope> {
   DndController? _ownController;
   DndController? _listeningTo;
-  late final SortablePreview _preview = SortablePreview.resolvedBy(_resolvePreview);
+  late final SortablePreview _preview = SortablePreview.resolvedBy(
+    _resolvePreview,
+    resolveOffsets: _resolveOffsets,
+  );
 
   /// Reorder strategies published by the container areas in this scope.
   ///
@@ -119,9 +133,10 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
     }
 
     _bindController();
-    // Container membership feeds the resolution, so a change makes the cached
-    // preview stale even when the drag itself has not moved.
-    if (!_listEquals(oldComponent.containers, component.containers)) {
+    // Container membership and the resolver feed the resolution, so a change to
+    // either makes the cached preview stale even when the drag has not moved.
+    if (oldComponent.offsetResolver != component.offsetResolver ||
+        !_listEquals(oldComponent.containers, component.containers)) {
       _preview.invalidate();
     }
   }
@@ -194,6 +209,26 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
       ),
       itemRects: controller.measuring.droppableRects,
       activeRect: controller.activeRect,
+    );
+  }
+
+  Map<DndId, DndPoint> _resolveOffsets() {
+    final move = _preview.details;
+    if (move == null) {
+      return const <DndId, DndPoint>{};
+    }
+
+    return component.offsetResolver(
+      SortableMultiOffsetInput(
+        activeId: move.activeId,
+        containers: component.containers,
+        itemRects: _controller.measuring.droppableRects,
+        fromContainerId: move.fromContainerId,
+        fromIndex: move.fromIndex,
+        toContainerId: move.toContainerId,
+        toIndex: move.toIndex,
+        activeRect: _controller.activeRect,
+      ),
     );
   }
 

@@ -22,6 +22,10 @@
   measured element.
 - `SortableMultiContainerArea` is now a `StatefulComponent` so it can publish
   its strategy to the scope. Its constructor is unchanged.
+- `SortableMultiScope` takes an `offsetResolver` (default
+  `SortableMultiOffsets.none`), so a board can open a live gap within and across
+  columns. Apply `details.offset` inside your `SortableMultiItem` builder as a
+  CSS transform.
 
 
 ## 0.5.0

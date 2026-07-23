@@ -28,17 +28,17 @@ void main() {
                 for (final id in itemIds)
                   SortableItem(
                     id: id,
-                    builder: (context, details, child) {
-                      offsets[details.id] = details.offset;
+                    builder: (context, itemDetails, child) {
+                      offsets[itemDetails.id] = itemDetails.offset;
                       // Applied inside the builder, so the transform lands on a
                       // child of the measured element rather than on it.
                       return div(
                         styles: Styles(
-                          transform: details.offset == DndPoint.zero
+                          transform: itemDetails.offset == DndPoint.zero
                               ? Transform.none
                               : Transform.translate(
-                                  x: details.offset.x.px,
-                                  y: details.offset.y.px,
+                                  x: itemDetails.offset.x.px,
+                                  y: itemDetails.offset.y.px,
                                 ),
                         ),
                         [child],

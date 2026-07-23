@@ -87,6 +87,9 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
   Widget build(BuildContext context) {
     return SortableMultiScope(
       containers: _containers,
+      // Open a live gap within and across columns while dragging. The library
+      // reports the per-card offset; the card builder animates it.
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
       child: Scaffold(
         body: Container(

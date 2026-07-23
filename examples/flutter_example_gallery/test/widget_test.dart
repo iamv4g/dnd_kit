@@ -28,6 +28,47 @@ void main() {
     expect(find.text('Design Dark Mode UI'), findsOneWidget);
   });
 
+  testWidgets('the multi-container board opens a gap while dragging a card',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const ExampleGalleryApp());
+    await tester.tap(find.text('Multi-container'));
+    await tester.pumpAndSettle();
+
+    // Cards in the same column: dragging one over the other opens a gap, which
+    // the card builder renders as a translation transform.
+    final firstCard = find.text('Design Dark Mode UI');
+    final secondCard = find.text('Implement Multi-Container API');
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(firstCard),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await gesture.moveTo(tester.getCenter(secondCard));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // At least one card carries a non-identity translation — the live gap.
+    final shifted = tester
+        .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+        .any((c) {
+      final t = c.transform;
+      return t != null &&
+          (t.getTranslation().y.abs() > 0.5 ||
+              t.getTranslation().x.abs() > 0.5);
+    });
+    expect(shifted, isTrue,
+        reason: 'a displaced card should carry an offset transform');
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('keeps the basic drag overlay aligned inside the gallery shell',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 800));
