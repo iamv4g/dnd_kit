@@ -143,11 +143,9 @@ class _SortableDemoState extends State<SortableDemo> {
   ) {
     final isActive = itemState.isActive || itemState.isDragging;
     final over = itemState.isOver;
-    final background = isActive
-        ? cActiveRow
-        : over
-        ? cAccentSoft
-        : cCardBg;
+    // The live gap shows where the row lands, so hovered neighbours are not
+    // highlighted: no over border and no over background tint.
+    final background = isActive ? cActiveRow : cCardBg;
     final offset = itemState.offset;
     return div(
       // The offset is applied here, inside the item builder, so the transform
