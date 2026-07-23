@@ -126,15 +126,20 @@ class _SortableDemoState extends State<SortableDemo> {
                     child: SortableItem(
                       id: DndId(track.id),
                       builder: (context, details, child) {
-                        // Applied inside the builder so the shift stays
-                        // below the measured box and cannot feed back into
-                        // collision detection.
+                        // Applied inside the builder so the shift stays below
+                        // the measured box and cannot feed back into collision
+                        // detection.
                         return AnimatedSlide(
                           duration: const Duration(milliseconds: 150),
                           curve: Curves.easeOut,
                           offset: Offset(0, details.offset.y / _rowExtent),
+                          // The dragged row floats in the overlay, so hide the
+                          // in-list copy while keeping its slot. The neighbours
+                          // slide over that slot, leaving one clean gap that
+                          // follows the pointer instead of a visible source row
+                          // the others overlap.
                           child: Opacity(
-                            opacity: details.isDragging ? 0.4 : 1,
+                            opacity: details.isDragging ? 0 : 1,
                             child: child,
                           ),
                         );

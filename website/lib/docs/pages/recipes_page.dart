@@ -133,6 +133,9 @@ class RecipesPage extends StatelessComponent {
                   'collision.',
               'Pair it with dropOnOver so the item lands in the gap the user '
                   'is looking at.',
+              'Hide the dragged row in place — the floating copy lives in the '
+                  'overlay — but keep its slot. The neighbours slide over that '
+                  'slot, leaving one clean gap.',
               'Read previewIndex when you want the landing index itself — for '
                   'a label, a counter, or an announcement.',
             ]),
@@ -143,16 +146,16 @@ class RecipesPage extends StatelessComponent {
               jaspr: _placeholderJaspr,
             ),
             docProseRich([
-              docText(
-                'Collapsing the dragged item\'s own slot is optional and '
-                'still app-owned. It is safe to do: the drag preview is '
-                'sized from the rectangle measured at drag start (',
-              ),
+              docText('Hide the source row rather than collapsing its height. '
+                  'The offsets shift the neighbours by the row\'s full extent '
+                  'to reclaim its slot; if you also collapsed the slot, the '
+                  'layout would reclaim that space a second time and the rows '
+                  'would overshoot. If you are building a gap by hand without '
+                  'the offset resolver and do collapse the source, the drag '
+                  'preview is sized from '),
               inlineCode('initialActiveRect'),
-              docText(
-                '), not the live one, so collapsing the source cannot '
-                'shrink the preview away.',
-              ),
+              docText(', the drag-start rectangle, so the floating copy still '
+                  'survives the collapse.'),
             ]),
           ],
         ),

@@ -154,13 +154,17 @@ class _SortableDemoState extends State<SortableDemo> {
       // lands on a child of the measured element and cannot feed back into
       // collision detection. dnd_kit reports the distance; this demo chooses
       // the transition.
+      //
+      // The dragged row floats in the overlay, so hide the in-list copy while
+      // keeping its slot: the neighbours slide over that slot, leaving one
+      // clean gap that follows the pointer.
       styles: Styles(
         border: .all(
           color: over ? cAccentBright : cBorder,
           width: over ? 2.px : 1.px,
         ),
         radius: .circular(18.px),
-        opacity: isActive ? 0.55 : 1,
+        opacity: isActive ? 0 : 1,
         backgroundColor: background,
         transform: offset == DndPoint.zero
             ? Transform.none

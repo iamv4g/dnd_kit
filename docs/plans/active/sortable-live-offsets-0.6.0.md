@@ -357,6 +357,17 @@ extension; roadmap alignment.
   correctly; what genuinely cannot be guessed is the **dragged** item's extent,
   so a missing active rect yields no offsets at all.
 
+- 2026-07-23 (post-Group 4): collapsing the source slot double-counts with the
+  offsets and must not be recommended. The offsets already shift the neighbours
+  by the dragged row's full extent to reclaim its slot; collapsing the slot
+  makes the real layout reclaim that space a second time, so the rows
+  overshoot. `initialActiveRect` does not fix this — it only keeps the overlay
+  sized, and a size change below the measured box still feeds back into
+  measurement anyway. The correct pattern with offsets is to **hide** the
+  source row (opacity 0) while keeping its slot; both gallery demos and the
+  website recipe now do that. This supersedes the earlier turn's proposal to
+  wire `initialActiveRect` into the offset resolver.
+
 Promote the preview/offset contract and the "offsets are output, never input"
 rule into `docs/decisions/` when Group 4 lands.
 

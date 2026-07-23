@@ -118,7 +118,7 @@ void main() {
       reason: 'the live gap should shift the displaced row upward',
     );
 
-    // The dragged row is rendered twice while dragging: the dimmed source and
+    // The dragged row is rendered twice while dragging: the in-list source and
     // the overlay copy that follows the pointer. Without the overlay the row
     // would appear frozen in place.
     final draggedLabels = tester.widgetList<Text>(firstRow).toList();
@@ -132,6 +132,18 @@ void main() {
       isTrue,
       reason:
           'the drag overlay should track the pointer, not stay at the source slot',
+    );
+
+    // The in-list source row is hidden while dragging, so the neighbours
+    // sliding over its slot read as one clean gap instead of overlapping a
+    // visible row. Exactly one item — the dragged one — is at opacity 0.
+    final zeroOpacities = tester
+        .widgetList<Opacity>(find.byType(Opacity))
+        .where((widget) => widget.opacity == 0);
+    expect(
+      zeroOpacities,
+      hasLength(1),
+      reason: 'the dragged source row should be hidden, not dimmed',
     );
 
     await gesture.up();
