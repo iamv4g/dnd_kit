@@ -6,6 +6,7 @@ import 'demos/basic_demo.dart';
 import 'demos/collision_demo.dart';
 import 'demos/modifiers_demo.dart';
 import 'demos/multi_container/multi_container_demo.dart';
+import 'demos/planner/planner_demo.dart';
 import 'demos/sensors_demo.dart';
 import 'demos/sortable_demo.dart';
 
@@ -87,6 +88,15 @@ final _demos = <_DemoEntry>[
     hint: 'Keyboard + announcements',
     icon: Icons.accessibility_new,
     builder: (_) => const AccessibilityDemo(),
+  ),
+  // Flutter-only advanced demo (no catalog/Jaspr peer): nested sortables in a
+  // CustomScrollView with sticky day headers.
+  _DemoEntry(
+    slug: 'planner',
+    label: 'Planner',
+    hint: 'Nested sortables in slivers',
+    icon: Icons.calendar_view_day_outlined,
+    builder: (_) => const PlannerDemo(),
   ),
 ];
 

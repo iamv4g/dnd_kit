@@ -284,6 +284,237 @@ void main() {
       expect(committed?.toContainerId, const DndId('done'));
     });
 
+    testWidgets('opens a gap when dropping between two cards of another column', (tester) async {
+      final offsets = <DndId, DndPoint>{};
+
+      // The 'done' column spaces its cards apart so there is a real gap region
+      // between d0 and d1 that belongs to the column but to no card.
+      const todo = <DndId>[DndId('t0')];
+      const done = <DndId>[DndId('d0'), DndId('d1')];
+      final containers = <SortableContainer>[
+        SortableContainer(id: const DndId('todo'), itemIds: todo),
+        SortableContainer(id: const DndId('done'), itemIds: done),
+      ];
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: SortableMultiScope(
+              containers: containers,
+              offsetResolver: SortableMultiOffsets.verticalLists,
+              onMove: (_) {},
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    width: 120,
+                    height: 300,
+                    child: SortableMultiContainerArea(
+                      id: const DndId('todo'),
+                      itemIds: todo,
+                      strategy: SortableStrategies.dropOnOver,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const <Widget>[
+                          SortableMultiItem(
+                            id: DndId('t0'),
+                            child: SizedBox(key: ValueKey<String>('t0'), width: 120, height: 40),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 160,
+                    top: 0,
+                    width: 120,
+                    height: 300,
+                    child: SortableMultiContainerArea(
+                      id: const DndId('done'),
+                      itemIds: done,
+                      strategy: SortableStrategies.dropOnOver,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          SortableMultiItem(
+                            id: const DndId('d0'),
+                            builder: (context, details, child) {
+                              offsets[const DndId('d0')] = details.offset;
+                              return child;
+                            },
+                            child: const SizedBox(
+                              key: ValueKey<String>('d0'),
+                              width: 120,
+                              height: 40,
+                            ),
+                          ),
+                          // The gap region between the two cards.
+                          const SizedBox(height: 60),
+                          SortableMultiItem(
+                            id: const DndId('d1'),
+                            builder: (context, details, child) {
+                              offsets[const DndId('d1')] = details.offset;
+                              return child;
+                            },
+                            child: const SizedBox(
+                              key: ValueKey<String>('d1'),
+                              width: 120,
+                              height: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final d0 = tester.getRect(find.byKey(const ValueKey<String>('d0')));
+      final d1 = tester.getRect(find.byKey(const ValueKey<String>('d1')));
+      final gapPoint = Offset(d0.center.dx, (d0.bottom + d1.top) / 2);
+
+      offsets.clear();
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey<String>('t0'))),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.moveTo(gapPoint);
+      await tester.pump();
+
+      // The pointer is in the empty space between d0 and d1. It must resolve to
+      // a card and open a gap there, not fall through to the column and append.
+      final anyGap =
+          (offsets[const DndId('d0')]?.y ?? 0) != 0 || (offsets[const DndId('d1')]?.y ?? 0) != 0;
+      expect(anyGap, isTrue, reason: 'the inter-card gap should open a placeholder, not vanish');
+
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('an app-provided plain controller still gets multi behavior', (tester) async {
+      // A plain DndController with no detector: the scope must install its
+      // multi-container detector on it, so the gap between cards still resolves
+      // to a card instead of appending at the column end.
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      final offsets = <DndId, DndPoint>{};
+      const done = <DndId>[DndId('d0'), DndId('d1')];
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: SortableMultiScope(
+              controller: controller,
+              containers: <SortableContainer>[
+                SortableContainer(id: const DndId('todo'), itemIds: const <DndId>[DndId('t0')]),
+                SortableContainer(id: const DndId('done'), itemIds: done),
+              ],
+              offsetResolver: SortableMultiOffsets.verticalLists,
+              onMove: (_) {},
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    width: 120,
+                    height: 300,
+                    child: SortableMultiContainerArea(
+                      id: const DndId('todo'),
+                      itemIds: const <DndId>[DndId('t0')],
+                      strategy: SortableStrategies.dropOnOver,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const <Widget>[
+                          SortableMultiItem(
+                            id: DndId('t0'),
+                            child: SizedBox(key: ValueKey<String>('t0'), width: 120, height: 40),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 160,
+                    top: 0,
+                    width: 120,
+                    height: 300,
+                    child: SortableMultiContainerArea(
+                      id: const DndId('done'),
+                      itemIds: done,
+                      strategy: SortableStrategies.dropOnOver,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          SortableMultiItem(
+                            id: const DndId('d0'),
+                            builder: (context, details, child) {
+                              offsets[const DndId('d0')] = details.offset;
+                              return child;
+                            },
+                            child: const SizedBox(
+                              key: ValueKey<String>('d0'),
+                              width: 120,
+                              height: 40,
+                            ),
+                          ),
+                          const SizedBox(height: 60),
+                          SortableMultiItem(
+                            id: const DndId('d1'),
+                            builder: (context, details, child) {
+                              offsets[const DndId('d1')] = details.offset;
+                              return child;
+                            },
+                            child: const SizedBox(
+                              key: ValueKey<String>('d1'),
+                              width: 120,
+                              height: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final d0 = tester.getRect(find.byKey(const ValueKey<String>('d0')));
+      final d1 = tester.getRect(find.byKey(const ValueKey<String>('d1')));
+
+      offsets.clear();
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey<String>('t0'))),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.moveTo(Offset(d0.center.dx, (d0.bottom + d1.top) / 2));
+      await tester.pump();
+
+      final anyGap =
+          (offsets[const DndId('d0')]?.y ?? 0) != 0 || (offsets[const DndId('d1')]?.y ?? 0) != 0;
+      expect(anyGap, isTrue, reason: 'the scope must wire its detector onto the app controller');
+
+      await gesture.up();
+      await tester.pump();
+    });
+
     testWidgets('offsets are zero without a resolver', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

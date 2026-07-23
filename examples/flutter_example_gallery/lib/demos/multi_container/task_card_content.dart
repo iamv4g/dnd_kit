@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'task_item.dart';
 
+/// A Kanban card rendered in plain Material style, matching the other demos.
 class TaskCardContent extends StatelessWidget {
   const TaskCardContent({
     super.key,
@@ -16,125 +17,80 @@ class TaskCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = task.color;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: isDraggingOverlay ? 0.12 : 0.05),
-        borderRadius: BorderRadius.circular(12),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isHovered || isDraggingOverlay
-              ? themeColor.withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.08),
-          width: 1.0,
+              ? scheme.primary
+              : scheme.outlineVariant,
         ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Colors.black.withValues(alpha: isDraggingOverlay ? 0.4 : 0.15),
-            blurRadius: isDraggingOverlay ? 16 : 8,
-            offset: Offset(0, isDraggingOverlay ? 8 : 4),
-          ),
-          if (isHovered || isDraggingOverlay)
-            BoxShadow(
-              color: themeColor.withValues(alpha: 0.08),
-              blurRadius: 12,
-              spreadRadius: 1,
-            ),
-        ],
+        boxShadow: isDraggingOverlay
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Row for Priority & Accent Color Indicator
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              _PriorityChip(priority: task.priority),
+              const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
-                  color: _priorityColor(task.priority).withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: _priorityColor(task.priority).withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  task.priority,
-                  style: TextStyle(
-                    color: _priorityColor(task.priority),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: themeColor,
+                  color: task.color,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: themeColor.withValues(alpha: 0.5),
-                      blurRadius: 6,
-                    ),
-                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Title
+          const SizedBox(height: 10),
           Text(
             task.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 6),
-
-          // Description
+          const SizedBox(height: 4),
           Text(
             task.description,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12,
-              height: 1.35,
-            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style:
+                textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 16),
-
-          // Owner Avatar & Info Row
+          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.account_circle_outlined,
-                    size: 16,
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    task.owner,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+              Icon(
+                Icons.account_circle_outlined,
+                size: 16,
+                color: scheme.onSurfaceVariant,
               ),
+              const SizedBox(width: 4),
+              Text(
+                task.owner,
+                style: textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
               Icon(
                 Icons.drag_indicator,
                 size: 16,
-                color: Colors.white.withValues(alpha: 0.35),
+                color: scheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -142,17 +98,35 @@ class TaskCardContent extends StatelessWidget {
       ),
     );
   }
+}
 
-  Color _priorityColor(String priority) {
-    switch (priority) {
-      case 'High':
-        return const Color(0xffef4444);
-      case 'Medium':
-        return const Color(0xfff59e0b);
-      case 'Low':
-        return const Color(0xff10b981);
-      default:
-        return const Color(0xff9ca3af);
-    }
+class _PriorityChip extends StatelessWidget {
+  const _PriorityChip({required this.priority});
+
+  final String priority;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (priority) {
+      'High' => Colors.red.shade600,
+      'Medium' => Colors.amber.shade700,
+      'Low' => Colors.green.shade600,
+      _ => Theme.of(context).colorScheme.outline,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        priority,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 }

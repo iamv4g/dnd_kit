@@ -106,6 +106,18 @@ A sensible fill order is shared-engine-visible concepts first (collision,
 sensors, modifiers, auto-scroll), then the presets (sortable, multi-container),
 then accessibility.
 
+## Advanced demos outside the parity catalog
+
+Beyond the eight catalog demos, a gallery may carry adapter-specific advanced
+demos that exercise a scenario the shared catalog does not, and that have no
+peer in the other adapter. These are labelled and ordered after the catalog,
+and are exempt from the parity matrix.
+
+- `flutter_example_gallery` — `planner`: nested sortables (a per-day
+  `SortableScope` for sections plus one board-wide `SortableMultiScope` for
+  items, sharing a controller) inside a `CustomScrollView` with sticky day
+  headers. Slivers are Flutter-only, so there is no Jaspr peer.
+
 ## How this feeds later work
 
 - **Docs live embeds** (deferred from the docs phase): once a catalog demo
