@@ -331,6 +331,12 @@ class _SectionCard extends StatelessWidget {
                           key: ValueKey('item-card:$itemId'),
                           item: _boardItem(context, itemId),
                         ),
+                      // Offsets are paint-only, so shifting items down to open a
+                      // gap does not grow this content-height card. Reserve real
+                      // layout space at the tail when an item from another
+                      // section is previewing a drop here, so the shifted items
+                      // stay inside the card instead of spilling out.
+                      _IncomingReserve(section: section),
                     ],
                   ),
                 ),
@@ -347,6 +353,41 @@ class _SectionCard extends StatelessWidget {
     // through the ancestor state.
     final state = context.findAncestorStateOfType<_PlannerDemoState>()!;
     return state._board.items[id]!;
+  }
+}
+
+/// Grows a section by one dragged-item's height while an item from another
+/// section is previewing a drop into it, so the transform-shifted items have
+/// somewhere to go.
+class _IncomingReserve extends StatelessWidget {
+  const _IncomingReserve({required this.section});
+
+  final PlannerSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller =
+        context.findAncestorStateOfType<_PlannerDemoState>()!._controller;
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final active = controller.activeId;
+        final preview = SortableMultiScope.of(context).preview;
+        final targetsThis = preview.containerId ==
+            DndId(PlannerIds.sectionContainer(section.id));
+        final isForeignItem = active != null &&
+            PlannerIds.isItem(active.value) &&
+            !section.itemIds.contains(PlannerIds.decode(active.value));
+        final reserve = targetsThis && isForeignItem
+            ? (controller.initialActiveRect?.height ?? 56) + 8
+            : 0.0;
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          child: SizedBox(width: double.infinity, height: reserve),
+        );
+      },
+    );
   }
 }
 

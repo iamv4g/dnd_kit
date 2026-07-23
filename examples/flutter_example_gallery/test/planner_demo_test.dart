@@ -83,6 +83,36 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the target section grows to hold an incoming item',
+        (tester) async {
+      await pumpPlanner(tester);
+
+      final afternoon =
+          find.byKey(const ValueKey('section-card:s-afternoon'));
+      final restingHeight = tester.getSize(afternoon).height;
+
+      // Start dragging the brief (from Morning) over the Afternoon section.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey('item-handle:i-brief'))),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      await gesture.moveTo(tester.getCenter(find.text('Team standup')));
+      await tester.pumpAndSettle();
+
+      // While hovering, the section reserves layout for the incoming item so the
+      // shifted items stay inside the card.
+      expect(
+        tester.getSize(afternoon).height,
+        greaterThan(restingHeight + 20),
+        reason: 'the section should reserve room for the incoming item',
+      );
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('an item note survives a move', (tester) async {
       await pumpPlanner(tester);
 
