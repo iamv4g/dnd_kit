@@ -4,7 +4,7 @@ Date: 2026-07-22
 
 ## Status
 
-Active
+Completed
 
 ## Outcome
 
@@ -271,7 +271,7 @@ extension; roadmap alignment.
       side, Jaspr animates the offset with a CSS transition). A gallery widget
       test drives a real drag and asserts the displaced row moves up and that
       the drop commits the move the gap previewed.
-- [ ] Full validation lane green; branch merged into `release/0.6.0`; plan moved
+- [x] Full validation lane green; branch merged into `release/0.6.0`; plan moved
       to `docs/plans/completed/`.
 
 ## Decisions
@@ -389,4 +389,48 @@ rule into `docs/decisions/` when Group 4 lands.
 
 ## Result
 
-Complete after implementation.
+Live sortable feedback shipped on the unreleased 0.6.0 line. Sortable
+resolution is phase-aware (`SortableDragContext`), a live preview is published
+for single- and multi-container scopes, and an opt-in offset plug-in
+(`SortableOffsetResolver` / `SortableOffsets.*`) reports how far each displaced
+item should shift. Offsets default to `none`, so no existing UI changes.
+
+Verified:
+
+- `dart run melos run validate` green across all six workspace packages at each
+  group.
+- Core (`dart test`) covers `SortableDragContext` phase parity, the
+  preview-equals-commit invariant, single-resolution-per-move, and the offset
+  resolvers (variable heights, list gaps, lazy lists, strategy-fed index
+  space).
+- Flutter widget tests cover preview publication, offsets reaching the builder,
+  the no-oscillation / rects-unchanged guard, and a large-list per-move cost
+  check (`none` 152ms vs `verticalList` 105ms over 200 items, same cost class).
+- A Jaspr browser test pins that a builder-applied offset does not move a
+  measured rectangle on real DOM.
+- Both galleries demonstrate a real placeholder gap; a Flutter gallery test
+  drives a drag and asserts the gap opens, the overlay tracks the pointer, the
+  source row is hidden, and the drop commits the previewed move.
+
+Scope delivered vs. deferred:
+
+- Delivered: preview for both single- and multi-container scopes; offsets for
+  single-container scopes.
+- Deferred (ADR 0025 follow-up): cross-container offsets, grid offsets, a
+  `DndDragOverlay` drop animation, and revisiting ADR 0024's active-item
+  collision exclusion now that items can shift. Cross-container offsets are the
+  next branch (`feat/sortable-multi-container-offsets`).
+
+Known issues:
+
+- One Jaspr browser test (`auto_scroll_browser_test.dart`, horizontal collision
+  after scroll) is environment-sensitive: it flakes on a viewport assumption it
+  does not control, independent of this work (fails identically on the untouched
+  0.6.0 baseline). Should set an explicit viewport or drop the pre-scroll
+  assertion; not addressed here.
+
+Course corrections recorded in Decisions: `SortableDragContext` carries drag
+facts only (not geometry); preview resolution is lazy and cached; offsets shift
+by the dragged item's extent (not into neighbour slots); the placeholder
+pattern hides the source row rather than collapsing it, which superseded an
+earlier proposal to wire `initialActiveRect` into the resolver.
