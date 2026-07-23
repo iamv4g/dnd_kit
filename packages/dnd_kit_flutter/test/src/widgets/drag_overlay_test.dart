@@ -238,6 +238,60 @@ void main() {
       );
     });
 
+    testWidgets('keeps the drag-start size when the source slot collapses', (tester) async {
+      final controller = DndController();
+      addTearDown(controller.dispose);
+      DndDragOverlayDetails? latestDetails;
+
+      await tester.pumpWidget(
+        DndScope(
+          controller: controller,
+          child: Stack(
+            textDirection: TextDirection.ltr,
+            children: <Widget>[
+              DndDragOverlay(
+                builder: (context, details) {
+                  latestDetails = details;
+                  return const SizedBox.expand(
+                    key: ValueKey<String>('collapse-overlay-child'),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+      const activeId = DndId('task-1');
+      controller.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: activeId,
+          position: DndPoint(30, 40),
+        ),
+        activeRect: const DndRect(left: 20, top: 30, width: 40, height: 50),
+      );
+      controller.startDrag();
+      await tester.pump();
+
+      // The application collapses the source slot to open a placeholder gap.
+      controller.measuring.updateDraggableRect(
+        activeId,
+        const DndRect(left: 20, top: 30, width: 40, height: 0),
+      );
+      controller.moveDrag(const DndPoint(35, 45));
+      await tester.pump();
+
+      expect(
+        tester.getSize(find.byKey(const ValueKey<String>('collapse-overlay-child'))),
+        const Size(40, 50),
+      );
+      expect(latestDetails?.activeRect.height, 0);
+      expect(
+        latestDetails?.initialActiveRect,
+        const DndRect(left: 20, top: 30, width: 40, height: 50),
+      );
+    });
+
     testWidgets('ignores pointer events by default', (tester) async {
       final controller = DndController();
       addTearDown(controller.dispose);

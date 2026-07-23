@@ -46,6 +46,11 @@ class DndController extends ChangeNotifier {
   /// The detector used to rank measured droppable collision candidates.
   DndCollisionDetector get collisionDetector => _runtime.collisionDetector;
 
+  /// Replaces the collision detector used for subsequent moves.
+  set collisionDetector(DndCollisionDetector detector) {
+    _runtime.collisionDetector = detector;
+  }
+
   /// The modifiers applied to active drag movement before collision detection.
   List<DndModifier> get modifiers => _runtime.modifiers;
 
@@ -56,7 +61,13 @@ class DndController extends ChangeNotifier {
   DndId? get overId => _runtime.overId;
 
   /// The active draggable rectangle, anchored at drag start when one is known.
+  ///
+  /// The origin stays fixed for the session while the size follows the source
+  /// widget; see [initialActiveRect] for the unchanging drag-start rectangle.
   DndRect? get activeRect => _runtime.activeRect;
+
+  /// The active draggable rectangle as measured at drag start.
+  DndRect? get initialActiveRect => _runtime.initialActiveRect;
 
   /// Whether no drag is active or pending.
   bool get isIdle => _runtime.isIdle;

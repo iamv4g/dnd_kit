@@ -2,6 +2,155 @@ import 'package:dnd_kit/dnd_kit.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('SortableDragContext', () {
+    const strategies = <String, SortableStrategy>{
+      'verticalList': SortableStrategies.verticalList,
+      'horizontalList': SortableStrategies.horizontalList,
+      'grid': SortableStrategies.grid,
+      'dropOnOver': SortableStrategies.dropOnOver,
+    };
+
+    for (final entry in strategies.entries) {
+      test('${entry.key} resolves a preview identically to the commit', () {
+        SortableStrategyInput inputFor(SortableResolutionPhase phase) {
+          return _input(
+            activeId: const DndId('item-1'),
+            overId: const DndId('item-3'),
+            fromIndex: 0,
+            activeTranslatedRect: _rect(top: 126),
+            itemRects: <DndId, DndRect>{
+              const DndId('item-1'): _rect(top: 0),
+              const DndId('item-2'): _rect(top: 60),
+              const DndId('item-3'): _rect(top: 120),
+            },
+            phase: phase,
+          );
+        }
+
+        final preview = entry.value(inputFor(SortableResolutionPhase.preview));
+        final commit = entry.value(inputFor(SortableResolutionPhase.commit));
+
+        expect(preview?.activeId, commit?.activeId);
+        expect(preview?.overId, commit?.overId);
+        expect(preview?.fromIndex, commit?.fromIndex);
+        expect(preview?.toIndex, commit?.toIndex);
+        expect(preview?.fromContainerId, commit?.fromContainerId);
+        expect(preview?.toContainerId, commit?.toContainerId);
+      });
+    }
+
+    test('carries the end event only when committing', () {
+      final session = DndDragSession.start(
+        activeId: const DndId('item-1'),
+        initialPointer: DndPoint.zero,
+      );
+      const overId = DndId('item-2');
+
+      final preview = SortableDragContext.preview(session: session, overId: overId);
+      final commit = SortableDragContext.commit(
+        DndDragEndEvent(session: session, overId: overId),
+      );
+
+      expect(preview.isPreview, isTrue);
+      expect(preview.endEvent, isNull);
+      expect(preview.activeId, const DndId('item-1'));
+      expect(preview.overId, overId);
+
+      expect(commit.isPreview, isFalse);
+      expect(commit.phase, SortableResolutionPhase.commit);
+      expect(commit.endEvent?.overId, overId);
+      expect(commit.activeId, const DndId('item-1'));
+    });
+
+    test('reports move details without an end event during preview', () {
+      final details = SortableStrategies.dropOnOver(
+        _input(
+          activeId: const DndId('item-1'),
+          overId: const DndId('item-3'),
+          fromIndex: 0,
+          activeTranslatedRect: _rect(top: 0),
+          itemRects: const <DndId, DndRect>{},
+          phase: SortableResolutionPhase.preview,
+        ),
+      );
+
+      expect(details?.toIndex, 2);
+      expect(
+        details?.event,
+        isNull,
+        reason: 'a preview describes an intent that has not happened yet',
+      );
+    });
+  });
+
+  group('SortableStrategies.dropOnOver', () {
+    test('lands at the drop-over index regardless of the active center', () {
+      // The active center has not crossed item-3's center, so the geometric
+      // strategy reports no move while dropOnOver commits at the highlight.
+      final input = _input(
+        activeId: const DndId('item-1'),
+        overId: const DndId('item-3'),
+        fromIndex: 0,
+        activeTranslatedRect: _rect(top: 30),
+        itemRects: <DndId, DndRect>{
+          const DndId('item-1'): _rect(top: 0),
+          const DndId('item-2'): _rect(top: 60),
+          const DndId('item-3'): _rect(top: 120),
+        },
+      );
+
+      final details = SortableStrategies.dropOnOver(input);
+
+      expect(details?.activeId, const DndId('item-1'));
+      expect(details?.overId, const DndId('item-3'));
+      expect(details?.fromIndex, 0);
+      expect(details?.toIndex, 2);
+      expect(SortableStrategies.verticalList(input), isNull);
+    });
+
+    test('reports moves without any measured rects', () {
+      final details = SortableStrategies.dropOnOver(
+        _input(
+          activeId: const DndId('item-3'),
+          overId: const DndId('item-1'),
+          fromIndex: 2,
+          activeTranslatedRect: _rect(top: 0),
+          itemRects: const <DndId, DndRect>{},
+        ),
+      );
+
+      expect(details?.toIndex, 0);
+    });
+
+    test('does not report same-item or targetless drops', () {
+      expect(
+        SortableStrategies.dropOnOver(
+          _input(
+            activeId: const DndId('item-1'),
+            overId: const DndId('item-1'),
+            fromIndex: 0,
+            activeTranslatedRect: _rect(top: 0),
+            itemRects: <DndId, DndRect>{const DndId('item-1'): _rect(top: 0)},
+          ),
+        ),
+        isNull,
+      );
+
+      expect(
+        SortableStrategies.dropOnOver(
+          _input(
+            activeId: const DndId('item-1'),
+            overId: null,
+            fromIndex: 0,
+            activeTranslatedRect: _rect(top: 0),
+            itemRects: <DndId, DndRect>{const DndId('item-1'): _rect(top: 0)},
+          ),
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('SortableStrategies.verticalList', () {
     test('computes new index from the active translated center', () {
       final details = SortableStrategies.verticalList(
@@ -421,7 +570,13 @@ SortableStrategyInput _input({
     DndId('item-2'),
     DndId('item-3'),
   ],
+  SortableResolutionPhase phase = SortableResolutionPhase.commit,
 }) {
+  final session = DndDragSession.start(
+    activeId: activeId,
+    initialPointer: DndPoint.zero,
+  );
+
   return SortableStrategyInput(
     activeId: activeId,
     overId: overId,
@@ -430,13 +585,15 @@ SortableStrategyInput _input({
     fromIndex: fromIndex,
     fromContainerId: const DndId('list-1'),
     toContainerId: const DndId('list-1'),
-    event: DndDragEndEvent(
-      session: DndDragSession.start(
-        activeId: activeId,
-        initialPointer: DndPoint.zero,
-      ),
-      overId: overId,
-    ),
+    context: switch (phase) {
+      SortableResolutionPhase.commit => SortableDragContext.commit(
+          DndDragEndEvent(session: session, overId: overId),
+        ),
+      SortableResolutionPhase.preview => SortableDragContext.preview(
+          session: session,
+          overId: overId,
+        ),
+    },
     activeRect: itemRects[activeId],
     activeTranslatedRect: activeTranslatedRect,
   );

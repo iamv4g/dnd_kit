@@ -42,7 +42,7 @@ class DndRuntime {
           scheduleDeferredTask: scheduleDeferredTask,
         ),
         modifiers = List<DndModifier>.unmodifiable(modifiers),
-        collisionDetector = collisionDetector ??
+        _collisionDetector = collisionDetector ??
             DndCollisionDetectors.compose(
               const <DndCollisionDetector>[
                 DndCollisionDetectors.pointerWithin,
@@ -54,6 +54,7 @@ class DndRuntime {
 
   DndState _state;
   DndRect? _activeRect;
+  DndRect? _initialActiveRect;
   DndId? _overId;
 
   /// Registered draggable and droppable metadata for this runtime.
@@ -62,8 +63,21 @@ class DndRuntime {
   /// Adapter-owned measured rectangles for registered drag-and-drop sources.
   final DndMeasuringRegistry measuring = DndMeasuringRegistry();
 
+  DndCollisionDetector _collisionDetector;
+
   /// The detector used to rank measured droppable collision candidates.
-  final DndCollisionDetector collisionDetector;
+  // ignore: unnecessary_getters_setters
+  DndCollisionDetector get collisionDetector => _collisionDetector;
+
+  /// Replaces the collision detector used for subsequent moves.
+  ///
+  /// [_updateCollision] reads this on every move, so a new detector takes
+  /// effect immediately. An adapter surface such as `SortableMultiScope`
+  /// installs its own detector here so its board semantics apply even to a
+  /// controller the application created.
+  set collisionDetector(DndCollisionDetector detector) {
+    _collisionDetector = detector;
+  }
 
   /// The modifiers applied to active drag movement before collision detection.
   final List<DndModifier> modifiers;
@@ -75,7 +89,18 @@ class DndRuntime {
   DndId? get overId => _overId;
 
   /// The active draggable rectangle, anchored at drag start when one is known.
+  ///
+  /// The origin stays fixed for the session while the size follows the source
+  /// widget, so collision keeps working when a remeasure changes the item's
+  /// size mid-drag.
   DndRect? get activeRect => _activeRect;
+
+  /// The active draggable rectangle as measured at drag start.
+  ///
+  /// Unlike [activeRect] this never changes during a session. Drag previews
+  /// size themselves from it so collapsing the source slot — the usual way to
+  /// open a placeholder gap — cannot shrink the preview.
+  DndRect? get initialActiveRect => _initialActiveRect;
 
   /// Whether no drag is active or pending.
   bool get isIdle => _state is DndIdle;
@@ -103,7 +128,15 @@ class DndRuntime {
 
   /// Starts pending activation for [event].
   void beginDrag(DndSensorActivationEvent event, {DndRect? activeRect}) {
+    // Ancestor scrolling moves registered widgets without relayout, so cached
+    // rects can be stale by the full scroll offset. Invalidate everything at
+    // drag start; the next refresh re-measures before any collision runs.
+    measuring.markAllDirty();
+    if (activeRect == null) {
+      measuring.refreshDirty();
+    }
     _activeRect = activeRect ?? measuring.draggableRect(event.activeId);
+    _initialActiveRect = _activeRect;
     _overId = null;
     _setState(
       DndPending(
@@ -193,6 +226,7 @@ class DndRuntime {
     }
 
     _activeRect = null;
+    _initialActiveRect = null;
     _overId = null;
     _setState(const DndIdle());
   }
@@ -207,6 +241,13 @@ class DndRuntime {
 
     final droppableRects = <DndId, DndRect>{};
     for (final entry in measuring.droppableRects.entries) {
+      // An item can never be its own drop target; sortable items register the
+      // same id as draggable and droppable, so the active id must be excluded
+      // before detection or it wins its own overlap/pointer test.
+      if (entry.key == session.activeId) {
+        continue;
+      }
+
       final registration = registry.droppable(entry.key);
       if (registration == null || registration.disabled) {
         continue;

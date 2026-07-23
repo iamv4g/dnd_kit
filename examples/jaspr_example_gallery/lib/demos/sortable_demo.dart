@@ -52,7 +52,11 @@ class _SortableDemoState extends State<SortableDemo> {
 
     return SortableScope(
       controller: _controller,
-      strategy: SortableStrategies.verticalList,
+      // dropOnOver keeps the committed move in step with the gap the offsets
+      // open; the geometric strategies resolve from the dragged rect center
+      // instead and would disagree with it.
+      strategy: SortableStrategies.dropOnOver,
+      offsetResolver: SortableOffsets.verticalList,
       itemIds: _tracks.map((track) => track.id),
       onMove: _handleMove,
       child: DemoPanel(
@@ -60,10 +64,13 @@ class _SortableDemoState extends State<SortableDemo> {
           const DemoIntro(
             title: 'Sortable list',
             description:
-                'Drag a row by its handle to reorder the playlist. Reorder intent '
-                'comes from the shared engine strategy, so the same math drives '
-                'Flutter and Jaspr. Keyboard works too: focus a handle, press '
-                'space to pick up, arrow up/down to move, space to drop.',
+                'Drag a row by its handle to reorder the playlist. The rows '
+                'slide aside to open a gap where the dragged row will land: '
+                'dnd_kit reports each row an offset and this demo animates it. '
+                'Reorder intent comes from the shared engine strategy, so the '
+                'same math drives Flutter and Jaspr. Keyboard works too: focus '
+                'a handle, press space to pick up, arrow up/down to move, space '
+                'to drop.',
           ),
           StatusBar(
             children: [
@@ -103,11 +110,13 @@ class _SortableDemoState extends State<SortableDemo> {
           DndDragOverlay(
             builder: (context, overlayDetails) {
               final track = _trackFor(overlayDetails.activeId);
+              // Mirror the in-list row's box exactly — _TrackContent already
+              // carries the padding, and the border stays 1px — so the floating
+              // copy matches the source size. The accent border colour and the
+              // shadow lift it without enlarging it.
               return div(
                 styles: Styles(
-                  display: .flex,
-                  padding: .symmetric(vertical: 14.px, horizontal: 18.px),
-                  border: .all(color: cAccentBright, width: 2.px),
+                  border: .all(color: cAccentBright, width: 1.px),
                   radius: .circular(18.px),
                   shadow: BoxShadow(
                     offsetX: 0.px,
@@ -115,8 +124,6 @@ class _SortableDemoState extends State<SortableDemo> {
                     blur: 36.px,
                     color: .rgba(154, 52, 18, 0.22),
                   ),
-                  alignItems: .center,
-                  gap: .all(14.px),
                   backgroundColor: cCardBg,
                 ),
                 [_TrackContent(track: track, dragging: true)],
@@ -136,21 +143,33 @@ class _SortableDemoState extends State<SortableDemo> {
   ) {
     final isActive = itemState.isActive || itemState.isDragging;
     final over = itemState.isOver;
-    final background = isActive
-        ? cActiveRow
-        : over
-        ? cAccentSoft
-        : cCardBg;
+    // The live gap shows where the row lands, so hovered neighbours are not
+    // highlighted: no over border and no over background tint.
+    final background = isActive ? cActiveRow : cCardBg;
+    final offset = itemState.offset;
     return div(
+      // The offset is applied here, inside the item builder, so the transform
+      // lands on a child of the measured element and cannot feed back into
+      // collision detection. dnd_kit reports the distance; this demo chooses
+      // the transition.
+      //
+      // The dragged row floats in the overlay, so hide the in-list copy while
+      // keeping its slot: the neighbours slide over that slot, leaving one
+      // clean gap that follows the pointer.
       styles: Styles(
-        border: .all(
-          color: over ? cAccentBright : cBorder,
-          width: over ? 2.px : 1.px,
-        ),
+        // The live gap already shows where the row will land, so the per-row
+        // over border is redundant. Keeping the border constant also avoids a
+        // width change that would perturb the item's measured size mid-drag.
+        border: .all(color: cBorder, width: 1.px),
         radius: .circular(18.px),
-        opacity: isActive ? 0.55 : 1,
+        opacity: isActive ? 0 : 1,
         backgroundColor: background,
-        raw: const {'transition': 'background 120ms ease'},
+        transform: offset == DndPoint.zero
+            ? Transform.none
+            : Transform.translate(x: offset.x.px, y: offset.y.px),
+        raw: const {
+          'transition': 'background 120ms ease, transform 150ms ease',
+        },
       ),
       attributes: <String, String>{
         'data-track-id': track.id.value,

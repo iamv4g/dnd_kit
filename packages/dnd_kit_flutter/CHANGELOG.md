@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `dnd_kit: ^0.6.0`, inheriting the drag-default fixes: the active
+  item is no longer its own drop target, drag start re-measures droppables, and
+  `SortableStrategies.dropOnOver` lands the drop where the highlight is.
+- **Breaking behavior:** `DndAutoScroll` now invalidates measurements and
+  re-resolves collision on every auto-scroll tick, so `overId` follows content
+  moving under a stationary pointer. `DndAutoScrollController` takes an
+  `onScrolled` callback for direct use.
+- **Breaking behavior:** `DndDragOverlay` sizes the preview from the drag-start
+  rect instead of the live active rect, so collapsing the source slot to open a
+  placeholder gap no longer clips the preview to zero.
+  `DndDragOverlayDetails` gains a required `initialActiveRect` alongside the
+  live `activeRect`.
+- `DndController` exposes `initialActiveRect`.
+- Adds live sortable feedback: `SortableScopeData.preview` and
+  `SortableMultiScopeData.preview` report where the active item would land, and
+  `SortableItemDetails` gains `previewIndex`, `previewContainerId`, and
+  `offset`.
+- `SortableScope` takes an `offsetResolver` (default `SortableOffsets.none`).
+  Set `SortableOffsets.verticalList` and apply `details.offset` inside your
+  `SortableItem.builder` — with `AnimatedSlide` or `Transform.translate` — to
+  open a placeholder gap. Apply it inside the builder, not around the item, so
+  the shift stays below the measured box.
+- `SortableMultiContainerArea` is now a `StatefulWidget` so it can publish its
+  strategy to the scope. Its constructor is unchanged.
+- `SortableMultiScope` takes an `offsetResolver` (default
+  `SortableMultiOffsets.none`), so a board can open a live gap within and across
+  columns. Apply `details.offset` inside your `SortableMultiItem` builder.
+- `DndController` takes an optional `collisionDetector` and exposes it as a
+  settable property.
+- `SortableMultiScope` takes an optional `collisionDetector` and installs its
+  effective detector on whatever controller it is given — including one the
+  application created and passed in — so a board wired to an external controller
+  ranks collisions correctly with no manual setup.
+- Inherits the core multi-container refinements: cross-container insertion
+  tracks the pointer within the hovered card, the gap between cards (and the
+  space below the last card) resolves to the nearest card, and picking an item
+  up or dropping it back in place no longer reorders.
+
+
 ## 0.5.0
 
 - Depends on `dnd_kit: ^0.5.0` (`DndCollisionInput.activeId`).

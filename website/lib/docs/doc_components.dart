@@ -55,6 +55,15 @@ Component docProseRich(List<Component> spans) => p(classes: _prose, spans);
 /// Plain inline text node, for composing with [inlineCode] in [docProseRich].
 Component docText(String text) => Component.text(text);
 
+/// An inline link, for composing with text inside [docProseRich].
+Component docLink(String label, String href) {
+  return a(
+    href: href,
+    classes: 'text-accent underline underline-offset-2 hover:no-underline',
+    [.text(label)],
+  );
+}
+
 /// Inline `code` styling.
 Component inlineCode(String text) {
   return Component.element(

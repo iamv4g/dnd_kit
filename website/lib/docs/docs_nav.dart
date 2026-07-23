@@ -131,6 +131,12 @@ const docGroups = <DocGroup>[
         title: 'Multi-container sortable',
         group: 'Sortable',
       ),
+      DocEntry(
+        slug: 'recipes',
+        navLabel: 'Recipes',
+        title: 'Recipes',
+        group: 'Sortable',
+      ),
     ],
   ),
   DocGroup(

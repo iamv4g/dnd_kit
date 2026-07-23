@@ -180,6 +180,165 @@ void main() {
       expect(captured?.activeId, const DndId('task-1'));
     });
 
+    test('excludes the active draggable from collision candidates', () {
+      DndCollisionInput? captured;
+      final runtime = DndRuntime(
+        collisionDetector: (input) {
+          captured = input;
+          return DndCollisionDetectors.compose(
+            const <DndCollisionDetector>[
+              DndCollisionDetectors.pointerWithin,
+              DndCollisionDetectors.rectIntersection,
+            ],
+          )(input);
+        },
+      );
+
+      // Sortable-style setup: the active item registers the same id as
+      // draggable and droppable, sitting directly above a neighbouring item.
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-1')));
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-2')));
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-1'),
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-2'),
+        const DndRect(left: 0, top: 40, width: 100, height: 40),
+      );
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // The pointer is still inside the active item's own slot; without the
+      // exclusion the active would win its own pointer test and become overId.
+      runtime.moveDrag(const DndPoint(50, 30));
+
+      expect(captured?.droppableRects.containsKey(const DndId('task-1')), isFalse);
+      expect(captured?.droppableRects.containsKey(const DndId('task-2')), isTrue);
+      expect(runtime.overId, const DndId('task-2'));
+    });
+
+    test('resolves the neighbouring target without overshooting the source slot', () {
+      final runtime = DndRuntime();
+
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-1')));
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('task-2')));
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-1'),
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.measuring.updateDroppableRect(
+        const DndId('task-2'),
+        const DndRect(left: 0, top: 40, width: 100, height: 40),
+      );
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // Pointer enters the neighbour: it must win immediately.
+      runtime.moveDrag(const DndPoint(50, 45));
+      expect(runtime.overId, const DndId('task-2'));
+
+      final endEvent = runtime.endDrag();
+      expect(endEvent?.overId, const DndId('task-2'));
+    });
+
+    test('remeasures stale droppables at drag start', () {
+      final runtime = DndRuntime();
+
+      // The droppable was measured before an ancestor scrolled: the cache is
+      // clean but the stored rect no longer matches the widget's position.
+      var measuredRect = const DndRect(left: 0, top: 200, width: 100, height: 40);
+      runtime.registry.registerDroppable(const DndDroppableRegistration(id: DndId('column-1')));
+      runtime.measuring.markDroppableDirty(
+        const DndId('column-1'),
+        measure: () => measuredRect,
+      );
+      runtime.measuring.refreshDirty();
+      measuredRect = const DndRect(left: 0, top: 40, width: 100, height: 40);
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+      runtime.moveDrag(const DndPoint(50, 60));
+
+      expect(
+        runtime.overId,
+        const DndId('column-1'),
+        reason: 'collision must use the post-scroll rect, not the stale cache',
+      );
+    });
+
+    test('remeasures a stale active rect at drag start when none is provided', () {
+      final runtime = DndRuntime();
+
+      var measuredRect = const DndRect(left: 0, top: 200, width: 100, height: 40);
+      runtime.measuring.markDraggableDirty(
+        const DndId('task-1'),
+        measure: () => measuredRect,
+      );
+      runtime.measuring.refreshDirty();
+      measuredRect = const DndRect(left: 0, top: 40, width: 100, height: 40);
+
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: DndId('task-1'),
+          position: DndPoint(50, 60),
+        ),
+      );
+
+      expect(runtime.activeRect, const DndRect(left: 0, top: 40, width: 100, height: 40));
+    });
+
+    test('keeps the drag-start rect stable while the source collapses', () {
+      final runtime = DndRuntime();
+
+      const activeId = DndId('task-1');
+      runtime.beginDrag(
+        const DndSensorActivationEvent(
+          activeId: activeId,
+          position: DndPoint(20, 20),
+        ),
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+      runtime.startDrag();
+
+      // The application collapses the source slot to open a placeholder gap.
+      runtime.measuring.updateDraggableRect(
+        activeId,
+        const DndRect(left: 0, top: 0, width: 100, height: 0),
+      );
+      runtime.moveDrag(const DndPoint(20, 60));
+
+      expect(runtime.activeRect?.height, 0, reason: 'live rect follows the source');
+      expect(
+        runtime.initialActiveRect,
+        const DndRect(left: 0, top: 0, width: 100, height: 40),
+      );
+
+      runtime.endDrag();
+      runtime.reset();
+      expect(runtime.initialActiveRect, isNull);
+    });
+
     test('refreshes dirty measurements before collision detection', () {
       final runtime = DndRuntime();
 

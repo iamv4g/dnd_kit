@@ -28,6 +28,7 @@ final class SortableItemDetails {
     required this.isOver,
     required this.overId,
     required this.session,
+    this.preview,
   });
 
   /// The stable sortable item id.
@@ -49,6 +50,9 @@ final class SortableItemDetails {
   final bool isDropping;
 
   /// Whether the active drag is currently over this item.
+  ///
+  /// This is the collision result, not the move the scope's strategy will
+  /// commit; see [SortableStrategies.dropOnOver] to make them agree.
   final bool isOver;
 
   /// The sortable item currently under the active drag, when one exists.
@@ -56,6 +60,31 @@ final class SortableItemDetails {
 
   /// The active session for this item, when available.
   final DndDragSession? session;
+
+  /// The scope's live preview, when a sortable scope is driving one.
+  ///
+  /// Reading [previewIndex] or [previewContainerId] resolves it once per move
+  /// and shares that result with every other item, so it is safe to read from
+  /// each item's builder.
+  final SortablePreview? preview;
+
+  /// The index the active item would land at if released now.
+  ///
+  /// Null when no drag is active or the drag would not move anything. Unlike
+  /// [isOver], which reports the raw collision result, this is the index the
+  /// scope's strategy will actually commit to.
+  int? get previewIndex => preview?.index;
+
+  /// The container the active item would land in if released now.
+  DndId? get previewContainerId => preview?.containerId;
+
+  /// How far this item should move to make room for the previewed drop.
+  ///
+  /// [DndPoint.zero] unless the scope has an offset resolver configured and
+  /// this item is displaced by the move. Apply it inside the builder — for
+  /// example with `AnimatedSlide` or `Transform.translate` — so the shift stays
+  /// below the measured box and cannot feed back into collision.
+  DndPoint get offset => preview?.offsetFor(id) ?? DndPoint.zero;
 }
 
 /// Registers a child as a sortable item in the nearest [SortableScope].
@@ -131,6 +160,7 @@ class SortableItem extends StatelessWidget {
       isOver: controller.overId == id,
       overId: controller.overId,
       session: draggable.session,
+      preview: scope.preview,
     );
   }
 

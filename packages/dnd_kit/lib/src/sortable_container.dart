@@ -61,7 +61,7 @@ enum SortableMultiInsertionStrategy {
 final class SortableMultiMoveInput {
   /// Creates multi-container move input.
   SortableMultiMoveInput({
-    required this.event,
+    required this.context,
     required Iterable<SortableContainer> containers,
     this.itemRects = const <DndId, DndRect>{},
     this.activeRect,
@@ -69,8 +69,38 @@ final class SortableMultiMoveInput {
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
   }) : containers = List<SortableContainer>.unmodifiable(containers);
 
+  /// Creates multi-container input for a drag that has ended.
+  factory SortableMultiMoveInput.fromDragEnd({
+    required DndDragEndEvent event,
+    required Iterable<SortableContainer> containers,
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+    SortableStrategy strategy = SortableStrategies.verticalList,
+    SortableMultiInsertionStrategy crossContainerInsertion =
+        SortableMultiInsertionStrategy.adaptive,
+  }) {
+    return SortableMultiMoveInput(
+      context: SortableDragContext.commit(event),
+      containers: containers,
+      itemRects: itemRects,
+      activeRect: activeRect,
+      strategy: strategy,
+      crossContainerInsertion: crossContainerInsertion,
+    );
+  }
+
+  /// The drag to resolve, and which phase it is in.
+  final SortableDragContext context;
+
   /// The drag end event to resolve.
-  final DndDragEndEvent event;
+  ///
+  /// Null while a drag is still active, because a preview has no end event
+  /// yet.
+  @Deprecated(
+    'Use context (SortableDragContext) instead. This getter is null during '
+    'preview resolutions and will be removed in a future release.',
+  )
+  DndDragEndEvent? get event => context.endEvent;
 
   /// The application-owned container order and item membership.
   final List<SortableContainer> containers;
@@ -94,7 +124,7 @@ final class SortableMultiMoveInput {
       return null;
     }
 
-    return activeRect.translate(event.session.transform.offset);
+    return activeRect.translate(context.transform.offset);
   }
 }
 
@@ -109,8 +139,12 @@ abstract final class SortableMultiContainer {
   ///
   /// Pointer hits prefer item droppables over container droppables so a card
   /// dropped inside a populated column resolves to the card it is over, not the
-  /// whole column behind it. When the pointer is not inside any droppable, the
-  /// [fallback] detector decides the ranking.
+  /// whole column behind it. When the pointer is inside a populated column but
+  /// over no card — the gap between two cards, or the trailing space — it
+  /// resolves to the nearest card so a gap opens next to it, rather than the
+  /// whole column (which would append at the end). An empty column still
+  /// resolves to the container. When the pointer is not inside any droppable,
+  /// the [fallback] detector decides the ranking.
   static DndCollisionDetector collisionDetector({
     required Iterable<SortableContainer> Function() containers,
     DndCollisionDetector fallback = DndCollisionDetectors.closestCenter,
@@ -120,7 +154,7 @@ abstract final class SortableMultiContainer {
     return (input) {
       final snapshot = List<SortableContainer>.unmodifiable(containers());
       final pointerWithin = DndCollisionDetectors.pointerWithin(input);
-      final prioritizedPointer = _prioritizePointerCollisions(pointerWithin, snapshot);
+      final prioritizedPointer = _prioritizePointerCollisions(input, pointerWithin, snapshot);
       if (prioritizedPointer.isNotEmpty) {
         return prioritizedPointer;
       }
@@ -150,7 +184,7 @@ abstract final class SortableMultiContainer {
         SortableMultiInsertionStrategy.adaptive,
   }) {
     return resolveMove(
-      SortableMultiMoveInput(
+      SortableMultiMoveInput.fromDragEnd(
         event: event,
         containers: containers,
         itemRects: itemRects,
@@ -163,19 +197,31 @@ abstract final class SortableMultiContainer {
 
   /// Resolves move intent for [input].
   static SortableMoveDetails? resolveMove(SortableMultiMoveInput input) {
-    final event = input.event;
-    final overId = event.overId;
-    if (overId == null || overId == event.activeId) {
+    final context = input.context;
+    final overId = context.overId;
+    if (overId == null || overId == context.activeId) {
       return null;
     }
 
-    final fromContainer = _containerContaining(input.containers, event.activeId);
+    // While the pointer is still inside the dragged item's own slot, resolve to
+    // no move. The active item is excluded from the droppable set, so its
+    // vacated slot otherwise resolves to the nearest neighbour: in preview this
+    // shifts the neighbour the instant the item is picked up, and on commit it
+    // would swap them even though the pointer never left the slot. The active
+    // rect keeps its original position for the whole drag, so it marks exactly
+    // that slot; dropping back onto it is a no-op.
+    final originRect = input.activeRect;
+    if (originRect != null && originRect.containsPoint(context.session.currentPointer)) {
+      return null;
+    }
+
+    final fromContainer = _containerContaining(input.containers, context.activeId);
     final target = _targetFor(input.containers, overId);
     if (fromContainer == null || target == null) {
       return null;
     }
 
-    final fromIndex = fromContainer.indexOf(event.activeId);
+    final fromIndex = fromContainer.indexOf(context.activeId);
     if (fromIndex < 0) {
       return null;
     }
@@ -184,14 +230,14 @@ abstract final class SortableMultiContainer {
     if (fromContainer.id == toContainer.id && !target.overContainer) {
       return input.strategy(
         SortableStrategyInput(
-          activeId: event.activeId,
+          activeId: context.activeId,
           overId: overId,
           itemIds: toContainer.itemIds,
           itemRects: input.itemRects,
           fromIndex: fromIndex,
           fromContainerId: fromContainer.id,
           toContainerId: toContainer.id,
-          event: event,
+          context: context,
           activeRect: input.activeRect,
           activeTranslatedRect: input.activeTranslatedRect,
         ),
@@ -210,13 +256,13 @@ abstract final class SortableMultiContainer {
     }
 
     return SortableMoveDetails(
-      activeId: event.activeId,
+      activeId: context.activeId,
       overId: overId,
       fromContainerId: fromContainer.id,
       toContainerId: toContainer.id,
       fromIndex: fromIndex,
       toIndex: toIndex,
-      event: event,
+      event: context.endEvent,
     );
   }
 
@@ -258,6 +304,7 @@ abstract final class SortableMultiContainer {
   }
 
   static DndCollisionResult _prioritizePointerCollisions(
+    DndCollisionInput input,
     DndCollisionResult result,
     List<SortableContainer> containers,
   ) {
@@ -275,14 +322,58 @@ abstract final class SortableMultiContainer {
       return DndCollisionResult(itemCollisions);
     }
 
-    final containerCollisions = result.collisions.where(
-      (collision) => containerIds.contains(collision.id),
-    );
-    if (containerCollisions.isNotEmpty) {
-      return DndCollisionResult(containerCollisions);
+    final containerCollisions =
+        result.collisions.where((collision) => containerIds.contains(collision.id)).toList();
+    if (containerCollisions.isEmpty) {
+      return result;
     }
 
-    return result;
+    // The pointer is inside a column but over no card (the gap between cards or
+    // the trailing space). Resolve to the nearest card in a hovered column so
+    // the gap opens next to it; keep the column only when it has no measured
+    // cards (an empty column), where appending is the right target.
+    final nearestCard = _nearestCardInHoveredContainers(input, containerCollisions, containers);
+    if (nearestCard != null) {
+      return DndCollisionResult(<DndCollision>[nearestCard]);
+    }
+
+    return DndCollisionResult(containerCollisions);
+  }
+
+  static DndCollision? _nearestCardInHoveredContainers(
+    DndCollisionInput input,
+    List<DndCollision> containerCollisions,
+    List<SortableContainer> containers,
+  ) {
+    final pointer = input.pointer;
+    if (pointer == null) {
+      return null;
+    }
+
+    DndId? nearestId;
+    var nearestDistance = double.infinity;
+    for (final collision in containerCollisions) {
+      for (final container in containers) {
+        if (container.id != collision.id) {
+          continue;
+        }
+        for (final itemId in container.itemIds) {
+          final rect = input.droppableRects[itemId];
+          if (rect == null) {
+            continue;
+          }
+          final dx = pointer.x - rect.center.x;
+          final dy = pointer.y - rect.center.y;
+          final distance = dx * dx + dy * dy;
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestId = itemId;
+          }
+        }
+      }
+    }
+
+    return nearestId == null ? null : DndCollision(id: nearestId, score: nearestDistance);
   }
 
   static int _crossContainerIndex(
@@ -296,16 +387,21 @@ abstract final class SortableMultiContainer {
       case SortableMultiInsertionStrategy.afterOverItem:
         return baseIndex + 1;
       case SortableMultiInsertionStrategy.adaptive:
-        final activeTranslatedRect = input.activeTranslatedRect;
-        final overId = input.event.overId;
+        final overId = input.context.overId;
         final overRect = overId == null ? null : input.itemRects[overId];
-        if (activeTranslatedRect == null || overRect == null) {
+        if (overRect == null) {
           return baseIndex;
         }
 
+        // Decide before/after from the pointer's position within the hovered
+        // card, not the dragged card's translated center. The dragged center
+        // depends on where the card was grabbed and which column it came from,
+        // so it flickers at the boundary and does not track what the user sees.
+        // The pointer is already what chose the hovered card (pointerWithin),
+        // so using it here keeps the whole decision on one signal.
         return _shouldInsertAfter(
           strategy: input.strategy,
-          activeTranslatedRect: activeTranslatedRect,
+          pointer: input.context.session.currentPointer,
           overRect: overRect,
         )
             ? baseIndex + 1
@@ -315,26 +411,25 @@ abstract final class SortableMultiContainer {
 
   static bool _shouldInsertAfter({
     required SortableStrategy strategy,
-    required DndRect activeTranslatedRect,
+    required DndPoint pointer,
     required DndRect overRect,
   }) {
-    final activeCenter = activeTranslatedRect.center;
     final overCenter = overRect.center;
 
     if (identical(strategy, SortableStrategies.horizontalList)) {
-      return activeCenter.x > overCenter.x;
+      return pointer.x > overCenter.x;
     }
 
     if (identical(strategy, SortableStrategies.grid)) {
-      final deltaY = activeCenter.y - overCenter.y;
+      final deltaY = pointer.y - overCenter.y;
       if (deltaY.abs() > overRect.height / 2) {
         return deltaY > 0;
       }
 
-      return activeCenter.x > overCenter.x;
+      return pointer.x > overCenter.x;
     }
 
-    return activeCenter.y > overCenter.y;
+    return pointer.y > overCenter.y;
   }
 }
 

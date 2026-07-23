@@ -16,6 +16,7 @@ class SortableMultiScope extends StatefulComponent {
     required Iterable<SortableContainer> containers,
     this.moveResolver,
     this.collisionDetector,
+    this.offsetResolver = SortableMultiOffsets.none,
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
     required this.onMove,
     required this.child,
@@ -23,6 +24,12 @@ class SortableMultiScope extends StatefulComponent {
   }) : containers = List<SortableContainer>.unmodifiable(containers);
 
   /// The externally owned drag-and-drop controller for controlled usage.
+  ///
+  /// The scope installs its multi-container collision detector on whatever
+  /// controller it uses, so a plain `DndController()` passed here works without
+  /// any manual wiring. Customize ranking through [collisionDetector] rather
+  /// than by pre-setting a detector on the controller — the scope overrides the
+  /// controller's detector with its own effective one.
   final DndController? controller;
 
   /// Screen-reader announcements provided to descendant live regions.
@@ -36,6 +43,16 @@ class SortableMultiScope extends StatefulComponent {
 
   /// Optional override for collision ranking.
   final DndCollisionDetector? collisionDetector;
+
+  /// Reports how far each item a previewed move displaces should shift.
+  ///
+  /// Defaults to [SortableMultiOffsets.none], which moves nothing. Set
+  /// [SortableMultiOffsets.verticalLists] (or `horizontalLists`) to open a live
+  /// gap within and across columns, then apply `details.offset` inside your
+  /// [SortableMultiItem] builder as a CSS transform. Apply it inside the
+  /// builder so the transform stays below the measured element and cannot feed
+  /// back into collision.
+  final SortableMultiOffsetResolver offsetResolver;
 
   /// How cross-container drops resolve around an over-item target.
   final SortableMultiInsertionStrategy crossContainerInsertion;
@@ -62,8 +79,25 @@ class SortableMultiScope extends StatefulComponent {
   State<SortableMultiScope> createState() => _SortableMultiScopeState();
 }
 
+/// A container area's registered reorder strategy and the component that owns it.
+typedef _AreaStrategy = ({Object owner, SortableStrategy strategy});
+
 class _SortableMultiScopeState extends State<SortableMultiScope> {
   DndController? _ownController;
+  DndController? _listeningTo;
+  late final SortablePreview _preview = SortablePreview.resolvedBy(
+    _resolvePreview,
+    resolveOffsets: _resolveOffsets,
+  );
+
+  /// Reorder strategies published by the container areas in this scope.
+  ///
+  /// Resolving a preview needs the strategy of the container holding the item
+  /// being dragged, but strategies are configured on each
+  /// [SortableMultiContainerArea] rather than on the scope, so the areas
+  /// register them here. Registration is owner-aware so a rebuilt area cannot
+  /// remove an entry a newer area already took over.
+  final Map<DndId, _AreaStrategy> _strategies = <DndId, _AreaStrategy>{};
 
   DndController get _controller => component.controller ?? _ownController!;
 
@@ -78,10 +112,9 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
   void initState() {
     super.initState();
     if (component.controller == null) {
-      _ownController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
+      _ownController = DndController();
     }
+    _bindController();
   }
 
   @override
@@ -91,29 +124,124 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
     if (oldComponent.controller == null && component.controller != null) {
       _ownController?.dispose();
       _ownController = null;
-      return;
+    } else if (oldComponent.controller != null && component.controller == null) {
+      _ownController = DndController();
     }
 
-    if (oldComponent.controller != null && component.controller == null) {
-      _ownController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
-      return;
-    }
-
-    if (component.controller == null &&
-        oldComponent.collisionDetector != component.collisionDetector) {
-      _ownController?.dispose();
-      _ownController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
+    _bindController();
+    // Container membership and the resolver feed the resolution, so a change to
+    // either makes the cached preview stale even when the drag has not moved.
+    if (oldComponent.offsetResolver != component.offsetResolver ||
+        !_listEquals(oldComponent.containers, component.containers)) {
+      _preview.invalidate();
     }
   }
 
   @override
   void dispose() {
+    _listeningTo?.removeListener(_preview.invalidate);
     _ownController?.dispose();
     super.dispose();
+  }
+
+  void _bindController() {
+    final next = _controller;
+    // Install the board's collision detector on whatever controller is in use —
+    // internal or app-provided — so multi-container semantics always apply.
+    // This is why an app can pass a plain DndController without wiring the
+    // detector itself.
+    next.collisionDetector = _effectiveCollisionDetector;
+
+    if (identical(_listeningTo, next)) {
+      return;
+    }
+
+    _listeningTo?.removeListener(_preview.invalidate);
+    _listeningTo = next;
+    next.addListener(_preview.invalidate);
+    _preview.invalidate();
+  }
+
+  void _registerStrategy(DndId id, SortableStrategy strategy, Object owner) {
+    final existing = _strategies[id];
+    if (existing != null && existing.owner == owner && existing.strategy == strategy) {
+      return;
+    }
+
+    _strategies[id] = (owner: owner, strategy: strategy);
+    _preview.invalidate();
+  }
+
+  void _unregisterStrategy(DndId id, Object owner) {
+    if (_strategies[id]?.owner != owner) {
+      return;
+    }
+
+    _strategies.remove(id);
+    _preview.invalidate();
+  }
+
+  SortableMoveDetails? _resolvePreview() {
+    final controller = _controller;
+    final session = controller.activeSession;
+    if (session == null || !controller.isDragging) {
+      return null;
+    }
+
+    // The strategy that matters is the one configured on the container holding
+    // the item being dragged, not the container being hovered.
+    SortableContainer? sourceContainer;
+    for (final container in component.containers) {
+      if (container.contains(session.activeId)) {
+        sourceContainer = container;
+        break;
+      }
+    }
+
+    if (sourceContainer == null) {
+      return null;
+    }
+
+    return _data().resolveDetails(
+      SortableDragContext.preview(session: session, overId: controller.overId),
+      container: SortableMultiContainerAreaData(
+        id: sourceContainer.id,
+        itemIds: sourceContainer.itemIds,
+        strategy: _strategies[sourceContainer.id]?.strategy ?? SortableStrategies.verticalList,
+      ),
+      itemRects: controller.measuring.droppableRects,
+      activeRect: controller.activeRect,
+    );
+  }
+
+  Map<DndId, DndPoint> _resolveOffsets() {
+    final move = _preview.details;
+    if (move == null) {
+      return const <DndId, DndPoint>{};
+    }
+
+    return component.offsetResolver(
+      SortableMultiOffsetInput(
+        activeId: move.activeId,
+        containers: component.containers,
+        itemRects: _controller.measuring.droppableRects,
+        fromContainerId: move.fromContainerId,
+        fromIndex: move.fromIndex,
+        toContainerId: move.toContainerId,
+        toIndex: move.toIndex,
+        activeRect: _controller.activeRect,
+      ),
+    );
+  }
+
+  SortableMultiScopeData _data() {
+    return SortableMultiScopeData(
+      containers: component.containers,
+      moveResolver: component.moveResolver,
+      crossContainerInsertion: component.crossContainerInsertion,
+      onMove: component.onMove,
+      preview: _preview,
+    );
   }
 
   @override
@@ -121,17 +249,32 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
     return DndScope(
       controller: _controller,
       announcements: component.announcements,
-      child: _SortableMultiScopeProvider(
-        data: SortableMultiScopeData(
-          containers: component.containers,
-          moveResolver: component.moveResolver,
-          crossContainerInsertion: component.crossContainerInsertion,
-          onMove: component.onMove,
+      child: _SortableMultiStrategyScope(
+        state: this,
+        child: _SortableMultiScopeProvider(
+          data: _data(),
+          child: component.child,
         ),
-        child: component.child,
       ),
     );
   }
+}
+
+/// Gives descendant container areas a way to publish their reorder strategy.
+class _SortableMultiStrategyScope extends InheritedComponent {
+  const _SortableMultiStrategyScope({
+    required this.state,
+    required super.child,
+  });
+
+  final _SortableMultiScopeState state;
+
+  static _SortableMultiScopeState? maybeOf(BuildContext context) {
+    return context.dependOnInheritedComponentOfExactType<_SortableMultiStrategyScope>()?.state;
+  }
+
+  @override
+  bool updateShouldNotify(_SortableMultiStrategyScope oldComponent) => state != oldComponent.state;
 }
 
 /// Immutable data exposed by [SortableMultiScope].
@@ -142,7 +285,20 @@ final class SortableMultiScopeData {
     required this.onMove,
     this.moveResolver,
     this.crossContainerInsertion = SortableMultiInsertionStrategy.adaptive,
-  }) : containers = List<SortableContainer>.unmodifiable(containers);
+    SortablePreview? preview,
+  })  : containers = List<SortableContainer>.unmodifiable(containers),
+        preview = preview ?? SortablePreview.inactive();
+
+  /// Where the active item would land if the drag were released now.
+  ///
+  /// Resolved lazily and cached per move, using the reorder strategy of the
+  /// container the dragged item came from. Reports nothing when no drag is
+  /// active.
+  ///
+  /// Deliberately excluded from [operator ==]: this is live drag state, not
+  /// part of the scope's identity, and the instance is stable for the lifetime
+  /// of the scope.
+  final SortablePreview preview;
 
   /// The application-owned container order and membership.
   final List<SortableContainer> containers;
@@ -173,8 +329,26 @@ final class SortableMultiScopeData {
     Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
     DndRect? activeRect,
   }) {
+    return resolveDetails(
+      SortableDragContext.commit(event),
+      container: container,
+      itemRects: itemRects,
+      activeRect: activeRect,
+    );
+  }
+
+  /// Resolves move intent for [context].
+  ///
+  /// Serves both drag phases: a preview context reports where the item would
+  /// land right now, a commit context reports the move to apply.
+  SortableMoveDetails? resolveDetails(
+    SortableDragContext context, {
+    required SortableMultiContainerAreaData container,
+    Map<DndId, DndRect> itemRects = const <DndId, DndRect>{},
+    DndRect? activeRect,
+  }) {
     final input = SortableMultiMoveInput(
-      event: event,
+      context: context,
       containers: containers,
       itemRects: itemRects,
       activeRect: activeRect,
@@ -204,7 +378,7 @@ final class SortableMultiScopeData {
 }
 
 /// Registers a sortable container area for the common multi-container case.
-class SortableMultiContainerArea extends StatelessComponent {
+class SortableMultiContainerArea extends StatefulComponent {
   /// Creates a multi-container area.
   SortableMultiContainerArea({
     required this.id,
@@ -256,19 +430,52 @@ class SortableMultiContainerArea extends StatelessComponent {
   }
 
   @override
+  State<SortableMultiContainerArea> createState() => _SortableMultiContainerAreaState();
+}
+
+class _SortableMultiContainerAreaState extends State<SortableMultiContainerArea> {
+  _SortableMultiScopeState? _scope;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scope = _SortableMultiStrategyScope.maybeOf(context);
+    if (!identical(_scope, scope)) {
+      _scope?._unregisterStrategy(component.id, this);
+      _scope = scope;
+    }
+    _scope?._registerStrategy(component.id, component.strategy, this);
+  }
+
+  @override
+  void didUpdateComponent(SortableMultiContainerArea oldComponent) {
+    super.didUpdateComponent(oldComponent);
+    if (oldComponent.id != component.id) {
+      _scope?._unregisterStrategy(oldComponent.id, this);
+    }
+    _scope?._registerStrategy(component.id, component.strategy, this);
+  }
+
+  @override
+  void dispose() {
+    _scope?._unregisterStrategy(component.id, this);
+    super.dispose();
+  }
+
+  @override
   Component build(BuildContext context) {
     return DndDroppable(
-      id: id,
-      disabled: disabled,
-      data: data,
-      builder: builder,
+      id: component.id,
+      disabled: component.disabled,
+      data: component.data,
+      builder: component.builder,
       child: _SortableMultiContainerAreaProvider(
         data: SortableMultiContainerAreaData(
-          id: id,
-          itemIds: itemIds,
-          strategy: strategy,
+          id: component.id,
+          itemIds: component.itemIds,
+          strategy: component.strategy,
         ),
-        child: child,
+        child: component.child,
       ),
     );
   }
@@ -368,6 +575,7 @@ class SortableMultiItem extends StatelessComponent {
   }
 
   SortableItemDetails _detailsFor(
+    SortableMultiScopeData multiScope,
     SortableMultiContainerAreaData container,
     DndController controller,
   ) {
@@ -382,6 +590,7 @@ class SortableMultiItem extends StatelessComponent {
       isOver: controller.overId == id,
       overId: controller.overId,
       session: controller.activeSession,
+      preview: multiScope.preview,
     );
   }
 
@@ -401,7 +610,7 @@ class SortableMultiItem extends StatelessComponent {
           : (innerContext, _, droppableChild) {
               return itemBuilder(
                 innerContext,
-                _detailsFor(container, controller),
+                _detailsFor(multiScope, container, controller),
                 droppableChild,
               );
             },

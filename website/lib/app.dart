@@ -12,6 +12,7 @@ import 'docs/pages/multi_container_page.dart';
 import 'docs/pages/overlay_page.dart';
 import 'docs/pages/overview_page.dart';
 import 'docs/pages/quickstart_page.dart';
+import 'docs/pages/recipes_page.dart';
 import 'docs/pages/reference_page.dart';
 import 'docs/pages/sensors_page.dart';
 import 'docs/pages/sortable_page.dart';
@@ -93,6 +94,11 @@ class App extends StatelessComponent {
           path: '/docs/multi-container',
           title: 'Multi-container sortable · dnd_kit',
           builder: (context, state) => const MultiContainerPage(),
+        ),
+        Route(
+          path: '/docs/recipes',
+          title: 'Recipes · dnd_kit',
+          builder: (context, state) => const RecipesPage(),
         ),
         Route(
           path: '/docs/accessibility',

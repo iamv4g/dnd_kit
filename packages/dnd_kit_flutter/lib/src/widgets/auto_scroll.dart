@@ -19,6 +19,7 @@ final class DndAutoScrollController {
     required TickerProvider vsync,
     this.axis = DndScrollAxis.vertical,
     this.options = const DndAutoScrollOptions(),
+    this.onScrolled,
   })  : _position = position,
         _viewportContext = viewportContext {
     _ticker = vsync.createTicker(_tick);
@@ -29,6 +30,15 @@ final class DndAutoScrollController {
   late Ticker _ticker;
   DndScrollAxis axis;
   DndAutoScrollOptions options;
+
+  /// Called after each tick moves the scroll position.
+  ///
+  /// Scrolling moves every registered rect without relayout, so measurements
+  /// must be invalidated and collision re-evaluated here. [DndAutoScroll]
+  /// wires this to the scope controller automatically; provide it when
+  /// driving this controller directly.
+  VoidCallback? onScrolled;
+
   DndPoint? _pointer;
 
   /// Whether this controller is actively ticking.
@@ -104,6 +114,7 @@ final class DndAutoScrollController {
     }
 
     position.jumpTo(nextPixels);
+    onScrolled?.call();
   }
 
   double _velocityFor(DndPoint pointer) {
@@ -280,6 +291,7 @@ class _DndAutoScrollState extends State<DndAutoScroll> with TickerProviderStateM
         vsync: this,
         axis: widget.axis,
         options: widget.options,
+        onScrolled: _handleAutoScrolled,
       );
     } else {
       autoScrollController
@@ -287,10 +299,25 @@ class _DndAutoScrollState extends State<DndAutoScroll> with TickerProviderStateM
         ..updateViewport(viewportContext)
         ..updateVsync(this)
         ..axis = widget.axis
-        ..options = widget.options;
+        ..options = widget.options
+        ..onScrolled = _handleAutoScrolled;
     }
 
     _syncAutoScroll();
+  }
+
+  /// Auto-scroll moves the content under a stationary pointer: every measured
+  /// rect is stale and the collision result no longer matches what is under
+  /// the drag. Re-measure and re-run collision at the unchanged pointer.
+  void _handleAutoScrolled() {
+    final controller = _controller;
+    final session = controller?.activeSession;
+    if (controller == null || session == null || !controller.isDragging) {
+      return;
+    }
+
+    controller.measuring.markAllDirty();
+    controller.moveDrag(session.currentPointer);
   }
 
   void _scheduleScrollableLookup() {

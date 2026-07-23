@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -87,140 +85,56 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
   Widget build(BuildContext context) {
     return SortableMultiScope(
       containers: _containers,
+      // Open a live gap within and across columns while dragging. The library
+      // reports the per-card offset; the card builder animates it.
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xff090d16),
-                Color(0xff111827),
-                Color(0xff1f2937),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              SafeArea(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ShaderMask(
-                                  shaderCallback: (bounds) =>
-                                      const LinearGradient(
-                                    colors: [
-                                      Color(0xff8b5cf6),
-                                      Color(0xff06b6d4)
-                                    ],
-                                  ).createShader(bounds),
-                                  child: const Text(
-                                    'Interactive Board',
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Experimental Multi-Container Sortable Showcase (Web Only)',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xff8b5cf6)
-                                  .withValues(alpha: 0.15),
-                              border: Border.all(
-                                color: const Color(0xff8b5cf6)
-                                    .withValues(alpha: 0.35),
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.bolt,
-                                    size: 16, color: Color(0xffa78bfa)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'v1.0-dev',
-                                  style: TextStyle(
-                                    color: Color(0xffa78bfa),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Column Layout
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            for (final container in _containers)
-                              Expanded(
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 8),
-                                  child: BoardColumnWidget(
-                                    container: container,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+        appBar: AppBar(title: const Text('Multi-container board')),
+        body: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Drag a card within a column or across to another. dnd_kit '
+                    'reports the move; the board owns its data.',
                   ),
-                ),
-              ),
-
-              // Floating Drag Overlay
-              DndDragOverlay(
-                builder: (context, details) {
-                  final taskId = details.activeId.value;
-                  final task = tasks[taskId];
-                  if (task == null) return const SizedBox.shrink();
-
-                  return Transform.rotate(
-                    angle: math.pi / 60,
-                    child: TaskCardContent(
-                      task: task,
-                      isDraggingOverlay: true,
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final container in _containers)
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              child: BoardColumnWidget(container: container),
+                            ),
+                          ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            // The dragged card floats here; the in-list copy is hidden.
+            DndDragOverlay(
+              builder: (context, details) {
+                final task = tasks[details.activeId.value];
+                if (task == null) return const SizedBox.shrink();
+
+                return Material(
+                  color: Colors.transparent,
+                  child: TaskCardContent(task: task, isDraggingOverlay: true),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

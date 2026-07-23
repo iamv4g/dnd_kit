@@ -60,7 +60,7 @@ each demo pairs with a docs page and can later back its live embed.
 | `sensors`         | Sensors         | sensors                | activation distance and press-delay constraints          |
 | `modifiers`       | Modifiers       | modifiers              | axis lock, snap-to-grid, boundary clamp                  |
 | `auto-scroll`     | Auto-scroll     | auto-scroll            | edge-driven scrolling in a bounded list                  |
-| `sortable`        | Sortable        | sortable               | reorder a list; vertical / horizontal / grid strategies  |
+| `sortable`        | Sortable        | sortable               | reorder a list; strategies, and live offsets opening a placeholder gap |
 | `multi-container` | Multi-container | multi-container        | move cards within and across columns (Kanban shape)      |
 | `accessibility`   | Accessibility   | accessibility          | keyboard drag plus live-region announcements             |
 
@@ -105,6 +105,18 @@ catalog demo.
 A sensible fill order is shared-engine-visible concepts first (collision,
 sensors, modifiers, auto-scroll), then the presets (sortable, multi-container),
 then accessibility.
+
+## Advanced demos outside the parity catalog
+
+Beyond the eight catalog demos, a gallery may carry adapter-specific advanced
+demos that exercise a scenario the shared catalog does not, and that have no
+peer in the other adapter. These are labelled and ordered after the catalog,
+and are exempt from the parity matrix.
+
+- `flutter_example_gallery` — `planner`: nested sortables (a per-day
+  `SortableScope` for sections plus one board-wide `SortableMultiScope` for
+  items, sharing a controller) inside a `CustomScrollView` with sticky day
+  headers. Slivers are Flutter-only, so there is no Jaspr peer.
 
 ## How this feeds later work
 

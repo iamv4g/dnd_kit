@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.6.0
+
+Fixes four defaults reported by a production integration; see
+`docs/decisions/0024-drag-defaults-match-what-users-see.md`.
+
+- **Breaking behavior:** the active draggable is no longer a collision
+  candidate. `DndCollisionInput.droppableRects` excludes the active id, so
+  `overId` can never equal `activeId` and drops near the source slot commit
+  instead of silently resolving to no move. Custom detectors no longer need to
+  filter the active item themselves.
+- **Breaking behavior:** `beginDrag` marks all measurements dirty, so a drag
+  started in a scrolled viewport measures targets at their current positions
+  instead of reusing rects captured at registration.
+- Adds `SortableStrategies.dropOnOver`, which commits the move at the drop-over
+  target so the drop lands where the `isOver` highlight is. The geometric
+  strategies keep resolving from the dragged rect's center and now document
+  that they can disagree with the highlight.
+- Adds `DndRuntime.initialActiveRect`, the active rectangle measured at drag
+  start and fixed for the session, so drag previews survive a collapsed source
+  slot.
+
+Live sortable feedback, added in the same line; see
+`docs/decisions/0025-sortable-live-preview-and-offsets.md`.
+
+- Adds `SortableDragContext` and `SortableResolutionPhase`, so a sortable
+  strategy runs both while a drag moves (preview) and when it ends (commit)
+  through one code path. The preview a UI shows and the move that is finally
+  reported are therefore the same computation.
+- **Deprecated:** `SortableStrategyInput.event` and
+  `SortableMultiMoveInput.event`. Both are now getters that return null during
+  a preview; use `context` instead. They will be removed in a future release.
+- Adds `SortablePreview`, which reports where the active item would land if
+  released now. It resolves lazily and caches per move, so reading it from
+  every item in a list costs one resolution.
+- Adds `SortableOffsetResolver`, `SortableOffsetInput`, and the
+  `SortableOffsets.verticalList` / `horizontalList` / `none` built-ins, which
+  report how far each item a move displaces should shift. `none` is the
+  default: the library reports geometry and the application decides whether to
+  animate it.
+- Adds `SortableMultiOffsetResolver`, `SortableMultiOffsetInput`, and the
+  `SortableMultiOffsets.verticalLists` / `horizontalLists` / `none` built-ins
+  for boards: a same-container move matches the single-list result, and a
+  cross-container move closes the source column and opens the target column.
+  See `docs/decisions/0026-cross-container-sortable-offsets.md`.
+
+Multi-container refinements from live testing.
+
+- `DndRuntime.collisionDetector` is now settable (was final), and its
+  constructor argument is optional. `_updateCollision` reads it on every move,
+  so a surface such as `SortableMultiScope` can install its board detector on a
+  controller the application created.
+- `SortableMultiContainer.collisionDetector` decides before/after an item from
+  the pointer's position within the hovered card, not the dragged rect's
+  center, so cross-container insertion no longer flips with the grab offset. The
+  gap between two cards, and the trailing space below the last card, resolve to
+  the nearest card instead of to the whole column.
+- `SortableMultiContainer.resolveMove` reports no move while the pointer is
+  still inside the dragged item's own original slot (which stays fixed for the
+  drag). Picking an item up no longer shifts its neighbours, and releasing
+  without leaving the slot no longer reorders — in both preview and commit.
+
+
 ## 0.5.0
 
 - Adds `DndCollisionInput.activeId`: the id of the draggable being moved is now

@@ -16,6 +16,8 @@ class MultiContainerDemo extends StatefulComponent {
 }
 
 class _MultiContainerDemoState extends State<MultiContainerDemo> {
+  // A plain controller: SortableMultiScope installs its multi-container
+  // collision detector on it, so no manual wiring is needed.
   late final DndController _controller = DndController()
     ..addListener(_handleChanged);
 
@@ -98,6 +100,9 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
     return SortableMultiScope(
       controller: _controller,
       containers: _containers,
+      // Open a live gap within and across columns while dragging; the card
+      // builder animates the reported per-card offset.
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
       child: DemoPanel(
         children: [
@@ -150,7 +155,9 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
               padding: .all(12.px),
               border: .all(color: isOver ? cAccent : cBorder, width: 1.px),
               radius: .circular(18.px),
-              minHeight: 200.px,
+              // Fixed column height so each column scrolls its own cards,
+              // matching the Flutter board.
+              height: 360.px,
               flexDirection: .column,
               gap: .all(10.px),
               backgroundColor: isOver ? cAccentSoft : cPanelAlt,
@@ -172,19 +179,32 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
               span(styles: Styles(color: cAccent), [.text('${cards.length}')]),
             ],
           ),
-          if (cards.isEmpty)
-            div(
-              styles: Styles(
-                padding: .symmetric(vertical: 18.px, horizontal: 12.px),
-                border: .all(color: cBorderSoft, width: 1.px),
-                radius: .circular(12.px),
-                textAlign: .center,
-                color: cMuted,
-                fontSize: 12.px,
-              ),
-              const [.text('drop here')],
+          // Scroll area for the cards. `min-height: 0` lets this flex child
+          // shrink below its content so `overflow-y: auto` actually scrolls.
+          div(
+            styles: Styles(
+              display: .flex,
+              flexDirection: .column,
+              gap: .all(10.px),
+              flex: Flex(grow: 1, shrink: 1, basis: .auto),
+              raw: const {'overflow-y': 'auto', 'min-height': '0'},
             ),
-          for (final id in cards) _card(id),
+            [
+              if (cards.isEmpty)
+                div(
+                  styles: Styles(
+                    padding: .symmetric(vertical: 18.px, horizontal: 12.px),
+                    border: .all(color: cBorderSoft, width: 1.px),
+                    radius: .circular(12.px),
+                    textAlign: .center,
+                    color: cMuted,
+                    fontSize: 12.px,
+                  ),
+                  const [.text('drop here')],
+                ),
+              for (final id in cards) _card(id),
+            ],
+          ),
         ]),
       ),
     ]);
@@ -200,9 +220,20 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
           'Press space to pick up, arrow keys to move between cards or columns, '
           'space to drop, escape to cancel.',
       builder: (context, sortableState, child) {
-        return div(styles: Styles(opacity: sortableState.isActive ? 0.4 : 1), [
-          child,
-        ]);
+        final offset = sortableState.offset;
+        // Hide the dragged card (its floating copy is in the overlay) and slide
+        // the rest via the reported offset. Applied inside the builder, the
+        // transform stays below the measured element.
+        return div(
+          styles: Styles(
+            opacity: sortableState.isActive ? 0 : 1,
+            transform: offset == DndPoint.zero
+                ? Transform.none
+                : Transform.translate(x: offset.x.px, y: offset.y.px),
+            raw: const {'transition': 'transform 150ms ease'},
+          ),
+          [child],
+        );
       },
       child: _cardFace(card),
     );
