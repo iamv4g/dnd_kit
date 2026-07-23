@@ -138,6 +138,9 @@ class RecipesPage extends StatelessComponent {
                   'slot, leaving one clean gap.',
               'Read previewIndex when you want the landing index itself — for '
                   'a label, a counter, or an announcement.',
+              'On a board, set SortableMultiOffsets.verticalLists on the '
+                  'SortableMultiScope: it closes the source column and opens '
+                  'the target column across a cross-column drag.',
             ]),
             const CodeTabs(
               flutterFile: 'placeholder_gap.dart',

@@ -39,6 +39,11 @@ Live sortable feedback, added in the same line; see
   report how far each item a move displaces should shift. `none` is the
   default: the library reports geometry and the application decides whether to
   animate it.
+- Adds `SortableMultiOffsetResolver`, `SortableMultiOffsetInput`, and the
+  `SortableMultiOffsets.verticalLists` / `horizontalLists` / `none` built-ins
+  for boards: a same-container move matches the single-list result, and a
+  cross-container move closes the source column and opens the target column.
+  See `docs/decisions/0026-cross-container-sortable-offsets.md`.
 
 
 ## 0.5.0

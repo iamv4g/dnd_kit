@@ -32,21 +32,22 @@ class _DraggableCardState extends State<DraggableCard> {
         // Default platform-adaptive activation: immediate with a mouse, but a
         // short hold on touch so a quick swipe scrolls instead of dragging.
         builder: (context, details, child) {
+          // The live gap shows where the card lands, so cards slide aside via
+          // details.offset and the dragged card is hidden (its floating copy is
+          // in the overlay). Applied here, inside the builder, the transform
+          // stays below the measured box and cannot feed back into collision.
           return AnimatedContainer(
             key: ValueKey('task-drop:${widget.task.id}'),
             duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: details.isOver
-                    ? const Color(0xff8b5cf6)
-                    : Colors.transparent,
-                width: details.isOver ? 2.0 : 0.0,
-              ),
-              borderRadius: BorderRadius.circular(12),
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(
+              details.offset.x,
+              details.offset.y,
+              0,
             ),
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 150),
-              opacity: details.isDragging ? 0.35 : 1.0,
+              opacity: details.isDragging ? 0.0 : 1.0,
               child: child,
             ),
           );

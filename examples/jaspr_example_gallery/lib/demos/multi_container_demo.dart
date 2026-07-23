@@ -98,6 +98,9 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
     return SortableMultiScope(
       controller: _controller,
       containers: _containers,
+      // Open a live gap within and across columns while dragging; the card
+      // builder animates the reported per-card offset.
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
       child: DemoPanel(
         children: [
@@ -200,9 +203,20 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
           'Press space to pick up, arrow keys to move between cards or columns, '
           'space to drop, escape to cancel.',
       builder: (context, sortableState, child) {
-        return div(styles: Styles(opacity: sortableState.isActive ? 0.4 : 1), [
-          child,
-        ]);
+        final offset = sortableState.offset;
+        // Hide the dragged card (its floating copy is in the overlay) and slide
+        // the rest via the reported offset. Applied inside the builder, the
+        // transform stays below the measured element.
+        return div(
+          styles: Styles(
+            opacity: sortableState.isActive ? 0 : 1,
+            transform: offset == DndPoint.zero
+                ? Transform.none
+                : Transform.translate(x: offset.x.px, y: offset.y.px),
+            raw: const {'transition': 'transform 150ms ease'},
+          ),
+          [child],
+        );
       },
       child: _cardFace(card),
     );
