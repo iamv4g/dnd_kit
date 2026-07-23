@@ -159,6 +159,63 @@ void main() {
       expect(details?.toIndex, 2);
     });
 
+    test('adaptive inserts before the over item when the pointer is in its upper half', () {
+      // task-4 rect: top 30, height 20 → center y 40. Pointer at y 34 (upper half).
+      final details = SortableMultiContainer.moveDetailsFor(
+        _event(
+          activeId: const DndId('task-1'),
+          overId: const DndId('task-4'),
+          from: const DndPoint(10, 10),
+          to: const DndPoint(250, 34),
+        ),
+        containers: containers,
+        itemRects: itemRects,
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 20),
+      );
+
+      expect(details?.toIndex, 1, reason: 'upper half of task-4 lands before it');
+    });
+
+    test('adaptive inserts after the over item when the pointer is in its lower half', () {
+      // Pointer at y 46 (lower half of task-4, center 40).
+      final details = SortableMultiContainer.moveDetailsFor(
+        _event(
+          activeId: const DndId('task-1'),
+          overId: const DndId('task-4'),
+          from: const DndPoint(10, 10),
+          to: const DndPoint(250, 46),
+        ),
+        containers: containers,
+        itemRects: itemRects,
+        activeRect: const DndRect(left: 0, top: 0, width: 100, height: 20),
+      );
+
+      expect(details?.toIndex, 2, reason: 'lower half of task-4 lands after it');
+    });
+
+    test('adaptive insertion is independent of where the card was grabbed', () {
+      // Same pointer (lower half of task-4), two very different grab offsets.
+      // The old active-rect-center rule flipped with the grab; the pointer rule
+      // must not.
+      SortableMoveDetails? resolve(DndPoint from) {
+        return SortableMultiContainer.moveDetailsFor(
+          _event(
+            activeId: const DndId('task-1'),
+            overId: const DndId('task-4'),
+            from: from,
+            to: const DndPoint(250, 46),
+          ),
+          containers: containers,
+          itemRects: itemRects,
+          activeRect: const DndRect(left: 0, top: 0, width: 100, height: 20),
+        );
+      }
+
+      // Grabbed near the top of the card vs near the bottom: same landing.
+      expect(resolve(const DndPoint(10, 2))?.toIndex, 2);
+      expect(resolve(const DndPoint(10, 18))?.toIndex, 2);
+    });
+
     test('supports explicit insertion overrides for cross-container moves', () {
       final details = SortableMultiContainer.moveDetailsFor(
         _event(activeId: const DndId('task-1'), overId: const DndId('task-4')),

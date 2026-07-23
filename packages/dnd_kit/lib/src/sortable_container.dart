@@ -326,16 +326,21 @@ abstract final class SortableMultiContainer {
       case SortableMultiInsertionStrategy.afterOverItem:
         return baseIndex + 1;
       case SortableMultiInsertionStrategy.adaptive:
-        final activeTranslatedRect = input.activeTranslatedRect;
         final overId = input.context.overId;
         final overRect = overId == null ? null : input.itemRects[overId];
-        if (activeTranslatedRect == null || overRect == null) {
+        if (overRect == null) {
           return baseIndex;
         }
 
+        // Decide before/after from the pointer's position within the hovered
+        // card, not the dragged card's translated center. The dragged center
+        // depends on where the card was grabbed and which column it came from,
+        // so it flickers at the boundary and does not track what the user sees.
+        // The pointer is already what chose the hovered card (pointerWithin),
+        // so using it here keeps the whole decision on one signal.
         return _shouldInsertAfter(
           strategy: input.strategy,
-          activeTranslatedRect: activeTranslatedRect,
+          pointer: input.context.session.currentPointer,
           overRect: overRect,
         )
             ? baseIndex + 1
@@ -345,26 +350,25 @@ abstract final class SortableMultiContainer {
 
   static bool _shouldInsertAfter({
     required SortableStrategy strategy,
-    required DndRect activeTranslatedRect,
+    required DndPoint pointer,
     required DndRect overRect,
   }) {
-    final activeCenter = activeTranslatedRect.center;
     final overCenter = overRect.center;
 
     if (identical(strategy, SortableStrategies.horizontalList)) {
-      return activeCenter.x > overCenter.x;
+      return pointer.x > overCenter.x;
     }
 
     if (identical(strategy, SortableStrategies.grid)) {
-      final deltaY = activeCenter.y - overCenter.y;
+      final deltaY = pointer.y - overCenter.y;
       if (deltaY.abs() > overRect.height / 2) {
         return deltaY > 0;
       }
 
-      return activeCenter.x > overCenter.x;
+      return pointer.x > overCenter.x;
     }
 
-    return activeCenter.y > overCenter.y;
+    return pointer.y > overCenter.y;
   }
 }
 
