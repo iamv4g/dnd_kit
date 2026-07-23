@@ -226,6 +226,138 @@ void main() {
       expect(offsets[const DndId('item-2')], const DndPoint(-70, 0));
     });
   });
+
+  group('SortableMultiOffsets.none', () {
+    test('never moves anything', () {
+      expect(
+        SortableMultiOffsets.none(
+          _multiInput(
+            fromContainerId: 'todo',
+            fromIndex: 0,
+            toContainerId: 'done',
+            toIndex: 0,
+          ),
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  group('SortableMultiOffsets.verticalLists same container', () {
+    test('matches the single-list result on the same column data', () {
+      final multi = SortableMultiOffsets.verticalLists(
+        _multiInput(
+          fromContainerId: 'todo',
+          fromIndex: 0,
+          toContainerId: 'todo',
+          toIndex: 2,
+        ),
+      );
+      // The single-list resolver over the very same todo column and rects.
+      final single = SortableOffsets.verticalList(
+        SortableOffsetInput(
+          activeId: const DndId('t0'),
+          itemIds: const <DndId>[DndId('t0'), DndId('t1'), DndId('t2')],
+          itemRects: _multiRects(),
+          fromIndex: 0,
+          toIndex: 2,
+        ),
+      );
+
+      expect(multi, single);
+      expect(multi, <DndId, DndPoint>{
+        const DndId('t1'): const DndPoint(0, -50),
+        const DndId('t2'): const DndPoint(0, -50),
+      });
+    });
+  });
+
+  group('SortableMultiOffsets.verticalLists cross container', () {
+    test('closes the source column and opens the target column', () {
+      // todo: [t0, t1, t2] at y 0/50/100. done: [d0, d1] at y 0/50.
+      // Drag t0 to done index 1: t1, t2 rise; d1 drops.
+      final offsets = SortableMultiOffsets.verticalLists(
+        _multiInput(
+          fromContainerId: 'todo',
+          fromIndex: 0,
+          toContainerId: 'done',
+          toIndex: 1,
+        ),
+      );
+
+      // Source column closes: items after t0 shift up by the dragged extent.
+      expect(offsets[const DndId('t1')], const DndPoint(0, -50));
+      expect(offsets[const DndId('t2')], const DndPoint(0, -50));
+      // Target column opens: items at/after index 1 shift down.
+      expect(offsets[const DndId('d1')], const DndPoint(0, 50));
+      // d0 (before the landing index) stays.
+      expect(offsets.containsKey(const DndId('d0')), isFalse);
+      // The dragged item never gets an offset.
+      expect(offsets.containsKey(const DndId('t0')), isFalse);
+    });
+
+    test('opens nothing when landing at the end of the target', () {
+      final offsets = SortableMultiOffsets.verticalLists(
+        _multiInput(
+          fromContainerId: 'todo',
+          fromIndex: 0,
+          toContainerId: 'done',
+          toIndex: 2, // past the last done item
+        ),
+      );
+
+      expect(offsets[const DndId('t1')], const DndPoint(0, -50));
+      expect(offsets.containsKey(const DndId('d0')), isFalse);
+      expect(offsets.containsKey(const DndId('d1')), isFalse);
+    });
+
+    test('still offsets an unmeasured target item', () {
+      final rects = _multiRects()..remove(const DndId('d1'));
+      final offsets = SortableMultiOffsets.verticalLists(
+        _multiInput(
+          fromContainerId: 'todo',
+          fromIndex: 0,
+          toContainerId: 'done',
+          toIndex: 1,
+          rects: rects,
+        ),
+      );
+
+      // d1's own rect is gone, but the shift comes from the dragged extent, so
+      // it still gets an offset once it scrolls in. The gap falls back to 0.
+      expect(offsets[const DndId('d1')], const DndPoint(0, 40));
+    });
+
+    test('reports nothing without a dragged extent', () {
+      final rects = _multiRects()..remove(const DndId('t0'));
+      expect(
+        SortableMultiOffsets.verticalLists(
+          _multiInput(
+            fromContainerId: 'todo',
+            fromIndex: 0,
+            toContainerId: 'done',
+            toIndex: 1,
+            rects: rects,
+          ),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('reports nothing when a container is missing', () {
+      expect(
+        SortableMultiOffsets.verticalLists(
+          _multiInput(
+            fromContainerId: 'todo',
+            fromIndex: 0,
+            toContainerId: 'ghost',
+            toIndex: 0,
+          ),
+        ),
+        isEmpty,
+      );
+    });
+  });
 }
 
 SortableOffsetInput _input({
@@ -252,5 +384,43 @@ Map<DndId, DndRect> _uniformRects() {
     const DndId('item-1'): const DndRect(left: 0, top: 0, width: 100, height: 40),
     const DndId('item-2'): const DndRect(left: 0, top: 40, width: 100, height: 40),
     const DndId('item-3'): const DndRect(left: 0, top: 80, width: 100, height: 40),
+  };
+}
+
+SortableMultiOffsetInput _multiInput({
+  required String fromContainerId,
+  required int fromIndex,
+  required String toContainerId,
+  required int toIndex,
+  Map<DndId, DndRect>? rects,
+}) {
+  return SortableMultiOffsetInput(
+    activeId: const DndId('t0'),
+    containers: <SortableContainer>[
+      SortableContainer(
+        id: const DndId('todo'),
+        itemIds: const <DndId>[DndId('t0'), DndId('t1'), DndId('t2')],
+      ),
+      SortableContainer(
+        id: const DndId('done'),
+        itemIds: const <DndId>[DndId('d0'), DndId('d1')],
+      ),
+    ],
+    itemRects: rects ?? _multiRects(),
+    fromContainerId: DndId(fromContainerId),
+    fromIndex: fromIndex,
+    toContainerId: DndId(toContainerId),
+    toIndex: toIndex,
+  );
+}
+
+// todo column stacked at x 0, done column at x 200; both 40 tall with a 10 gap.
+Map<DndId, DndRect> _multiRects() {
+  return <DndId, DndRect>{
+    const DndId('t0'): const DndRect(left: 0, top: 0, width: 100, height: 40),
+    const DndId('t1'): const DndRect(left: 0, top: 50, width: 100, height: 40),
+    const DndId('t2'): const DndRect(left: 0, top: 100, width: 100, height: 40),
+    const DndId('d0'): const DndRect(left: 200, top: 0, width: 100, height: 40),
+    const DndId('d1'): const DndRect(left: 200, top: 50, width: 100, height: 40),
   };
 }
