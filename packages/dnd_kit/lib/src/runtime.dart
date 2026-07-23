@@ -42,7 +42,7 @@ class DndRuntime {
           scheduleDeferredTask: scheduleDeferredTask,
         ),
         modifiers = List<DndModifier>.unmodifiable(modifiers),
-        collisionDetector = collisionDetector ??
+        _collisionDetector = collisionDetector ??
             DndCollisionDetectors.compose(
               const <DndCollisionDetector>[
                 DndCollisionDetectors.pointerWithin,
@@ -63,8 +63,21 @@ class DndRuntime {
   /// Adapter-owned measured rectangles for registered drag-and-drop sources.
   final DndMeasuringRegistry measuring = DndMeasuringRegistry();
 
+  DndCollisionDetector _collisionDetector;
+
   /// The detector used to rank measured droppable collision candidates.
-  final DndCollisionDetector collisionDetector;
+  // ignore: unnecessary_getters_setters
+  DndCollisionDetector get collisionDetector => _collisionDetector;
+
+  /// Replaces the collision detector used for subsequent moves.
+  ///
+  /// [_updateCollision] reads this on every move, so a new detector takes
+  /// effect immediately. An adapter surface such as `SortableMultiScope`
+  /// installs its own detector here so its board semantics apply even to a
+  /// controller the application created.
+  set collisionDetector(DndCollisionDetector detector) {
+    _collisionDetector = detector;
+  }
 
   /// The modifiers applied to active drag movement before collision detection.
   final List<DndModifier> modifiers;

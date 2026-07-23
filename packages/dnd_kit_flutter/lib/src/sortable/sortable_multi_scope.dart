@@ -27,19 +27,11 @@ class SortableMultiScope extends StatefulWidget {
 
   /// The externally owned drag-and-drop controller for controlled usage.
   ///
-  /// When omitted, the scope creates a controller wired with the
-  /// multi-container collision detector. A controller you pass here keeps its
-  /// own detector, so give it one built for this board — otherwise the pointer
-  /// resolves to the whole column in the gaps between cards and drops append at
-  /// the end:
-  ///
-  /// ```dart
-  /// DndController(
-  ///   collisionDetector: SortableMultiContainer.collisionDetector(
-  ///     containers: () => myContainers,
-  ///   ),
-  /// )
-  /// ```
+  /// The scope installs its multi-container collision detector on whatever
+  /// controller it uses, so a plain `DndController()` passed here works without
+  /// any manual wiring. Customize ranking through [collisionDetector] rather
+  /// than by pre-setting a detector on the controller — the scope overrides the
+  /// controller's detector with its own effective one.
   final DndController? controller;
 
   /// Default haptic feedback behavior for descendant draggables.
@@ -135,9 +127,7 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
   void initState() {
     super.initState();
     if (widget.controller == null) {
-      _internalController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
+      _internalController = DndController();
     }
     _bindController();
   }
@@ -150,15 +140,7 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
       _internalController?.dispose();
       _internalController = null;
     } else if (oldWidget.controller != null && widget.controller == null) {
-      _internalController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
-    } else if (widget.controller == null &&
-        oldWidget.collisionDetector != widget.collisionDetector) {
-      _internalController?.dispose();
-      _internalController = DndController(
-        collisionDetector: _effectiveCollisionDetector,
-      );
+      _internalController = DndController();
     }
 
     _bindController();
@@ -179,6 +161,12 @@ class _SortableMultiScopeState extends State<SortableMultiScope> {
 
   void _bindController() {
     final next = _controller;
+    // Install the board's collision detector on whatever controller is in use —
+    // internal or app-provided — so multi-container semantics always apply.
+    // This is why an app can pass a plain DndController without wiring the
+    // detector itself.
+    next.collisionDetector = _effectiveCollisionDetector;
+
     if (identical(_listeningTo, next)) {
       return;
     }

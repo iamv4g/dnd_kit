@@ -49,6 +49,11 @@ class DndController extends ChangeNotifier {
   /// The detector used to rank measured droppable collision candidates.
   DndCollisionDetector get collisionDetector => _runtime.collisionDetector;
 
+  /// Replaces the collision detector used for subsequent moves.
+  set collisionDetector(DndCollisionDetector detector) {
+    _runtime.collisionDetector = detector;
+  }
+
   /// The modifiers applied to active drag movement before collision detection.
   List<DndModifier> get modifiers => _runtime.modifiers;
 
