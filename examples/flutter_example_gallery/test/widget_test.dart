@@ -121,6 +121,7 @@ void main() {
       'Sortable',
       'Multi-container',
       'Accessibility',
+      'Planner',
     ];
     for (final label in labels) {
       await tester.tap(find.text(label).first);
