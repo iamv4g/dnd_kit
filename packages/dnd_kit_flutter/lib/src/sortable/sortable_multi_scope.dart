@@ -26,6 +26,20 @@ class SortableMultiScope extends StatefulWidget {
   }) : containers = List<SortableContainer>.unmodifiable(containers);
 
   /// The externally owned drag-and-drop controller for controlled usage.
+  ///
+  /// When omitted, the scope creates a controller wired with the
+  /// multi-container collision detector. A controller you pass here keeps its
+  /// own detector, so give it one built for this board — otherwise the pointer
+  /// resolves to the whole column in the gaps between cards and drops append at
+  /// the end:
+  ///
+  /// ```dart
+  /// DndController(
+  ///   collisionDetector: SortableMultiContainer.collisionDetector(
+  ///     containers: () => myContainers,
+  ///   ),
+  /// )
+  /// ```
   final DndController? controller;
 
   /// Default haptic feedback behavior for descendant draggables.

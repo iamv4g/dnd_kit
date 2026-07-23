@@ -16,8 +16,15 @@ class MultiContainerDemo extends StatefulComponent {
 }
 
 class _MultiContainerDemoState extends State<MultiContainerDemo> {
-  late final DndController _controller = DndController()
-    ..addListener(_handleChanged);
+  // A controller passed to SortableMultiScope must carry the multi-container
+  // collision detector; the scope only applies its default detector to a
+  // controller it creates itself. Without this, the pointer resolves to the
+  // whole column in the gaps between cards and the drop appends at the end.
+  late final DndController _controller = DndController(
+    collisionDetector: SortableMultiContainer.collisionDetector(
+      containers: () => _containers,
+    ),
+  )..addListener(_handleChanged);
 
   Map<String, List<DndId>> _board = _initialBoard();
   int _moves = 0;
