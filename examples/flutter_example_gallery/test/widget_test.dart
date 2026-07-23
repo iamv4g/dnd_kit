@@ -24,7 +24,7 @@ void main() {
     await tester.tap(find.text('Multi-container'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Interactive Board'), findsOneWidget);
+    expect(find.text('Multi-container board'), findsOneWidget);
     expect(find.text('Design Dark Mode UI'), findsOneWidget);
   });
 

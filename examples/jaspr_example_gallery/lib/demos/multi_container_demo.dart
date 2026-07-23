@@ -155,7 +155,9 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
               padding: .all(12.px),
               border: .all(color: isOver ? cAccent : cBorder, width: 1.px),
               radius: .circular(18.px),
-              minHeight: 200.px,
+              // Fixed column height so each column scrolls its own cards,
+              // matching the Flutter board.
+              height: 360.px,
               flexDirection: .column,
               gap: .all(10.px),
               backgroundColor: isOver ? cAccentSoft : cPanelAlt,
@@ -177,19 +179,32 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
               span(styles: Styles(color: cAccent), [.text('${cards.length}')]),
             ],
           ),
-          if (cards.isEmpty)
-            div(
-              styles: Styles(
-                padding: .symmetric(vertical: 18.px, horizontal: 12.px),
-                border: .all(color: cBorderSoft, width: 1.px),
-                radius: .circular(12.px),
-                textAlign: .center,
-                color: cMuted,
-                fontSize: 12.px,
-              ),
-              const [.text('drop here')],
+          // Scroll area for the cards. `min-height: 0` lets this flex child
+          // shrink below its content so `overflow-y: auto` actually scrolls.
+          div(
+            styles: Styles(
+              display: .flex,
+              flexDirection: .column,
+              gap: .all(10.px),
+              flex: Flex(grow: 1, shrink: 1, basis: .auto),
+              raw: const {'overflow-y': 'auto', 'min-height': '0'},
             ),
-          for (final id in cards) _card(id),
+            [
+              if (cards.isEmpty)
+                div(
+                  styles: Styles(
+                    padding: .symmetric(vertical: 18.px, horizontal: 12.px),
+                    border: .all(color: cBorderSoft, width: 1.px),
+                    radius: .circular(12.px),
+                    textAlign: .center,
+                    color: cMuted,
+                    fontSize: 12.px,
+                  ),
+                  const [.text('drop here')],
+                ),
+              for (final id in cards) _card(id),
+            ],
+          ),
         ]),
       ),
     ]);

@@ -1,11 +1,11 @@
-import 'dart:ui';
-
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
 import 'draggable_card.dart';
 import 'task_item.dart';
 
+/// A Kanban column in plain Material style: a surface panel with a header and
+/// its own scrollable card list.
 class BoardColumnWidget extends StatelessWidget {
   const BoardColumnWidget({
     super.key,
@@ -40,21 +40,23 @@ class BoardColumnWidget extends StatelessWidget {
     }
   }
 
-  Color get _color {
+  Color get _accent {
     switch (container.id.value) {
       case 'backlog':
-        return const Color(0xfff3a683);
+        return Colors.orange;
       case 'in_progress':
-        return const Color(0xff06b6d4);
+        return Colors.cyan;
       case 'completed':
-        return const Color(0xff10b981);
+        return Colors.green;
       default:
-        return const Color(0xff8b5cf6);
+        return Colors.blueGrey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return SortableMultiContainerArea(
       id: container.id,
       itemIds: container.itemIds,
@@ -62,111 +64,91 @@ class BoardColumnWidget extends StatelessWidget {
         final isOver = details.isOver;
         return AnimatedContainer(
           key: ValueKey('column-drop:${container.id.value}'),
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: isOver ? 0.06 : 0.03),
-            borderRadius: BorderRadius.circular(16),
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isOver
-                  ? _color.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.06),
-              width: isOver ? 1.5 : 1.0,
+              color: isOver ? scheme.primary : scheme.outlineVariant,
+              width: isOver ? 1.5 : 1,
             ),
-            boxShadow: [
-              if (isOver)
-                BoxShadow(
-                  color: _color.withValues(alpha: 0.1),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-            ],
           ),
           child: child,
         );
       },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                // Column Header
-                Row(
-                  children: [
-                    Icon(_icon, color: _color, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${container.itemIds.length}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Divider(color: Colors.white.withValues(alpha: 0.06), height: 1),
-                const SizedBox(height: 16),
+                Icon(_icon, color: _accent, size: 18),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      final visibleIds = <DndId>[
-                        for (final itemId in container.itemIds)
-                          if (tasks[itemId.value] != null) itemId,
-                      ];
-                      return ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: visibleIds.length,
-                        // Relocate keyed cards when the order changes instead of
-                        // rebuilding them, so dnd_kit registrations stay stable
-                        // across reorders in a lazy list.
-                        findChildIndexCallback: (key) {
-                          final value = (key as ValueKey<String>).value;
-                          final id = value.replaceFirst('task-padding:', '');
-                          final index =
-                              visibleIds.indexWhere((e) => e.value == id);
-                          return index < 0 ? null : index;
-                        },
-                        itemBuilder: (context, index) {
-                          final itemId = visibleIds[index];
-                          return Padding(
-                            key: ValueKey('task-padding:${itemId.value}'),
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: DraggableCard(
-                              key: ValueKey('task-card:${itemId.value}'),
-                              task: tasks[itemId.value]!,
-                            ),
-                          );
-                        },
-                      );
-                    },
+                  child: Text(
+                    _title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: scheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${container.itemIds.length}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 12),
+            // The column has a fixed height (its parent stretches it), so this
+            // list scrolls its own cards.
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final visibleIds = <DndId>[
+                    for (final itemId in container.itemIds)
+                      if (tasks[itemId.value] != null) itemId,
+                  ];
+                  return ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: visibleIds.length,
+                    // Relocate keyed cards when the order changes instead of
+                    // rebuilding them, so dnd_kit registrations stay stable
+                    // across reorders in a lazy list.
+                    findChildIndexCallback: (key) {
+                      final value = (key as ValueKey<String>).value;
+                      final id = value.replaceFirst('task-padding:', '');
+                      final index = visibleIds.indexWhere((e) => e.value == id);
+                      return index < 0 ? null : index;
+                    },
+                    itemBuilder: (context, index) {
+                      final itemId = visibleIds[index];
+                      return Padding(
+                        key: ValueKey('task-padding:${itemId.value}'),
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: DraggableCard(
+                          key: ValueKey('task-card:${itemId.value}'),
+                          task: tasks[itemId.value]!,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
