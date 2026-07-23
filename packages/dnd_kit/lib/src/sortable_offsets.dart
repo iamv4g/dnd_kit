@@ -226,8 +226,7 @@ final class SortableMultiOffsetInput {
 /// Built-in multi-container offset resolvers.
 abstract final class SortableMultiOffsets {
   /// Moves nothing. The default, and the behavior before offsets existed.
-  static Map<DndId, DndPoint> none(SortableMultiOffsetInput input) =>
-      const <DndId, DndPoint>{};
+  static Map<DndId, DndPoint> none(SortableMultiOffsetInput input) => const <DndId, DndPoint>{};
 
   /// Shifts items for columns laid out as vertical lists, along the y axis.
   static Map<DndId, DndPoint> verticalLists(SortableMultiOffsetInput input) {
@@ -274,8 +273,8 @@ abstract final class SortableMultiOffsets {
     final offsets = <DndId, DndPoint>{};
 
     // Source column: items after the dragged item close the vacated slot.
-    final sourceShift =
-        -(extent + SortableOffsets._gapOf(fromContainer.itemIds, input.itemRects, vertical: vertical));
+    final sourceShift = -(extent +
+        SortableOffsets._gapOf(fromContainer.itemIds, input.itemRects, vertical: vertical));
     for (var index = input.fromIndex + 1; index < fromContainer.itemIds.length; index += 1) {
       final id = fromContainer.itemIds[index];
       if (id == input.activeId) {
