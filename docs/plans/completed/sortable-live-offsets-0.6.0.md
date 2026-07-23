@@ -1,0 +1,436 @@
+# Execution Plan: Sortable Live Preview And Offset Plug-In (0.6.0)
+
+Date: 2026-07-22
+
+## Status
+
+Completed
+
+## Outcome
+
+Applications can render live sortable feedback — neighbours moving aside, a gap
+opening where the item will land — without re-deriving intent the engine
+already computes, and without the library rendering or animating anything.
+
+Two additive capabilities, shipping inside the 0.6.0 line:
+
+1. **Live preview.** During a drag, the sortable layer publishes where the
+   active item would land if released now (`previewIndex`,
+   `previewContainerId`), instead of only resolving it at drag end.
+2. **Offset plug-in.** An opt-in pure function (`SortableOffsetResolver`) maps
+   the current preview to a per-item offset. `SortableItemDetails.offset`
+   carries it to the builder; the application applies it with whatever
+   animation primitive it wants.
+
+Visual behavior is unchanged by default: with no resolver configured every
+offset is zero, so an app that ignores the new surface looks exactly as it does
+today.
+
+## Context
+
+- This ships **inside 0.6.0**, not a later line. 0.6.0 is neither merged to
+  `main` nor published, so folding the new surface in means consumers adopt one
+  breaking release instead of two.
+- The 0.6.0 drag-default fixes are already complete on `release/0.6.0`
+  (`docs/plans/completed/integration-feedback-fixes-0.6.0.md`, ADR 0024). That
+  plan stays completed; this is additive work on the same unreleased line, and
+  its changelog entries extend the existing 0.6.0 sections rather than opening
+  a new version.
+- `INTEGRATION_FEEDBACK.md` §3.5 is the demand signal: the integration
+  hand-built a placeholder gap and noted it "has to re-derive the insert
+  direction the reducer already knows".
+- Repository authority that constrains the design:
+  - `docs/product/api-principles.md`, Multi-Container Defaults: "Applications
+    still own rendering, **animation**, and collection mutation." A
+    library-owned animating widget would contradict this; returning geometry
+    the application applies does not.
+  - Users Own Data: the library reports intent and must not mutate user
+    collections.
+  - Shared Drag And Registry Principles: "Sortable strategies operate on the
+    measured (visible) item subset" — the offset resolver must tolerate
+    partially-measured lazy lists the same way.
+  - Performance Principles: do not rebuild the whole app per pointer move; run
+    collision at most once per frame.
+  - Shared Family Naming: no React-shaped names; stay in the `Sortable*`
+    family.
+  - ADR 0022: `dnd_kit` owns default interaction semantics for the common
+    board/list case; override hooks stay explicit and additive.
+- Prior art: `@dnd-kit/sortable` computes a transform per item and the consumer
+  applies it via `style`; it does not animate on the consumer's behalf. This
+  plan follows that division of labour, not its package split — sortable is
+  already bundled into `dnd_kit` plus the adapters here.
+
+Two structural findings from the current code, both load-bearing:
+
+- **The strategy only runs at drag end.** `SortableStrategyInput.event` is
+  typed `DndDragEndEvent`, and `moveDetailsFor` is called from `onDragEnd`.
+  Live preview needs the same computation from an active session, which is why
+  the input contract is being generalized.
+- **Applying an offset inside the builder cannot corrupt measurement.** In
+  Flutter the measured `DndMeasuredBox` wraps the builder's output; in Jaspr the
+  measured `div(key: _nodeKey)` is the parent of the builder's output. A
+  transform applied by the builder therefore sits *below* the measured node in
+  both adapters, so measured rects keep reporting unshifted positions and the
+  shift → measure → collision → shift feedback loop does not form. This is what
+  makes the feature safe by construction, and it holds only while the offset is
+  delivered to (and applied by) the item builder.
+
+## Scope
+
+In scope:
+
+- Live preview for `SortableScope` and `SortableMultiScope` (both use the same
+  resolution path, so covering the board costs almost nothing).
+- `SortableOffsetResolver` in `dnd_kit`, with `SortableOffsets.verticalList`,
+  `SortableOffsets.horizontalList`, and `SortableOffsets.none` as the default.
+- `SortableItemDetails.offset` on both adapters, defaulting to `DndPoint.zero`,
+  wired for the **single-container** surface.
+- Docs: how to apply the offset, the rule that it must be applied inside the
+  item builder, an updated placeholder-gap recipe, and the performance note.
+- ADR for the preview/offset contract and the "offsets are output, never input"
+  rule, including a revisit of the ADR 0024 tradeoff.
+- Extend the existing 0.6.0 changelog entries; no additional version bump.
+- Align `docs/product/release-roadmap.md`, which is currently stale: its
+  "Current State" claims work through `US-079` while later paragraphs describe
+  through `US-088`, and it does not mention the 0.6.0 line at all.
+
+Out of scope:
+
+- **Cross-container offsets.** `SortableMultiScope` gets preview but not
+  shifting; source-column-closes / target-column-opens geometry is the hardest
+  part and must not hold up this line.
+- **Any shifting-by-default behavior.** The mechanism ships; whether
+  `SortableScope` should shift by default is a 1.0 question.
+- Drop animation for `DndDragOverlay` (ghost flying to its landing slot). Same
+  problem family, separate work.
+- Grid offsets. Two-dimensional shifting has materially different visual
+  expectations; add only after list shifting has shipped.
+- Any change to primitives (`DndDraggable`, `DndDroppable`, `DndController`).
+  They stay silent, per the agreed layering.
+
+## Approach
+
+Four groups, core first so both adapters inherit the same policy.
+
+### Group 1 — `SortableDragContext`
+
+Introduce a drag context (session, `overId`, item rects) that both the move
+path and the drag-end path construct `SortableStrategyInput` from, carrying
+which phase it is in so a strategy can distinguish preview from commit. Keep
+`SortableStrategyInput.event` for this release and deprecate it.
+
+Proof: core tests that a strategy produces identical results from a mid-drag
+context and from the equivalent drag-end event.
+
+### Group 2 — Live preview
+
+Resolve the preview through the Group 1 context and publish `previewIndex` /
+`previewContainerId` on scope data and `SortableItemDetails`.
+
+Because preview is always available (decision 1), it must not cost anything for
+apps that never read it: compute it **lazily and cache per move** rather than
+eagerly on every controller notification. A getter that recomputes only when
+the drag state has changed since the last read keeps the performance principle
+intact while still behaving like always-on state.
+
+The invariant worth testing explicitly: **the preview at the moment of release
+equals the move that is committed.** If those diverge, the feature lies to the
+UI — exactly the class of bug 0.6.0 fixed.
+
+Proof: core/adapter tests for that invariant across the geometric strategies
+and `dropOnOver`; preview is null when no drag is active; a test that reading
+preview twice in one move resolves once.
+
+### Group 3 — `SortableOffsetResolver`
+
+Add the pure function type in `dnd_kit` — a fourth member of the plug-in family
+alongside `DndCollisionDetector`, `DndModifier`, and `SortableStrategy` —
+mapping (active id, item ids, measured item rects, from index, preview index)
+to a per-item offset map. Ship the vertical and horizontal list built-ins plus
+`none`.
+
+Symmetry worth preserving in naming and docs: `DndModifier` transforms the
+**active** item's transform; this transforms the **other** items' transforms.
+
+Rules the implementation must hold:
+
+- Pure and synchronous; no measurement, no side effects.
+- Unmeasured (off-screen) items get no offset rather than a guessed one, per
+  the visible-subset principle. This is visually sufficient because off-screen
+  items are not seen.
+- Offsets are output only. They must never be fed back into collision or
+  measurement.
+
+Proof: core unit tests — preview equal to from-index yields all-zero offsets;
+items outside the moved range are untouched; unmeasured items are skipped;
+direction reverses correctly for upward vs downward moves.
+
+### Group 4 — Adapter exposure, docs, release
+
+`SortableItemDetails.offset` on Flutter and Jaspr; wire the resolver through
+`SortableScope`.
+
+Proof: Flutter widget test asserting the builder receives expected offsets; a
+guard test that `overId` does not oscillate while offsets are applied; a Jaspr
+browser test for the same, including an assertion that measured rects are
+unchanged while offsets are non-zero (so a future refactor of the component
+structure fails loudly); a gallery demo; website recipe update; ADR; changelog
+extension; roadmap alignment.
+
+## Risks And Recovery
+
+- **Preview cost for everyone.** Decision 1 makes preview always-on, so without
+  care the strategy would run on every move for every consumer, against the
+  performance principle. Mitigation is structural, not incidental: lazy,
+  cached-per-move resolution (Group 2). Add a test that proves it resolves once
+  per move regardless of how many items read it.
+- **Rebuild cost per move.** Measured, not assumed: a widget test drives 40
+  moves over a 200-item lazy list and reports `none` 152ms versus
+  `verticalList` 105ms. Same cost class; the offsets run measured second and so
+  benefits from warm-up, which is why the conclusion is "no change in cost
+  class" rather than "faster". The resolver runs once per move regardless of
+  how many items read it, which is what keeps it flat. The check lives in
+  `performance_smoke_test.dart` so a future regression fails a test rather than
+  a review.
+- **Environment-sensitive Jaspr browser test.** `auto_scroll_browser_test.dart`
+  ("resolves horizontal collision against a target scrolled into view") asserts
+  `controller.overId` is still null immediately after a pointermove, before
+  auto-scroll brings the target into view. It fails with
+  `Expected: null / Actual: DndId(drop-zone)`, meaning the target is already
+  under the pointer — a layout/viewport condition, not drag logic.
+
+  Established by control runs rather than inference: the same command fails 3/3
+  on the current work, 3/3 on the Group 2 commit, and 3/3 on the untouched
+  `release/0.6.0` baseline — yet all of those passed earlier the same day (the
+  0.6.0 baseline 7/8, the Group 2 commit 9/9 including three under deliberate
+  CPU load). The code is not the variable; the browser environment is. Earlier
+  speculation in this plan about a stale compiled bundle was wrong.
+
+  Not a blocker for this line, but the test encodes an assumption about the
+  browser viewport that it does not control. It should either set an explicit
+  viewport or drop the pre-scroll assertion.
+- **Jaspr transform/measurement coupling.** CSS transforms do affect
+  `getBoundingClientRect`. Safety depends on the offset being applied to a
+  descendant of the measured node, which the current component structure gives
+  us — hence the explicit browser assertion above.
+- **Interaction with the 0.6.0 defaults.** ADR 0024 excluded the active item
+  from collision candidates partly because nothing shifts today. Once items can
+  shift, that tradeoff deserves re-evaluation, and `dropOnOver` becomes less
+  necessary because the geometric strategies and the visuals agree by
+  construction. Revisit explicitly in this plan's ADR rather than letting the
+  reasoning go stale.
+- **Deprecating `SortableStrategyInput.event` inside a release that already
+  carries breaking behavior.** Acceptable because it is additive with a
+  deprecation window, but the changelog must not bury it among the 0.6.0 fixes.
+- Recovery: each group is a separate commit on `feat/sortable-live-offsets`,
+  merged into `release/0.6.0` when green. The feature is inert until a resolver
+  is configured, so reverting the visual behavior is a one-line change and
+  reverting the feature is a clean commit revert.
+
+## Progress
+
+- [x] Branch `feat/sortable-live-offsets` created from `release/0.6.0`.
+- [x] Open decisions 1–4 resolved (see below).
+- [x] Group 1 — `SortableDragContext` + parity tests (`SortableDragContext`,
+      `SortableResolutionPhase`, and `.commit`/`.preview` factories in core;
+      `SortableStrategyInput.context` and `SortableMultiMoveInput.context`
+      added with `event` demoted to a deprecated nullable getter;
+      `resolveDetails` added beside `moveDetailsFor` on both adapters' scope
+      data; core 149 / flutter 107 / jaspr VM 37 tests green and the full
+      melos gate passes).
+- [x] Group 2 — lazy cached live preview + the preview-equals-commit invariant
+      (`SortablePreview` in core; a stateful preview host below `DndScope` on
+      both adapters owns the instance and invalidates it on controller change;
+      `SortableScopeData.preview` and `SortableItemDetails.previewIndex` /
+      `previewContainerId`; core 149 / flutter 112 / jaspr VM 37 green, full
+      melos gate green, Jaspr browser suites 23 green).
+      Single-container only; multi-container preview is still open (see below).
+- [x] Group 2b — multi-container preview (owner-aware area→strategy registry on
+      the multi scope state; `SortableMultiContainerArea` is now stateful and
+      publishes its strategy; preview resolves with the **source** container's
+      strategy and is exposed through `SortableMultiScopeData.preview` and the
+      same `SortableItemDetails.previewIndex`; flutter 115 tests green, full
+      melos gate green). Decision 4 is now fully delivered.
+- [x] Group 3 — `SortableOffsetResolver` + built-ins + unit tests
+      (`SortableOffsetInput`, `SortableOffsets.verticalList` /
+      `horizontalList` / `none` in `dnd_kit/src/sortable_offsets.dart`; 14 unit
+      tests including variable heights, list gaps, lazy lists, and a
+      strategy-fed case that pins the index space; core 163 tests green, full
+      melos gate green).
+- [x] Group 4 — adapter exposure, perf measurement, docs, ADR, changelog
+      extension, roadmap alignment (`SortableScope.offsetResolver` and
+      `SortableItemDetails.offset` on both adapters; offsets share the preview
+      cache; Flutter widget tests plus a Jaspr browser test pin that measured
+      rects stay put and `overId` does not oscillate while offsets are applied;
+      ADR 0025; 0.6.0 changelogs extended; Flutter README and the website
+      placeholder recipe rewritten around the resolver; roadmap Phase 34 added
+      and its stale "Current State" corrected).
+- [x] Gallery demo showing a real placeholder gap on both adapters (the
+      existing `sortable` catalog demo now uses `SortableOffsets.verticalList`
+      with `dropOnOver`; Flutter adds a toggle so both modes are visible side by
+      side, Jaspr animates the offset with a CSS transition). A gallery widget
+      test drives a real drag and asserts the displaced row moves up and that
+      the drop commits the move the gap previewed.
+- [x] Full validation lane green; branch merged into `release/0.6.0`; plan moved
+      to `docs/plans/completed/`.
+
+## Decisions
+
+- 2026-07-22: Follow `@dnd-kit/sortable`'s division of labour (library computes
+  geometry, application applies it) but not its package split; sortable is
+  already bundled here and a separate package would add versioning cost without
+  a boundary benefit.
+- 2026-07-22: Primitives stay silent. Nothing here touches `DndDraggable`,
+  `DndDroppable`, or `DndController` behavior.
+- 2026-07-22: Offsets are delivered to the item builder specifically because
+  that position is below the measured node in both adapters, which removes the
+  feedback loop by construction rather than by discipline.
+- 2026-07-22: Ships inside the unreleased 0.6.0 line so consumers absorb one
+  breaking release rather than two.
+- 2026-07-22 (decision 1): **Preview always published, offsets opt-in.** Preview
+  changes nothing visually and answers the original complaint (apps re-deriving
+  insert direction); offsets default to `none` so no existing UI changes. Making
+  shifting the default was rejected for this line — the mechanism has not
+  soaked, and it would alter every consumer's visuals inside a release already
+  carrying behavior changes.
+- 2026-07-22 (decision 2): **Add `SortableDragContext`**, with
+  `SortableStrategyInput.event` kept and deprecated for one release. A single
+  code path serving both preview and commit is what makes the
+  preview-equals-commit invariant enforceable; a nullable `event` would leave
+  strategies unable to tell the phases apart, and a separate preview resolver
+  would duplicate the resolution logic that must not drift.
+- 2026-07-22 (decision 3): **`SortableOffsetResolver` / `SortableOffsets.*`,
+  with `previewIndex` and `previewContainerId`.** Neutral about rendering, so it
+  does not promise animation the library will not perform, and it stays in the
+  `Sortable*` family per API principles. `SortableLayoutShift` implied the
+  library moves things itself; `SortableTransformStrategy` collided too closely
+  with the existing `SortableStrategy`.
+- 2026-07-22 (decision 4): **Preview for both scopes, offsets single-container
+  only.** The board gets correct preview state for labels and announcements at
+  almost no cost, while cross-container shifting geometry stays out of this
+  line.
+
+- 2026-07-22 (Group 1): `SortableDragContext` carries drag facts only —
+  session, phase, `overId`, and the end event — not measured geometry, even
+  though the plan sketch mentioned item rects. Rectangles already live on
+  `SortableStrategyInput` and `SortableMultiMoveInput`; holding them in two
+  places would create two sources of truth for the same layout.
+- 2026-07-22 (Group 1): the adapters keep `moveDetailsFor(DndDragEndEvent)` and
+  gain `resolveDetails(SortableDragContext)`, with the former delegating to the
+  latter. Existing call sites and consumer code keep working, and the commit
+  path provably runs the same resolution the preview path will.
+
+- 2026-07-22 (Group 2): the preview instance is owned by a stateful host placed
+  *below* `DndScope`, not by `SortableScope` itself, because an uncontrolled
+  scope only has a controller below that point. `SortableScopeData.preview` is
+  excluded from `==` so live drag state cannot churn `InheritedWidget`
+  notifications; the instance is stable for the scope's lifetime.
+- 2026-07-22 (Group 2): decision 4's multi-container preview did not land with
+  the single-container case. Multi resolution needs the active item's container
+  strategy, which lives on the area widgets rather than the scope, so it needs
+  a registry the scope does not have yet. Sequenced as Group 2b rather than
+  dropped.
+- 2026-07-22 (Group 2b): container areas publish their strategy to the scope
+  through an owner-aware registry, mirroring how `DndRegistry` handles
+  ownership, so a rebuilt area cannot unregister an entry a newer area already
+  took over. The preview resolves with the strategy of the container the
+  dragged item *came from*, not the one being hovered — that is the container
+  whose ordering rules the move is subject to.
+- 2026-07-22 (Group 2b): the multi scope needed no separate preview host; its
+  state already owns the controller for both the controlled and uncontrolled
+  cases, unlike `SortableScope`, which only reaches a controller below
+  `DndScope`.
+
+- 2026-07-22 (Group 3): every displaced item shifts by the **dragged** item's
+  extent plus the list gap, not into its neighbour's slot. Shifting into the
+  neighbour's slot is only correct for uniform sizes; the dragged-extent rule
+  reproduces the true post-move layout for variable heights too, which the
+  tests pin.
+- 2026-07-23 (Group 4): the gallery demo extends the existing `sortable`
+  catalog entry rather than adding a new one. `docs/product/examples-standard.md`
+  requires a demo slug to equal its docs concept slug, and offsets have no
+  concept page of their own — they are part of sortable. Only that entry's
+  "Demonstrates" cell changed.
+- 2026-07-22 (Group 3): the plan's "unmeasured items get no offset" rule was
+  narrowed to what it was protecting against. A displaced item's offset does
+  not depend on its own rectangle, so an off-screen item can be offset
+  correctly; what genuinely cannot be guessed is the **dragged** item's extent,
+  so a missing active rect yields no offsets at all.
+
+- 2026-07-23 (post-Group 4): collapsing the source slot double-counts with the
+  offsets and must not be recommended. The offsets already shift the neighbours
+  by the dragged row's full extent to reclaim its slot; collapsing the slot
+  makes the real layout reclaim that space a second time, so the rows
+  overshoot. `initialActiveRect` does not fix this — it only keeps the overlay
+  sized, and a size change below the measured box still feeds back into
+  measurement anyway. The correct pattern with offsets is to **hide** the
+  source row (opacity 0) while keeping its slot; both gallery demos and the
+  website recipe now do that. This supersedes the earlier turn's proposal to
+  wire `initialActiveRect` into the offset resolver.
+
+Promote the preview/offset contract and the "offsets are output, never input"
+rule into `docs/decisions/` when Group 4 lands.
+
+## Validation
+
+- Focused proof: `dart test packages/dnd_kit` for the drag context, the
+  preview-equals-commit invariant, single-resolution-per-move, and the offset
+  resolvers; `flutter test packages/dnd_kit_flutter` for builder offsets and the
+  no-oscillation guard; `dart test packages/dnd_kit_jaspr -p chrome` on the
+  `@TestOn('browser')` files for the browser equivalent plus the
+  measured-rects-unchanged assertion.
+- Integration or end-to-end proof: a gallery demo showing a real placeholder gap
+  on both adapters, driven only by the published offsets.
+- Runtime measurement: rebuild/frame cost on a large list before and after,
+  since a performance principle is directly at stake.
+- Repository-required checks: `dart run melos run validate` before claiming
+  completion; note that the melos lane does not run the Jaspr
+  `@TestOn('browser')` files, so those must be run explicitly.
+
+## Result
+
+Live sortable feedback shipped on the unreleased 0.6.0 line. Sortable
+resolution is phase-aware (`SortableDragContext`), a live preview is published
+for single- and multi-container scopes, and an opt-in offset plug-in
+(`SortableOffsetResolver` / `SortableOffsets.*`) reports how far each displaced
+item should shift. Offsets default to `none`, so no existing UI changes.
+
+Verified:
+
+- `dart run melos run validate` green across all six workspace packages at each
+  group.
+- Core (`dart test`) covers `SortableDragContext` phase parity, the
+  preview-equals-commit invariant, single-resolution-per-move, and the offset
+  resolvers (variable heights, list gaps, lazy lists, strategy-fed index
+  space).
+- Flutter widget tests cover preview publication, offsets reaching the builder,
+  the no-oscillation / rects-unchanged guard, and a large-list per-move cost
+  check (`none` 152ms vs `verticalList` 105ms over 200 items, same cost class).
+- A Jaspr browser test pins that a builder-applied offset does not move a
+  measured rectangle on real DOM.
+- Both galleries demonstrate a real placeholder gap; a Flutter gallery test
+  drives a drag and asserts the gap opens, the overlay tracks the pointer, the
+  source row is hidden, and the drop commits the previewed move.
+
+Scope delivered vs. deferred:
+
+- Delivered: preview for both single- and multi-container scopes; offsets for
+  single-container scopes.
+- Deferred (ADR 0025 follow-up): cross-container offsets, grid offsets, a
+  `DndDragOverlay` drop animation, and revisiting ADR 0024's active-item
+  collision exclusion now that items can shift. Cross-container offsets are the
+  next branch (`feat/sortable-multi-container-offsets`).
+
+Known issues:
+
+- One Jaspr browser test (`auto_scroll_browser_test.dart`, horizontal collision
+  after scroll) is environment-sensitive: it flakes on a viewport assumption it
+  does not control, independent of this work (fails identically on the untouched
+  0.6.0 baseline). Should set an explicit viewport or drop the pre-scroll
+  assertion; not addressed here.
+
+Course corrections recorded in Decisions: `SortableDragContext` carries drag
+facts only (not geometry); preview resolution is lazy and cached; offsets shift
+by the dragged item's extent (not into neighbour slots); the placeholder
+pattern hides the source row rather than collapsing it, which superseded an
+earlier proposal to wire `initialActiveRect` into the resolver.

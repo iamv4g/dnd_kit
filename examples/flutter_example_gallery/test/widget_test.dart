@@ -87,4 +87,70 @@ void main() {
       expect(tester.takeException(), isNull, reason: '$label demo threw');
     }
   });
+
+  testWidgets('the sortable demo opens a gap while dragging', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const ExampleGalleryApp());
+    await tester.tap(find.text('Sortable').first);
+    await tester.pumpAndSettle();
+
+    final firstRow = find.text('Write the launch brief');
+    final thirdRow = find.text('Wire the drag engine');
+    final restingTop = tester.getTopLeft(thirdRow).dy;
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(firstRow),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final thirdRowCenter = tester.getCenter(thirdRow);
+    await gesture.moveTo(thirdRowCenter);
+    await tester.pumpAndSettle();
+
+    // The third row has slid up to make room for the row being dragged onto it.
+    expect(
+      tester.getTopLeft(thirdRow).dy,
+      lessThan(restingTop),
+      reason: 'the live gap should shift the displaced row upward',
+    );
+
+    // The dragged row is rendered twice while dragging: the in-list source and
+    // the overlay copy that follows the pointer. Without the overlay the row
+    // would appear frozen in place.
+    final draggedLabels = tester.widgetList<Text>(firstRow).toList();
+    expect(draggedLabels, hasLength(2), reason: 'source row plus drag overlay');
+    final overlayFollowsPointer = draggedLabels.any((label) {
+      final center = tester.getCenter(find.byWidget(label));
+      return (center.dy - thirdRowCenter.dy).abs() < 30;
+    });
+    expect(
+      overlayFollowsPointer,
+      isTrue,
+      reason:
+          'the drag overlay should track the pointer, not stay at the source slot',
+    );
+
+    // The in-list source row is hidden while dragging, so the neighbours
+    // sliding over its slot read as one clean gap instead of overlapping a
+    // visible row. Exactly one item — the dragged one — is at opacity 0.
+    final zeroOpacities = tester
+        .widgetList<Opacity>(find.byType(Opacity))
+        .where((widget) => widget.opacity == 0);
+    expect(
+      zeroOpacities,
+      hasLength(1),
+      reason: 'the dragged source row should be hidden, not dimmed',
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // Dropping commits the move the gap was previewing.
+    expect(tester.getTopLeft(firstRow).dy,
+        greaterThan(tester.getTopLeft(thirdRow).dy));
+  });
 }

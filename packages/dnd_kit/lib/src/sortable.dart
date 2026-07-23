@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 import 'events.dart';
 import 'geometry.dart';
 import 'id.dart';
+import 'state.dart';
 
 /// Called when a sortable item is dropped over another sortable item.
 typedef SortableMoveCallback = void Function(SortableMoveDetails details);
@@ -39,6 +40,9 @@ final class SortableMoveDetails {
   final int toIndex;
 
   /// The lower-level drag end event that produced this move intent.
+  ///
+  /// Null when these details describe a live preview rather than a committed
+  /// move.
   final DndDragEndEvent? event;
 
   @override
@@ -75,8 +79,204 @@ final class SortableMoveDetails {
   }
 }
 
-/// Computes sortable move intent for a drag end.
+/// Which phase of a drag a sortable resolution is running in.
+enum SortableResolutionPhase {
+  /// The drag is still active and the result is where the item *would* land.
+  ///
+  /// Preview results drive live feedback such as a drop-target label or an
+  /// offset plug-in. They are recomputed as the drag moves and are never
+  /// reported through `onMove`.
+  preview,
+
+  /// The drag has ended and the result is the move that will be reported.
+  commit,
+}
+
+/// The drag facts a sortable resolution needs, independent of drag phase.
+///
+/// The same resolution runs while a drag is moving (to publish a preview) and
+/// when it ends (to commit a move). This context is what both paths are built
+/// from, so the preview a UI shows and the move that is finally reported come
+/// from one code path and cannot drift apart.
+///
+/// Measured geometry is deliberately *not* held here: rectangles already live
+/// on [SortableStrategyInput] and the multi-container input, and duplicating
+/// them would create two sources of truth for the same layout.
+@immutable
+final class SortableDragContext {
+  /// Creates a drag context.
+  const SortableDragContext({
+    required this.session,
+    required this.phase,
+    this.overId,
+    this.endEvent,
+  });
+
+  /// Creates a commit-phase context for a drag that has ended.
+  factory SortableDragContext.commit(DndDragEndEvent event) {
+    return SortableDragContext(
+      session: event.session,
+      phase: SortableResolutionPhase.commit,
+      overId: event.overId,
+      endEvent: event,
+    );
+  }
+
+  /// Creates a preview-phase context for a drag that is still active.
+  factory SortableDragContext.preview({
+    required DndDragSession session,
+    DndId? overId,
+  }) {
+    return SortableDragContext(
+      session: session,
+      phase: SortableResolutionPhase.preview,
+      overId: overId,
+    );
+  }
+
+  /// The active drag session.
+  final DndDragSession session;
+
+  /// Whether this resolution is a live preview or a committed move.
+  final SortableResolutionPhase phase;
+
+  /// The droppable currently under the drag, when one exists.
+  final DndId? overId;
+
+  /// The drag end event, present only in [SortableResolutionPhase.commit].
+  final DndDragEndEvent? endEvent;
+
+  /// The sortable item being moved.
+  DndId get activeId => session.activeId;
+
+  /// The current drag transform after modifiers have been applied.
+  DndTransform get transform => session.transform;
+
+  /// Whether this resolution is a live preview.
+  bool get isPreview => phase == SortableResolutionPhase.preview;
+
+  @override
+  bool operator ==(Object other) {
+    return other is SortableDragContext &&
+        other.session == session &&
+        other.phase == phase &&
+        other.overId == overId &&
+        other.endEvent == endEvent;
+  }
+
+  @override
+  int get hashCode => Object.hash(session, phase, overId, endEvent);
+
+  @override
+  String toString() {
+    return 'SortableDragContext(phase: $phase, activeId: $activeId, overId: $overId)';
+  }
+}
+
+/// Computes sortable move intent for a drag.
+///
+/// Runs both while a drag moves (preview) and when it ends (commit); check
+/// `input.context.phase` when the two must behave differently.
 typedef SortableStrategy = SortableMoveDetails? Function(SortableStrategyInput input);
+
+/// Where the active sortable item would land if the drag were released now.
+///
+/// Resolution is lazy and memoized. The first read after the drag changes
+/// resolves once; every later read within the same move returns the cached
+/// result, no matter how many items ask. An application that never reads a
+/// preview never pays to compute one.
+///
+/// The resolution runs the same strategy the drop will, so the index reported
+/// here is the index the move will commit to.
+final class SortablePreview {
+  /// Creates a preview that always reports nothing.
+  ///
+  /// Used where no sortable scope is driving resolution, so consumers can read
+  /// preview state unconditionally without null checks on the preview itself.
+  SortablePreview.inactive()
+      : _resolve = null,
+        _resolveOffsets = null;
+
+  /// Creates a preview backed by [resolve].
+  ///
+  /// [resolve] should return null when no drag is active or the drag would not
+  /// move anything. It is called at most once per [invalidate].
+  ///
+  /// [resolveOffsets] optionally reports how far the items this move displaces
+  /// should shift. It shares this cache, so it is also called at most once per
+  /// [invalidate], and only if something actually reads [offsets].
+  SortablePreview.resolvedBy(
+    SortableMoveDetails? Function() resolve, {
+    Map<DndId, DndPoint> Function()? resolveOffsets,
+  })  : _resolve = resolve,
+        _resolveOffsets = resolveOffsets;
+
+  final SortableMoveDetails? Function()? _resolve;
+  final Map<DndId, DndPoint> Function()? _resolveOffsets;
+  SortableMoveDetails? _cached;
+  Map<DndId, DndPoint>? _cachedOffsets;
+  bool _dirty = true;
+  bool _offsetsDirty = true;
+
+  /// The move intent the active drag would produce, or null when there is none.
+  SortableMoveDetails? get details {
+    final resolve = _resolve;
+    if (resolve == null) {
+      return null;
+    }
+
+    if (_dirty) {
+      _cached = resolve();
+      _dirty = false;
+    }
+
+    return _cached;
+  }
+
+  /// The index the active item would land at, when a move is in progress.
+  int? get index => details?.toIndex;
+
+  /// The container the active item would land in, when known.
+  DndId? get containerId => details?.toContainerId;
+
+  /// The item the active drag is currently over, when one exists.
+  DndId? get overId => details?.overId;
+
+  /// Whether a move is currently previewed.
+  bool get isActive => details != null;
+
+  /// How far each item displaced by the previewed move should shift.
+  ///
+  /// Empty when no offset resolver is configured, which is the default: the
+  /// library reports the geometry and the application decides whether and how
+  /// to animate it.
+  Map<DndId, DndPoint> get offsets {
+    final resolve = _resolveOffsets;
+    if (resolve == null) {
+      return const <DndId, DndPoint>{};
+    }
+
+    if (_offsetsDirty) {
+      _cachedOffsets = resolve();
+      _offsetsDirty = false;
+    }
+
+    return _cachedOffsets ?? const <DndId, DndPoint>{};
+  }
+
+  /// The offset for [id], or [DndPoint.zero] when it is not displaced.
+  DndPoint offsetFor(DndId id) => offsets[id] ?? DndPoint.zero;
+
+  /// Discards the cached resolution so the next read resolves again.
+  ///
+  /// Adapters call this whenever drag state changes.
+  void invalidate() {
+    _dirty = true;
+    _cached = null;
+    _offsetsDirty = true;
+    _cachedOffsets = null;
+  }
+}
 
 /// Input passed to a [SortableStrategy].
 @immutable
@@ -90,11 +290,41 @@ final class SortableStrategyInput {
     required this.fromIndex,
     required this.fromContainerId,
     required this.toContainerId,
-    required this.event,
+    required this.context,
     this.activeRect,
     this.activeTranslatedRect,
   })  : itemIds = List<DndId>.unmodifiable(itemIds),
         itemRects = Map<DndId, DndRect>.unmodifiable(itemRects);
+
+  /// Creates strategy input for a drag that has ended.
+  ///
+  /// Convenience for the commit path; equivalent to passing
+  /// `SortableDragContext.commit(event)`.
+  factory SortableStrategyInput.fromDragEnd({
+    required DndId activeId,
+    required DndId? overId,
+    required Iterable<DndId> itemIds,
+    required Map<DndId, DndRect> itemRects,
+    required int fromIndex,
+    required DndId? fromContainerId,
+    required DndId? toContainerId,
+    required DndDragEndEvent event,
+    DndRect? activeRect,
+    DndRect? activeTranslatedRect,
+  }) {
+    return SortableStrategyInput(
+      activeId: activeId,
+      overId: overId,
+      itemIds: itemIds,
+      itemRects: itemRects,
+      fromIndex: fromIndex,
+      fromContainerId: fromContainerId,
+      toContainerId: toContainerId,
+      context: SortableDragContext.commit(event),
+      activeRect: activeRect,
+      activeTranslatedRect: activeTranslatedRect,
+    );
+  }
 
   /// The sortable item being moved.
   final DndId activeId;
@@ -117,8 +347,18 @@ final class SortableStrategyInput {
   /// The destination container id, when the move is associated with a container.
   final DndId? toContainerId;
 
+  /// The drag this resolution is running for, and which phase it is in.
+  final SortableDragContext context;
+
   /// The lower-level drag end event that produced this strategy input.
-  final DndDragEndEvent event;
+  ///
+  /// Null while a drag is still active, because a preview has no end event
+  /// yet.
+  @Deprecated(
+    'Use context (SortableDragContext) instead. This getter is null during '
+    'preview resolutions and will be removed in a future release.',
+  )
+  DndDragEndEvent? get event => context.endEvent;
 
   /// The measured active rectangle before translation, when known.
   final DndRect? activeRect;
@@ -154,7 +394,7 @@ final class SortableStrategyInput {
       toContainerId: toContainerId,
       fromIndex: fromIndex,
       toIndex: toIndex ?? fallbackIndex,
-      event: event,
+      event: context.endEvent,
     );
   }
 }
