@@ -4,7 +4,7 @@ Date: 2026-07-23
 
 ## Status
 
-Active
+Completed
 
 ## Outcome
 
@@ -144,11 +144,21 @@ version section.
 
 - [x] Branch `feat/sortable-multi-container-offsets` created from
       `release/0.6.0` (post-merge, gate green).
-- [ ] Group 1 — core cross-container offset built-ins + unit tests.
-- [ ] Group 2 — adapter wiring + widget/browser tests.
-- [ ] Group 3 — demo, docs, ADR, changelog.
-- [ ] Full validation lane green; branch merged into `release/0.6.0`; plan moved
-      to `docs/plans/completed/`.
+- [x] Group 1 — core cross-container offset built-ins + unit tests
+      (`SortableMultiOffsetResolver`, `SortableMultiOffsetInput`,
+      `SortableMultiOffsets.verticalLists`/`horizontalLists`/`none`; same
+      container delegates to the single-list logic; 21 offset tests green).
+- [x] Group 2 — adapter wiring + widget tests
+      (`SortableMultiScope.offsetResolver` on both adapters, fed the resolved
+      preview move; flutter multi-scope tests cover same-column, cross-column,
+      and the no-resolver-zero case).
+- [x] Group 3 — demo, docs, ADR, changelog (both board demos animate
+      `details.offset` and hide the dragged card; ADR 0026; 0.6.0 changelogs
+      and the website recipe extended; a gallery test drives a drag and asserts
+      a displaced card carries an offset transform).
+- [x] Full validation lane green; Jaspr `@TestOn('browser')` offset/multi/
+      overlay suites green under `-p chrome`; branch merged into
+      `release/0.6.0`; plan moved to `docs/plans/completed/`.
 
 ## Decisions
 
@@ -175,4 +185,35 @@ lands (addendum to ADR 0025 or a new record).
 
 ## Result
 
-Complete after implementation.
+Cross-container offsets shipped on the 0.6.0 line. `SortableMultiScope` takes an
+`offsetResolver` (default `SortableMultiOffsets.none`); with
+`SortableMultiOffsets.verticalLists` a board opens a live gap within a column
+and across columns — the source column closes the vacated slot and the target
+column opens the landing slot — with the library reporting geometry and the app
+animating it.
+
+Verified:
+
+- `dart run melos run validate` green across all six workspace packages.
+- Core: same-container offsets equal the single-list result; cross-container
+  shifts the source tail up and the target tail down by the dragged extent;
+  end-of-target, missing-extent, missing-container, and unmeasured-target cases
+  behave as specified.
+- Flutter widget tests: same-column and cross-column drags shift the right
+  cards; a drag with no resolver leaves every offset zero.
+- Jaspr `@TestOn('browser')` offset/multi/overlay suites pass under `-p chrome`.
+- Both galleries open a live gap on the board; a gallery widget test drives a
+  real drag and asserts a displaced card carries an offset transform.
+
+Delivered vs. deferred:
+
+- Delivered: same- and cross-container offsets for list columns, opt-in, both
+  adapters, both demos.
+- Deferred (ADR 0026 follow-up): true two-dimensional grid offsets, and a
+  `DndDragOverlay` drop animation.
+
+Design decisions held: a dedicated `SortableMultiOffsetResolver` (the
+single-list resolver cannot express a two-list removal-plus-insertion move);
+same-container delegates to the single-list built-ins for one source of truth;
+the demo hides the dragged card rather than collapsing it, consistent with the
+single-container pattern.
