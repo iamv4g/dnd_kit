@@ -3,9 +3,11 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
 import '../drag/drag_bus.dart';
+import '../drag/sortable_offsets.dart';
 
-/// A free-form sandbox: drag tokens from the pool into any bucket. Pure generic
-/// droppables + collision, app-owned state — a quick "try it yourself".
+/// A sandbox on the multi-container sortable surface: drag tokens from the pool
+/// into any bucket. The zones open a gap where the token will land; the app
+/// owns the state.
 @client
 class Playground extends StatefulComponent {
   const Playground({super.key});
@@ -27,39 +29,47 @@ class _PlaygroundState extends State<Playground> {
     DndId('t-6'),
   ];
 
-  Map<String, List<DndId>> _zones = {
-    'pool': List<DndId>.of(_allTokens),
-    'bucket-a': [],
-    'bucket-b': [],
-    'bucket-c': [],
-  };
+  Map<String, List<DndId>> _zones = _initialZones();
+
+  static Map<String, List<DndId>> _initialZones() {
+    return {
+      'pool': List<DndId>.of(_allTokens),
+      'bucket-a': [],
+      'bucket-b': [],
+      'bucket-c': [],
+    };
+  }
 
   void _onChanged() {
     dragBus.report(_controller, source: 'playground');
     if (mounted) setState(() {});
   }
 
-  void _handleEnd(DndDragEndEvent event) {
-    final over = event.overId;
-    if (over == null || !_zones.containsKey(over.value)) return;
-    final active = event.activeId;
-    setState(() {
-      for (final list in _zones.values) {
-        list.remove(active);
-      }
-      _zones[over.value]!.add(active);
-    });
+  void _handleMove(SortableMoveDetails move) {
+    final fromId = move.fromContainerId?.value;
+    final toId = move.toContainerId?.value;
+    if (fromId == null || toId == null) return;
+
+    final next = <String, List<DndId>>{
+      for (final entry in _zones.entries)
+        entry.key: List<DndId>.of(entry.value),
+    };
+    final from = next[fromId];
+    final to = next[toId];
+    if (from == null ||
+        to == null ||
+        move.fromIndex < 0 ||
+        move.fromIndex >= from.length) {
+      return;
+    }
+
+    from.removeAt(move.fromIndex);
+    to.insert(move.toIndex.clamp(0, to.length), move.activeId);
+    setState(() => _zones = next);
   }
 
   void _reset() {
-    setState(() {
-      _zones = {
-        'pool': List<DndId>.of(_allTokens),
-        'bucket-a': [],
-        'bucket-b': [],
-        'bucket-c': [],
-      };
-    });
+    setState(() => _zones = _initialZones());
   }
 
   @override
@@ -72,8 +82,16 @@ class _PlaygroundState extends State<Playground> {
 
   @override
   Component build(BuildContext context) {
-    return DndScope(
+    return SortableMultiScope(
       controller: _controller,
+      containers: [
+        for (final entry in _zones.entries)
+          SortableContainer(id: DndId(entry.key), itemIds: entry.value),
+      ],
+      // Every token is the same box in a wrapped row, so a displaced token
+      // moves exactly one slot along the flow, wrapping included.
+      offsetResolver: flowOffsets,
+      onMove: _handleMove,
       child: div(classes: 'flex flex-col gap-5', [
         _pool(),
         div(classes: 'grid grid-cols-1 gap-4 sm:grid-cols-3', [
@@ -85,8 +103,8 @@ class _PlaygroundState extends State<Playground> {
           button(
             classes:
                 'rounded-full bg-surface px-5 py-2 text-sm font-semibold '
-                'text-muted shadow-lift transition-transform duration-200 '
-                'ease-spring hover:-translate-y-0.5 hover:text-accent',
+                'text-muted shadow-lift transition-colors duration-200 '
+                'hover:text-accent',
             attributes: const {'type': 'button'},
             onClick: _reset,
             const [.text('Reset')],
@@ -96,66 +114,77 @@ class _PlaygroundState extends State<Playground> {
           controller: _controller,
           builder: (context, overlay) => _tokenFace(overlay.activeId, true),
         ),
+        const DndLiveRegion(),
       ]),
     );
   }
 
   Component _pool() {
-    final isOver = _controller.overId?.value == 'pool';
-    return DndDroppable(
+    final tokens = _zones['pool']!;
+    return SortableMultiContainerArea(
       id: const DndId('pool'),
-      child: div(
-        classes: 'drop-zone flex min-h-[64px] flex-wrap items-center gap-2 p-3',
-        attributes: {'data-over': isOver.toString()},
-        [
-          span(
-            classes:
-                'w-full font-mono text-[10px] uppercase tracking-wider '
-                'text-muted',
-            const [.text('pool · drag into a bucket')],
-          ),
-          for (final id in _zones['pool']!) _token(id),
-        ],
+      itemIds: tokens,
+      builder: (context, dropState, child) => div(
+        classes:
+            'drop-zone flex min-h-[92px] flex-wrap content-start gap-2 p-3',
+        attributes: {'data-over': dropState.isOver.toString()},
+        [child],
       ),
+      child: .fragment([
+        span(
+          classes:
+              'w-full font-mono text-[10px] uppercase tracking-wider '
+              'text-muted',
+          const [.text('pool · drag into a bucket')],
+        ),
+        for (final id in tokens) _token(id),
+      ]),
     );
   }
 
   Component _bucket(String id, String title) {
-    final isOver = _controller.overId?.value == id;
     final tokens = _zones[id]!;
-    return DndDroppable(
+    return SortableMultiContainerArea(
       id: DndId(id),
-      child: div(
-        classes: 'drop-zone flex min-h-[120px] flex-col gap-2 p-3',
-        attributes: {'data-over': isOver.toString()},
-        [
-          div(
-            classes:
-                'flex items-center justify-between font-mono text-[10px] '
-                'uppercase tracking-wider text-muted',
-            [
-              span([.text(title)]),
-              span(classes: 'text-accent', [.text('${tokens.length}')]),
-            ],
-          ),
-          div(classes: 'flex flex-wrap gap-2', [
-            for (final id in tokens) _token(id),
-          ]),
-        ],
+      itemIds: tokens,
+      // Fixed height, so opening a gap never resizes the row of buckets.
+      builder: (context, dropState, child) => div(
+        classes: 'drop-zone flex h-[9.5rem] flex-col gap-2 p-3',
+        attributes: {'data-over': dropState.isOver.toString()},
+        [child],
       ),
+      child: .fragment([
+        div(
+          classes:
+              'flex items-center justify-between font-mono text-[10px] '
+              'uppercase tracking-wider text-muted',
+          [
+            span([.text(title)]),
+            span(classes: 'text-accent', [.text('${tokens.length}')]),
+          ],
+        ),
+        // `min-h-0` lets this flex child shrink below its content, which is
+        // what makes the overflow scroll inside the fixed bucket.
+        div(
+          classes:
+              'flex min-h-0 flex-1 flex-wrap content-start gap-2 overflow-y-auto',
+          [for (final id in tokens) _token(id)],
+        ),
+      ]),
     );
   }
 
   Component _token(DndId id) {
-    final isActive = _controller.activeId == id;
-    return DndDraggable(
+    return SortableMultiItem(
       id: id,
       constraint: const DndSensorActivationConstraint(distance: 4),
       label: 'Drag token ${id.value}',
-      onDragEnd: _handleEnd,
-      child: div(classes: isActive ? 'opacity-30' : '', [
-        _tokenFace(id, false),
-      ]),
+      description:
+          'Press space to pick up, arrow keys to move between tokens and zones, '
+          'space to drop, escape to cancel.',
+      builder: (context, itemState, child) =>
+          div(styles: slotStyles(itemState), [child]),
+      child: _tokenFace(id, false),
     );
   }
 
@@ -165,9 +194,8 @@ class _PlaygroundState extends State<Playground> {
       classes:
           'inline-grid h-10 w-10 cursor-grab select-none place-items-center '
           'rounded-2xl squircle bg-surface font-mono text-sm font-bold text-ink '
-          'transition-[transform,box-shadow] duration-300 ease-spring '
           'active:cursor-grabbing '
-          '${dragging ? 'rotate-6 scale-105 shadow-lift-hi' : 'shadow-lift hover:-translate-y-0.5'}',
+          '${dragging ? 'rotate-6 shadow-lift-hi' : 'shadow-lift'}',
       [.text(n)],
     );
   }

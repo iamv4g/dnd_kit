@@ -149,7 +149,8 @@ class _ReorderableNavState extends State<ReorderableNav> {
   Component build(BuildContext context) {
     return SortableScope(
       controller: _controller,
-      strategy: SortableStrategies.horizontalList,
+      strategy: SortableStrategies.dropOnOver,
+      offsetResolver: SortableOffsets.horizontalList,
       itemIds: _order,
       onMove: _onMove,
       child: div(classes: 'hidden items-center gap-1 md:flex', [
@@ -159,13 +160,15 @@ class _ReorderableNavState extends State<ReorderableNav> {
             constraint: const DndSensorActivationConstraint(distance: 6),
             label: 'Reorder ${_itemFor(id).label}',
             builder: (context, itemState, child) {
-              // No floating overlay here (it would sit behind the sticky nav),
-              // so lift the pill in place while dragging instead of dimming it.
+              // No DndDragOverlay here: the capsule's backdrop-blur makes it a
+              // containing block for fixed descendants, so an overlay would
+              // position against the capsule instead of the viewport. The
+              // dragged pill carries the session transform itself instead.
               final dragging = itemState.isActive || itemState.isDragging;
+              final transform = dragging ? itemState.session?.transform : null;
               return div(
-                classes:
-                    'transition-transform duration-150 '
-                    '${dragging ? '-translate-y-0.5 scale-105' : ''}',
+                classes: dragging ? 'relative z-10' : '',
+                styles: _pillStyles(transform, itemState.offset),
                 [child],
               );
             },
@@ -192,6 +195,23 @@ class _ReorderableNavState extends State<ReorderableNav> {
             ]),
           ),
       ]),
+    );
+  }
+
+  /// The dragged pill tracks the pointer 1:1, so it gets no transition.
+  Styles _pillStyles(DndTransform? transform, DndPoint offset) {
+    if (transform != null) {
+      return Styles(
+        transform: transform.isIdentity
+            ? Transform.none
+            : Transform.translate(x: transform.x.px, y: transform.y.px),
+      );
+    }
+    return Styles(
+      transform: offset == DndPoint.zero
+          ? Transform.none
+          : Transform.translate(x: offset.x.px, y: offset.y.px),
+      raw: const {'transition': 'transform 150ms ease'},
     );
   }
 }

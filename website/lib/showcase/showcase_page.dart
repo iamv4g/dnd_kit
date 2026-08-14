@@ -40,9 +40,9 @@ class ShowcasePage extends StatelessComponent {
             eyebrow: 'Live · Jaspr',
             title: 'Drop zones with live collision',
             desc:
-                'Drag the tokens from the pool into any bucket. Pure generic '
-                'droppables with live collision feedback — the same engine, a '
-                'different shape.',
+                'Drag the tokens from the pool into any bucket. The zones '
+                'open a gap where the token will land — the same engine as the '
+                'board, a different shape.',
             child: const Playground(),
           ),
           _flutterSection(),

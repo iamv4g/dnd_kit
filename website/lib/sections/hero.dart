@@ -5,6 +5,7 @@ import 'package:jaspr/jaspr.dart';
 import '../components/ui.dart';
 import '../data/site_data.dart';
 import '../drag/drag_bus.dart';
+import '../drag/sortable_offsets.dart';
 import 'install_pill.dart';
 
 /// The hero: a thesis headline plus a live "drag me" moment so the very first
@@ -89,34 +90,43 @@ class _HeroStackState extends State<HeroStack> {
   late final DndController _controller = DndController()
     ..addListener(_onChanged);
 
-  final List<DndId> _tray = [
-    const DndId('chip-sortable'),
-    const DndId('chip-keyboard'),
-    const DndId('chip-modifiers'),
-    const DndId('chip-scroll'),
-    const DndId('chip-overlay'),
-  ];
-  final List<DndId> _stack = [];
+  Map<String, List<DndId>> _board = {
+    'zone-tray': [
+      const DndId('chip-sortable'),
+      const DndId('chip-keyboard'),
+      const DndId('chip-modifiers'),
+      const DndId('chip-scroll'),
+      const DndId('chip-overlay'),
+    ],
+    'zone-stack': [],
+  };
 
   void _onChanged() {
     dragBus.report(_controller, source: 'hero');
     if (mounted) setState(() {});
   }
 
-  void _handleEnd(DndDragEndEvent event) {
-    final over = event.overId;
-    if (over == null) return;
-    final active = event.activeId;
-    if (over.value == 'zone-stack') {
-      _tray.remove(active);
-      if (!_stack.contains(active)) _stack.add(active);
-    } else if (over.value == 'zone-tray') {
-      _stack.remove(active);
-      if (!_tray.contains(active)) _tray.add(active);
-    } else {
+  void _handleMove(SortableMoveDetails move) {
+    final fromId = move.fromContainerId?.value;
+    final toId = move.toContainerId?.value;
+    if (fromId == null || toId == null) return;
+
+    final next = <String, List<DndId>>{
+      for (final entry in _board.entries)
+        entry.key: List<DndId>.of(entry.value),
+    };
+    final from = next[fromId];
+    final to = next[toId];
+    if (from == null ||
+        to == null ||
+        move.fromIndex < 0 ||
+        move.fromIndex >= from.length) {
       return;
     }
-    setState(() {});
+
+    from.removeAt(move.fromIndex);
+    to.insert(move.toIndex.clamp(0, to.length), move.activeId);
+    setState(() => _board = next);
   }
 
   @override
@@ -129,82 +139,92 @@ class _HeroStackState extends State<HeroStack> {
 
   @override
   Component build(BuildContext context) {
-    return DndScope(
+    return SortableMultiScope(
       controller: _controller,
+      containers: [
+        for (final entry in _board.entries)
+          SortableContainer(id: DndId(entry.key), itemIds: entry.value),
+      ],
+      offsetResolver: flowOffsets,
+      onMove: _handleMove,
       child: div(classes: 'card-lg flex flex-col gap-4 p-6', [
         div(classes: 'flex items-center justify-between', [
           span(
             classes: 'font-mono text-xs uppercase tracking-wider text-faint',
-            const [.text('drag a capability →')],
+            const [.text('drag a capability \u2192')],
           ),
           span(
             classes:
                 'rounded-full bg-accent/10 px-3 py-1 font-mono text-xs '
                 'text-accent-deep dark:text-accent',
-            [.text('${_stack.length} in stack')],
+            [.text('${_board['zone-stack']!.length} in stack')],
           ),
         ]),
-        _zone('zone-tray', _tray, 'Capabilities'),
-        _zone('zone-stack', _stack, 'Your stack', emptyHint: 'drop here'),
+        _zone('zone-tray', 'Capabilities'),
+        _zone('zone-stack', 'Your stack', emptyHint: 'drop here'),
         DndDragOverlay(
           controller: _controller,
           builder: (context, overlay) => _chipFace(overlay.activeId, true),
         ),
+        const DndLiveRegion(),
       ]),
     );
   }
 
-  Component _zone(
-    String zoneId,
-    List<DndId> chips,
-    String title, {
-    String? emptyHint,
-  }) {
-    final isOver = _controller.overId?.value == zoneId;
-    return DndDroppable(
+  Component _zone(String zoneId, String title, {String? emptyHint}) {
+    final chips = _board[zoneId]!;
+    return SortableMultiContainerArea(
       id: DndId(zoneId),
-      child: div(
-        classes:
-            'drop-zone flex min-h-[84px] flex-wrap content-start gap-2 p-4',
-        attributes: {'data-over': isOver.toString()},
-        [
-          span(
-            classes:
-                'w-full font-mono text-[10px] uppercase tracking-wider '
-                'text-faint',
-            [.text(title)],
-          ),
-          if (chips.isEmpty && emptyHint != null)
-            span(classes: 'text-xs text-faint', [.text(emptyHint)]),
-          for (final id in chips) _chip(id),
-        ],
+      itemIds: chips,
+      // Sized for every chip in one zone, so the card never resizes and a
+      // chip displaced on to a new line stays inside its zone.
+      builder: (context, dropState, child) => div(
+        classes: 'drop-zone flex h-[11.5rem] flex-wrap content-start gap-2 p-4',
+        attributes: {'data-over': dropState.isOver.toString()},
+        [child],
       ),
+      child: .fragment([
+        span(
+          classes:
+              'w-full font-mono text-[10px] uppercase tracking-wider '
+              'text-faint',
+          [.text(title)],
+        ),
+        if (chips.isEmpty && emptyHint != null)
+          span(classes: 'text-xs text-faint', [.text(emptyHint)]),
+        for (final id in chips) _chip(id),
+      ]),
     );
   }
 
   Component _chip(DndId id) {
-    final isActive = _controller.activeId == id;
-    return DndDraggable(
+    return SortableMultiItem(
       id: id,
       constraint: const DndSensorActivationConstraint(distance: 4),
       label: 'Drag ${_chipLabels[id.value]}',
-      onDragEnd: _handleEnd,
-      child: div(classes: isActive ? 'opacity-30' : '', [_chipFace(id, false)]),
+      description:
+          'Press space to pick up, arrow keys to move between chips and zones, '
+          'space to drop, escape to cancel.',
+      builder: (context, itemState, child) =>
+          div(styles: slotStyles(itemState), [child]),
+      child: _chipFace(id, false),
     );
   }
 
   Component _chipFace(DndId id, bool dragging) {
+    // One width for every chip, so a displaced chip lands exactly on its
+    // neighbour's slot however the row wraps.
     return span(
       classes:
-          'inline-flex cursor-grab select-none items-center gap-2 rounded-full '
-          'bg-surface px-4 py-2 text-sm font-semibold text-ink '
-          'transition-[transform,box-shadow] duration-300 ease-spring '
+          'inline-flex w-[8.5rem] cursor-grab select-none items-center gap-2 '
+          'rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink '
           'active:cursor-grabbing '
-          '${dragging ? 'rotate-2 scale-[1.03] shadow-lift-hi' : 'shadow-lift hover:-translate-y-0.5'}',
+          '${dragging ? 'rotate-2 shadow-lift-hi' : 'shadow-lift'}',
       [
         span(
           classes:
-              'h-2 w-2 rounded-full bg-gradient-to-br from-accent-deep to-sky',
+              'h-2 w-2 shrink-0 rounded-full bg-gradient-to-br '
+              'from-accent-deep to-sky',
           const [],
         ),
         .text(_chipLabels[id.value] ?? id.value),

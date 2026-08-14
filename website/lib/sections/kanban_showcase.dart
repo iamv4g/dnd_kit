@@ -4,6 +4,7 @@ import 'package:jaspr/jaspr.dart';
 
 import '../drag/drag_bus.dart';
 import '../drag/grip.dart';
+import '../drag/sortable_offsets.dart';
 
 /// An interactive multi-column board built on the multi-container sortable
 /// surface: [SortableMultiScope], [SortableMultiContainerArea], and
@@ -179,6 +180,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
     return SortableMultiScope(
       controller: _controller,
       containers: _containers,
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
       child: div(classes: 'space-y-6', [
         _statusBar(),
@@ -247,8 +249,10 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
           itemIds: cards,
           builder: (context, droppableState, child) {
             final isOver = _columnIsOver(DndId(col.id), droppableState);
+            // Fixed height, so opening a gap scrolls the cards inside a
+            // column instead of resizing the row of columns.
             return div(
-              classes: 'drop-zone flex w-full flex-col gap-3 p-4',
+              classes: 'drop-zone flex h-[26rem] w-full flex-col gap-3 p-4',
               attributes: {'data-over': isOver.toString()},
               [child],
             );
@@ -263,12 +267,13 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
                 span(classes: 'text-accent', [.text('${cards.length}')]),
               ],
             ),
+            // `min-h-0` lets this flex child shrink below its content, which is
+            // what makes `overflow-y: auto` scroll inside the fixed column.
             DndAutoScroll(
               axis: DndScrollAxis.vertical,
               controller: _controller,
               classes:
-                  'flex min-h-[120px] max-h-[55vh] flex-col gap-3 overflow-y-auto '
-                  'pr-0.5',
+                  'flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-0.5',
               child: .fragment([
                 if (cards.isEmpty)
                   div(
@@ -296,15 +301,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
           'Press space to pick up, arrow keys to move between cards, '
           'space to drop, escape to cancel.',
       builder: (context, sortableState, child) {
-        final stateClasses = sortableState.isActive
-            ? 'opacity-40'
-            : sortableState.isOver
-            ? 'ring-2 ring-accent ring-offset-2 ring-offset-raised'
-            : '';
-        return div(
-          classes: 'transition-[opacity,box-shadow] duration-150 $stateClasses',
-          [child],
-        );
+        return div(styles: slotStyles(sortableState), [child]);
       },
       child: _cardFace(card),
     );
@@ -314,8 +311,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
     return div(
       classes:
           'flex items-start gap-2 rounded-2xl squircle bg-surface p-3.5 '
-          'transition-[transform,box-shadow] duration-300 ease-spring '
-          '${dragging ? 'rotate-2 scale-[1.02] shadow-lift-hi' : 'shadow-lift'}',
+          '${dragging ? 'rotate-2 shadow-lift-hi' : 'shadow-lift'}',
       [
         Grip(label: 'Reorder ${card.title}'),
         div(classes: 'flex flex-1 flex-col gap-1', [

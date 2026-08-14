@@ -60,8 +60,8 @@ class Site extends StatelessComponent {
             tag: 'Playground',
             title: 'Try it yourself',
             desc:
-                'Drag the tokens from the pool into any bucket. Pure generic '
-                'droppables with live collision feedback.',
+                'Drag the tokens from the pool into any bucket. The zones '
+                'open a gap where the token will land.',
             child: const Playground(),
           ),
         ],

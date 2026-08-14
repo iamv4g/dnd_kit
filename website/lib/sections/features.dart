@@ -5,6 +5,7 @@ import 'package:jaspr/jaspr.dart';
 import '../data/site_data.dart';
 import '../drag/drag_bus.dart';
 import '../drag/grip.dart';
+import '../drag/sortable_offsets.dart';
 
 /// The feature grid — itself reorderable. The marketing cards are wired through
 /// the single-container [SortableScope] preset, so the page proves the sortable
@@ -53,7 +54,10 @@ class _FeaturesState extends State<Features> {
   Component build(BuildContext context) {
     return SortableScope(
       controller: _controller,
-      strategy: SortableStrategies.grid,
+      // dropOnOver lands the move where the gap is; the geometric strategies
+      // resolve from the dragged rect center and can disagree with it.
+      strategy: SortableStrategies.dropOnOver,
+      offsetResolver: gridOffsets,
       itemIds: _order,
       onMove: _onMove,
       child: div([
@@ -64,22 +68,16 @@ class _FeaturesState extends State<Features> {
               constraint: const DndSensorActivationConstraint(distance: 8),
               label: 'Reorder ${_featureFor(id).title}',
               builder: (context, itemState, child) {
-                final lifted = itemState.isActive || itemState.isDragging;
-                final over = itemState.isOver;
-                return div(
-                  classes:
-                      'h-full transition-[opacity,transform] duration-150 '
-                      '${lifted ? 'opacity-40' : ''} '
-                      '${over ? 'scale-[1.02]' : ''}',
-                  [child],
-                );
+                return div(classes: 'h-full', styles: slotStyles(itemState), [
+                  child,
+                ]);
               },
               child: _featureCard(_featureFor(id)),
             ),
         ]),
         DndDragOverlay(
           controller: _controller,
-          builder: (context, overlay) => div(classes: 'rotate-2 scale-[1.02]', [
+          builder: (context, overlay) => div(classes: 'rotate-2', [
             _featureCard(_featureFor(overlay.activeId), lifted: true),
           ]),
         ),
