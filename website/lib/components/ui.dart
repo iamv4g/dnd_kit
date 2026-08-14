@@ -1,38 +1,42 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-/// Mono uppercase label that sits above section headings.
+/// Small capsule label that sits above section headings.
 Component eyebrow(String text) {
   return span(
-    classes: 'font-mono text-xs uppercase tracking-[0.22em] text-accent',
+    classes:
+        'inline-flex w-fit items-center gap-2 rounded-full bg-accent/10 px-3.5 '
+        'py-1.5 font-mono text-xs uppercase tracking-[0.18em] text-accent-deep '
+        'dark:text-accent',
     [.text(text)],
   );
 }
 
-/// Solid coral call-to-action.
+/// Primary call-to-action: a gradient capsule that lifts on hover.
 Component ctaPrimary(String label, String href, {bool external = false}) {
   return a(
     href: href,
     target: external ? Target.blank : null,
     attributes: external ? const {'rel': 'noreferrer'} : null,
     classes:
-        'inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 '
-        'text-sm font-semibold text-white shadow-lift-accent transition-transform '
-        'duration-200 hover:-translate-y-0.5 hover:bg-accent-deep',
+        'inline-flex items-center gap-2 rounded-full bg-gradient-to-r '
+        'from-accent-deep to-accent px-6 py-3 text-sm font-semibold text-white '
+        'shadow-lift-accent transition-transform duration-200 ease-spring '
+        'hover:-translate-y-0.5',
     [.text(label)],
   );
 }
 
-/// Outlined secondary call-to-action.
+/// Secondary call-to-action: a soft raised capsule.
 Component ctaGhost(String label, String href, {bool external = false}) {
   return a(
     href: href,
     target: external ? Target.blank : null,
     attributes: external ? const {'rel': 'noreferrer'} : null,
     classes:
-        'inline-flex items-center gap-2 rounded-full border border-line px-5 '
-        'py-2.5 text-sm font-semibold text-ink transition-colors duration-200 '
-        'hover:border-accent hover:text-accent',
+        'inline-flex items-center gap-2 rounded-full bg-surface px-6 py-3 '
+        'text-sm font-semibold text-ink shadow-lift transition-transform '
+        'duration-200 ease-spring hover:-translate-y-0.5',
     [.text(label)],
   );
 }
@@ -57,7 +61,7 @@ class Reveal extends StatelessComponent {
   Component build(BuildContext context) {
     return div(
       classes:
-          'reveal max-w-full overflow-x-hidden'
+          'reveal max-w-full overflow-x-hidden '
           '${classes == null ? '' : ' $classes'}',
       styles: delayMs == 0
           ? null
@@ -68,21 +72,48 @@ class Reveal extends StatelessComponent {
 }
 
 /// Global IntersectionObserver that reveals every `.reveal` element once.
+///
+/// Deferred until the document has finished parsing: hydration can still be
+/// rewriting the body, and querying too early observes nodes that are either
+/// missing or already detached, which leaves them stuck at opacity 0.
 const revealScript = '''
 (function(){
-  var els = document.querySelectorAll('.reveal');
-  if (!('IntersectionObserver' in window)) {
-    els.forEach(function(el){ el.setAttribute('data-shown','true'); });
-    return;
-  }
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if (e.isIntersecting) {
-        e.target.setAttribute('data-shown','true');
-        io.unobserve(e.target);
-      }
+  var io = ('IntersectionObserver' in window)
+    ? new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if (e.isIntersecting) {
+            e.target.setAttribute('data-shown','true');
+            io.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 })
+    : null;
+
+  // Idempotent: `data-armed` keeps a node from being observed twice, and any
+  // node that hydration swapped in arrives unarmed and gets picked up.
+  function arm(){
+    document.querySelectorAll('.reveal:not([data-armed])').forEach(function(el){
+      el.setAttribute('data-armed','');
+      if (io) { io.observe(el); } else { el.setAttribute('data-shown','true'); }
     });
-  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
-  els.forEach(function(el){ io.observe(el); });
+  }
+
+  arm();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', arm);
+  }
+  window.addEventListener('load', arm);
+
+  // Hydration replaces these wrappers *after* DOMContentLoaded, which detaches
+  // whatever the observer was already holding. Re-arm whenever the body
+  // changes so the replacements are picked up whenever they land.
+  if ('MutationObserver' in window) {
+    var pending = false;
+    new MutationObserver(function(){
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function(){ pending = false; arm(); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
 })();
 ''';

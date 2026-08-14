@@ -45,7 +45,7 @@ class _MobileNavState extends State<MobileNav> {
       button(
         classes:
             'inline-grid h-10 w-10 place-items-center rounded-full border '
-            'border-line bg-surface text-ink transition-colors '
+            'bg-surface text-ink shadow-lift transition-colors '
             'hover:border-accent hover:text-accent',
         attributes: {
           'type': 'button',
@@ -60,8 +60,8 @@ class _MobileNavState extends State<MobileNav> {
       if (_open)
         div(
           classes:
-              'absolute right-0 top-full mt-2 w-56 origin-top-right rounded-2xl '
-              'border border-line bg-surface p-2 shadow-lift animate-fade-in',
+              'absolute right-0 top-full mt-3 w-56 origin-top-right rounded-3xl '
+              'squircle bg-surface p-2 shadow-lift-hi animate-fade-in',
           [
             for (final item in navItems)
               a(

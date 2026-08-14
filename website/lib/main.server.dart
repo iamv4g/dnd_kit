@@ -4,17 +4,23 @@ import 'package:jaspr/server.dart';
 import 'app.dart';
 import 'main.server.options.dart';
 
-/// Google Fonts: Newsreader (display serif), Hanken Grotesk (body),
-/// Geist Mono (utility/code).
+/// Google Fonts: Hanken Grotesk carries both display and body, Geist Mono
+/// carries utility and code. Weight 800 is what the display sizes are set in.
 const _fontsUrl =
     'https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500'
-    '&family=Hanken+Grotesk:wght@400;500;600;700'
-    '&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600'
+    '&family=Hanken+Grotesk:wght@400;500;600;700;800'
     '&display=swap';
 
-/// Applies the saved (or system) theme before first paint to avoid a flash.
+/// Applies the saved (or system) theme before first paint to avoid a flash, and
+/// marks the document as script-capable.
+///
+/// The `js` class is what arms the scroll-reveal animation. Keeping it here
+/// means the hidden state only ever exists when scripting is actually running,
+/// so a failed or blocked bundle degrades to "everything visible" instead of a
+/// blank page.
 const _noFlashScript = '''
 (function(){try{
+  document.documentElement.classList.add('js');
   var t = localStorage.getItem('theme');
   var dark = t ? (t === 'dark')
                 : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -35,7 +41,7 @@ void main() {
     Document(
       title: _title,
       lang: 'en',
-      meta: const {'description': _description, 'theme-color': '#FAF9F5'},
+      meta: const {'description': _description, 'theme-color': '#FBFAF7'},
       head: [
         Component.element(
           tag: 'link',

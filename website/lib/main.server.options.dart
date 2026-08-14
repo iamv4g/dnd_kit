@@ -12,6 +12,7 @@ import 'package:dnd_kit_website/layout/nav_bar.dart' as _nav_bar;
 import 'package:dnd_kit_website/sections/code_sample.dart' as _code_sample;
 import 'package:dnd_kit_website/sections/features.dart' as _features;
 import 'package:dnd_kit_website/sections/hero.dart' as _hero;
+import 'package:dnd_kit_website/sections/install_pill.dart' as _install_pill;
 import 'package:dnd_kit_website/sections/kanban_showcase.dart'
     as _kanban_showcase;
 import 'package:dnd_kit_website/sections/playground.dart' as _playground;
@@ -50,6 +51,9 @@ ServerOptions get defaultServerOptions => ServerOptions(
     ),
     _features.Features: ClientTarget<_features.Features>('features'),
     _hero.HeroStack: ClientTarget<_hero.HeroStack>('hero'),
+    _install_pill.InstallPill: ClientTarget<_install_pill.InstallPill>(
+      'install_pill',
+    ),
     _kanban_showcase.KanbanShowcase:
         ClientTarget<_kanban_showcase.KanbanShowcase>('kanban_showcase'),
     _playground.Playground: ClientTarget<_playground.Playground>('playground'),

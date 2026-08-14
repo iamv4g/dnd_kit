@@ -21,9 +21,10 @@ drag state as you go.
   playground use generic drop zones.
 - **Showcase page.** `lib/showcase/showcase_page.dart` (`/showcase` route) runs
   the Kanban and playground live on `dnd_kit_jaspr`, then embeds the
-  `flutter_example_gallery` — built with `flutter build web` and bundled into the
-  Pages output at `flutter/` by the deploy workflow — in an iframe, so the same
-  demos show on both adapters.
+  `flutter_example_gallery` — a separate Flutter web app bundled into the site
+  output at `flutter/` — in an iframe, so the same demos show on both adapters.
+  `jaspr build` cannot produce that directory; run `tool/gallery.sh` for it (see
+  [Build](#build-static-site)), or the iframe is dead.
 - **Telemetry HUD** (`lib/drag/telemetry_hud.dart`) is the signature element: a
   shared `DragBus` collects every island's controller state into one live
   readout.
@@ -56,7 +57,14 @@ fvm dart pub global run jaspr_cli:jaspr serve   # terminal 2: dev server on :808
 ```sh
 tool/styles.sh --minify         # compile web/styles.css
 fvm dart pub global run jaspr_cli:jaspr build   # outputs static files to build/jaspr
+tool/gallery.sh                 # build + bundle the Flutter gallery to build/jaspr/flutter
 ```
+
+`tool/gallery.sh` is what makes the showcase page's "The same demos, on Flutter"
+section work. Skip it and that iframe 404s — which is all the deploy workflow
+was doing for us before, so the section only ever worked on CI. Pass the base
+path when the site is not served from the root, e.g. `tool/gallery.sh
+/dnd_kit/flutter/` for the project Pages subpath.
 
 The contents of `build/jaspr` are plain static files — deploy them to any
 static host (GitHub Pages, Netlify, Cloudflare Pages, …).

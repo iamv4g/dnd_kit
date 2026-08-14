@@ -5,6 +5,7 @@ import 'package:jaspr/jaspr.dart';
 import '../components/ui.dart';
 import '../data/site_data.dart';
 import '../drag/drag_bus.dart';
+import 'install_pill.dart';
 
 /// The hero: a thesis headline plus a live "drag me" moment so the very first
 /// thing a visitor can do is grab something.
@@ -14,39 +15,55 @@ class Hero extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return header(classes: 'relative overflow-hidden', [
-      // Soft ambient backdrop.
       div(
         classes:
-            'pointer-events-none absolute -top-32 right-0 h-[420px] w-[420px] '
-            'rounded-full bg-accent/20 blur-3xl',
+            'sweep pointer-events-none absolute -left-[12%] -right-[12%] '
+            '-top-[30%] h-[132%]',
         const [],
       ),
       div(
         classes:
-            'mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 '
-            'lg:grid-cols-[1.1fr_0.9fr] lg:py-28',
+            'hero-close pointer-events-none absolute -left-[6%] -right-[6%] '
+            'bottom-0 h-[120px]',
+        const [],
+      ),
+      div(
+        classes:
+            // pt clears the overlaid nav capsule (see NavBar's negative margin).
+            'relative mx-auto grid max-w-6xl items-center gap-12 px-6 pb-32 '
+            'pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:pb-40 lg:pt-44',
         [
           div(classes: 'flex flex-col items-start gap-6', [
-            eyebrow('Drag-and-drop · Flutter & Web'),
+            eyebrow('Stable 0.4.0 · one engine, two adapters'),
             h1(
               classes:
-                  'font-serif text-5xl leading-[1.05] text-ink sm:text-6xl',
+                  'max-w-[15ch] font-display text-5xl font-extrabold '
+                  'leading-[1.02] tracking-[-0.045em] text-ink sm:text-6xl',
               [
-                .text('Pick up the '),
-                span(classes: 'text-accent', [.text('whole page')]),
-                .text('.'),
+                .text('Drag is a '),
+                span(classes: 'ink-sweep', [.text('continuous')]),
+                .text(' thing. So is this engine.'),
               ],
             ),
-            p(classes: 'max-w-xl text-lg leading-relaxed text-muted', const [
+            p(classes: 'max-w-xl text-lg leading-relaxed text-muted', [
               .text(
-                'dnd_kit is one drag engine for Flutter and the browser. '
-                'This page is built with it — every handle, card and chip '
-                'you can grab below runs on the same runtime.',
+                'dnd_kit keeps the whole gesture in one pure-Dart runtime '
+                '— activation, geometry, collision, modifiers, sortable math '
+                '— and lets ',
               ),
+              strong(classes: 'font-semibold text-ink', const [
+                .text('Flutter'),
+              ]),
+              .text(' and '),
+              strong(classes: 'font-semibold text-ink', const [.text('Jaspr')]),
+              const .text(' render it. Same curve, same answer, both sides.'),
             ]),
-            div(classes: 'flex flex-wrap items-center gap-3', [
-              ctaPrimary('View on GitHub', SiteLinks.github, external: true),
-              ctaGhost('Read the docs', SiteLinks.docs),
+            div(classes: 'flex flex-col items-start gap-4', [
+              div(classes: 'flex flex-wrap items-center gap-3', [
+                ctaPrimary('View the source', SiteLinks.github, external: true),
+                ctaGhost('Read the docs', SiteLinks.docs),
+              ]),
+              const InstallPill(),
             ]),
           ]),
           // The entrance animation lives on this static wrapper, not inside
@@ -114,15 +131,18 @@ class _HeroStackState extends State<HeroStack> {
   Component build(BuildContext context) {
     return DndScope(
       controller: _controller,
-      child: div(classes: 'card flex flex-col gap-4 p-5 shadow-lift', [
+      child: div(classes: 'card-lg flex flex-col gap-4 p-6', [
         div(classes: 'flex items-center justify-between', [
           span(
-            classes: 'font-mono text-xs uppercase tracking-wider text-muted',
+            classes: 'font-mono text-xs uppercase tracking-wider text-faint',
             const [.text('drag a capability →')],
           ),
-          span(classes: 'font-mono text-xs text-accent', [
-            .text('${_stack.length} in stack'),
-          ]),
+          span(
+            classes:
+                'rounded-full bg-accent/10 px-3 py-1 font-mono text-xs '
+                'text-accent-deep dark:text-accent',
+            [.text('${_stack.length} in stack')],
+          ),
         ]),
         _zone('zone-tray', _tray, 'Capabilities'),
         _zone('zone-stack', _stack, 'Your stack', emptyHint: 'drop here'),
@@ -145,17 +165,17 @@ class _HeroStackState extends State<HeroStack> {
       id: DndId(zoneId),
       child: div(
         classes:
-            'drop-zone flex min-h-[72px] flex-wrap content-start gap-2 p-3',
+            'drop-zone flex min-h-[84px] flex-wrap content-start gap-2 p-4',
         attributes: {'data-over': isOver.toString()},
         [
           span(
             classes:
                 'w-full font-mono text-[10px] uppercase tracking-wider '
-                'text-muted',
+                'text-faint',
             [.text(title)],
           ),
           if (chips.isEmpty && emptyHint != null)
-            span(classes: 'text-xs text-muted', [.text(emptyHint)]),
+            span(classes: 'text-xs text-faint', [.text(emptyHint)]),
           for (final id in chips) _chip(id),
         ],
       ),
@@ -176,12 +196,17 @@ class _HeroStackState extends State<HeroStack> {
   Component _chipFace(DndId id, bool dragging) {
     return span(
       classes:
-          'inline-flex cursor-grab select-none items-center gap-1.5 rounded-full '
-          'border bg-surface px-3 py-1.5 text-sm font-medium text-ink '
-          'transition active:cursor-grabbing '
-          '${dragging ? 'border-accent shadow-lift-accent rotate-2' : 'border-line hover:border-accent'}',
+          'inline-flex cursor-grab select-none items-center gap-2 rounded-full '
+          'bg-surface px-4 py-2 text-sm font-semibold text-ink '
+          'transition-[transform,box-shadow] duration-300 ease-spring '
+          'active:cursor-grabbing '
+          '${dragging ? 'rotate-2 scale-[1.03] shadow-lift-hi' : 'shadow-lift hover:-translate-y-0.5'}',
       [
-        span(classes: 'text-accent', const [.text('⠿')]),
+        span(
+          classes:
+              'h-2 w-2 rounded-full bg-gradient-to-br from-accent-deep to-sky',
+          const [],
+        ),
         .text(_chipLabels[id.value] ?? id.value),
       ],
     );

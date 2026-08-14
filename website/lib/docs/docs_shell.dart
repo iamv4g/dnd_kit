@@ -75,14 +75,15 @@ class DocsShell extends StatelessComponent {
     );
   }
 
+  /// A sidebar capsule; the current page is marked by a tinted fill.
   Component _sidebarLink(DocEntry entry) {
     final active = entry.slug == slug;
     return a(
       href: entry.href,
       attributes: active ? const {'aria-current': 'page'} : null,
       classes:
-          'rounded-lg px-3 py-1.5 text-sm transition-colors '
-          '${active ? 'bg-surface font-medium text-accent' : 'text-muted hover:bg-surface hover:text-ink'}',
+          'rounded-full px-3.5 py-1.5 text-sm transition-colors duration-200 '
+          '${active ? 'bg-accent/10 font-semibold text-accent' : 'text-muted hover:bg-accent/10 hover:text-accent'}',
       [.text(entry.navLabel)],
     );
   }
@@ -93,20 +94,45 @@ class DocsShell extends StatelessComponent {
     return Component.element(
       tag: 'details',
       classes:
-          'sticky top-16 z-20 mb-8 rounded-2xl border border-line '
-          'bg-paper/95 shadow-sm backdrop-blur lg:hidden',
+          // Near-opaque on purpose: the panel scrolls over the dark code slabs,
+          // and anything lighter lets them bleed through the list. `group` sits
+          // here (not on the summary) because `group-open:` reads the `open`
+          // attribute, which lives on the details element.
+          'group sticky top-16 z-20 mb-8 rounded-3xl squircle bg-surface/95 '
+          'shadow-lift backdrop-blur-xl lg:hidden',
       children: [
         Component.element(
           tag: 'summary',
           classes:
-              'cursor-pointer select-none rounded-2xl px-4 py-3 text-sm '
-              'font-medium text-ink',
-          children: const [.text('Documentation menu')],
+              'flex cursor-pointer select-none items-center gap-2 '
+              'rounded-3xl px-5 py-3.5 text-sm font-semibold text-ink',
+          children: [
+            span(classes: 'flex-1', const [.text('Documentation menu')]),
+            Component.element(
+              tag: 'svg',
+              classes:
+                  'h-4 w-4 shrink-0 text-faint transition-transform '
+                  'duration-200 group-open:rotate-180',
+              attributes: const {
+                'viewBox': '0 0 16 16',
+                'fill': 'none',
+                'stroke': 'currentColor',
+                'stroke-width': '1.8',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round',
+                'aria-hidden': 'true',
+              },
+              children: [
+                Component.element(
+                  tag: 'path',
+                  attributes: const {'d': 'M4 6.5 8 10.5 12 6.5'},
+                ),
+              ],
+            ),
+          ],
         ),
         div(
-          classes:
-              'flex max-h-[70vh] flex-col gap-5 overflow-auto border-t '
-              'border-line px-4 py-4',
+          classes: 'flex max-h-[70vh] flex-col gap-5 overflow-auto px-4 pb-4',
           [
             for (final group in docGroups)
               div(classes: 'flex flex-col gap-1', [
@@ -128,9 +154,12 @@ class DocsShell extends StatelessComponent {
     return div(classes: 'min-w-0', [
       _mobileNav(),
       eyebrow(entry.group),
-      h1(classes: 'mt-3 font-serif text-4xl text-ink sm:text-5xl', [
-        .text(entry.title),
-      ]),
+      h1(
+        classes:
+            'mt-3 font-display text-4xl font-extrabold tracking-[-0.04em] '
+            'text-ink sm:text-5xl',
+        [.text(entry.title)],
+      ),
       div(classes: 'mt-6 flex flex-col gap-10', body),
       _pager(),
     ]);
@@ -169,23 +198,25 @@ class DocsShell extends StatelessComponent {
     if (prev == null && next == null) {
       return Component.element(tag: 'div', children: const []);
     }
-    return div(
-      classes:
-          'mt-12 flex items-stretch justify-between gap-4 border-t '
-          'border-line pt-6',
-      [
+    return .fragment([
+      div(
+        classes:
+            'mt-12 h-px bg-gradient-to-r from-transparent via-line '
+            'to-transparent',
+        const [],
+      ),
+      div(classes: 'mt-6 flex items-stretch justify-between gap-4', [
         if (prev != null) _pagerLink(prev, next: false) else div(const []),
         if (next != null) _pagerLink(next, next: true) else div(const []),
-      ],
-    );
+      ]),
+    ]);
   }
 
   Component _pagerLink(DocEntry entry, {required bool next}) {
     return a(
       href: entry.href,
       classes:
-          'flex flex-col gap-0.5 rounded-2xl border border-line bg-surface '
-          'px-5 py-3 transition-colors hover:border-accent '
+          'card card-hover flex flex-col gap-0.5 px-5 py-3 '
           '${next ? 'items-end text-right' : 'items-start'}',
       [
         span(classes: 'font-mono text-xs text-muted', [

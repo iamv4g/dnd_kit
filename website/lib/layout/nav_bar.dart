@@ -13,8 +13,16 @@ class NavBar extends StatelessComponent {
   const NavBar({
     this.activeDocs = false,
     this.activeShowcase = false,
+    this.overlap = false,
     super.key,
   });
+
+  /// Pulls the following content up under the capsule so a full-bleed backdrop
+  /// (the home hero's sweep) can run to the very top of the page.
+  ///
+  /// Off by default: the docs and showcase shells start with ordinary content
+  /// that would slide underneath the nav.
+  final bool overlap;
 
   /// Highlights the Docs pill when the docs page is the current route.
   final bool activeDocs;
@@ -24,22 +32,39 @@ class NavBar extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
+    // 4.5rem = the capsule's h-14 plus its top-4 offset, so the following
+    // content slides up under the floating nav.
     return nav(
       classes:
-          'sticky top-0 z-30 border-b border-line bg-paper/80 backdrop-blur',
+          'sticky top-4 z-30 mx-auto w-fit max-w-[calc(100%-1.5rem)] px-3'
+          '${overlap ? ' -mb-[4.5rem]' : ''}',
       [
         div(
           classes:
-              'mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 '
-              'px-6',
+              'flex h-14 items-center justify-between gap-2 rounded-full '
+              'bg-surface/75 px-3 shadow-lift backdrop-blur-xl',
           [
             a(
               href: '#top',
-              classes: 'font-serif text-xl font-semibold text-ink',
+              classes:
+                  'flex items-center gap-2 pl-1 pr-3 font-display text-lg '
+                  'font-extrabold tracking-[-0.03em] text-ink',
               [
-                .text('dnd'),
-                span(classes: 'text-accent', [.text('_')]),
-                .text('kit'),
+                Component.element(
+                  tag: 'img',
+                  classes: 'h-7 w-7',
+                  attributes: const {
+                    'src': 'favicon.svg',
+                    'alt': '',
+                    'width': '28',
+                    'height': '28',
+                  },
+                ),
+                span([
+                  .text('dnd'),
+                  span(classes: 'ink-sweep', [.text('_')]),
+                  .text('kit'),
+                ]),
               ],
             ),
             const ReorderableNav(),
@@ -144,9 +169,8 @@ class _ReorderableNavState extends State<ReorderableNav> {
                 [child],
               );
             },
-            // A hover-revealed grip is the drag surface; pressing the link text
-            // itself does not trigger pointer capture, so the anchor still
-            // navigates on a plain click. Drag the grip to reorder.
+            // The grip is the only drag surface, so pressing the link text
+            // never captures the pointer and the anchor still navigates.
             child: div(classes: 'group flex items-center rounded-full', [
               DndDragHandle(
                 label: 'Reorder ${_itemFor(id).label}',

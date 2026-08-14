@@ -38,7 +38,7 @@ class _ThemeToggleState extends State<ThemeToggle> {
     return button(
       classes:
           'inline-grid h-10 w-10 place-items-center rounded-full border '
-          'border-line bg-surface text-ink transition-colors hover:border-accent '
+          'bg-surface text-ink shadow-lift transition-colors hover:text-accent '
           'hover:text-accent',
       attributes: {
         'type': 'button',

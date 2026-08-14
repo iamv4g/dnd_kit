@@ -79,31 +79,42 @@ class _FeaturesState extends State<Features> {
         ]),
         DndDragOverlay(
           controller: _controller,
-          builder: (context, overlay) => div(
-            classes: 'rotate-2 shadow-lift-accent',
-            [_featureCard(_featureFor(overlay.activeId))],
-          ),
+          builder: (context, overlay) => div(classes: 'rotate-2 scale-[1.02]', [
+            _featureCard(_featureFor(overlay.activeId), lifted: true),
+          ]),
         ),
       ]),
     );
   }
 
-  Component _featureCard(Feature feature) {
+  Component _featureCard(Feature feature, {bool lifted = false}) {
+    const orbs = <String>[
+      'from-accent-deep to-accent',
+      'from-accent to-sky',
+      'from-sky to-mint',
+      'from-mint to-apricot',
+      'from-apricot to-accent',
+      'from-accent to-accent-deep',
+    ];
+    final orb = orbs[features.indexOf(feature) % orbs.length];
     return div(
       classes:
-          'group flex h-full flex-col gap-3 rounded-2xl border border-line '
-          'bg-surface p-5 transition-colors hover:border-accent/50',
+          'card card-hover group flex h-full flex-col gap-4 p-6 '
+          '${lifted ? 'shadow-lift-hi' : ''}',
       [
         div(classes: 'flex items-center justify-between', [
           span(
             classes:
-                'inline-grid h-10 w-10 place-items-center rounded-xl '
-                'bg-accent/10 text-lg text-accent',
+                'inline-grid h-11 w-11 place-items-center rounded-2xl '
+                'squircle bg-gradient-to-br $orb text-lg text-white',
             [.text(feature.glyph)],
           ),
           Grip(label: 'Reorder ${feature.title}'),
         ]),
-        h3(classes: 'font-serif text-xl text-ink', [.text(feature.title)]),
+        h3(
+          classes: 'font-display text-xl font-bold tracking-[-0.02em] text-ink',
+          [.text(feature.title)],
+        ),
         p(classes: 'text-sm leading-relaxed text-muted', [.text(feature.body)]),
       ],
     );

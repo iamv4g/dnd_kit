@@ -9,18 +9,23 @@ class Footer extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    return footer(classes: 'border-t border-line', [
+    return footer(classes: 'band mt-10', [
       div(
         classes:
             'mx-auto flex max-w-6xl flex-col items-start justify-between '
             'gap-6 px-6 py-12 sm:flex-row sm:items-center',
         [
           div(classes: 'flex flex-col gap-1', [
-            span(classes: 'font-serif text-lg text-ink', [
-              .text('dnd'),
-              span(classes: 'text-accent', [.text('_')]),
-              .text('kit'),
-            ]),
+            span(
+              classes:
+                  'font-display text-lg font-extrabold tracking-[-0.03em] '
+                  'text-ink',
+              [
+                .text('dnd'),
+                span(classes: 'ink-sweep', [.text('_')]),
+                .text('kit'),
+              ],
+            ),
             span(classes: 'text-sm text-muted', const [
               .text('One drag engine for Flutter and the web.'),
             ]),

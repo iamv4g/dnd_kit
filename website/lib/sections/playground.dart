@@ -84,9 +84,9 @@ class _PlaygroundState extends State<Playground> {
         div(classes: 'flex justify-end', [
           button(
             classes:
-                'rounded-full border border-line px-4 py-1.5 text-sm '
-                'font-medium text-muted transition-colors hover:border-accent '
-                'hover:text-accent',
+                'rounded-full bg-surface px-5 py-2 text-sm font-semibold '
+                'text-muted shadow-lift transition-transform duration-200 '
+                'ease-spring hover:-translate-y-0.5 hover:text-accent',
             attributes: const {'type': 'button'},
             onClick: _reset,
             const [.text('Reset')],
@@ -164,9 +164,10 @@ class _PlaygroundState extends State<Playground> {
     return span(
       classes:
           'inline-grid h-10 w-10 cursor-grab select-none place-items-center '
-          'rounded-xl border bg-surface font-mono text-sm text-ink '
-          'transition active:cursor-grabbing '
-          '${dragging ? 'border-accent shadow-lift-accent rotate-6' : 'border-line hover:border-accent'}',
+          'rounded-2xl squircle bg-surface font-mono text-sm font-bold text-ink '
+          'transition-[transform,box-shadow] duration-300 ease-spring '
+          'active:cursor-grabbing '
+          '${dragging ? 'rotate-6 scale-105 shadow-lift-hi' : 'shadow-lift hover:-translate-y-0.5'}',
       [.text(n)],
     );
   }
