@@ -37,7 +37,7 @@ tab also mirrors those announcements on screen.
 
 ```bash
 cd examples/jaspr_example_gallery
-~/.pub-cache/bin/jaspr serve
+fvm dart run jaspr_cli:jaspr serve
 ```
 
 The development server defaults to `http://localhost:8080`.
@@ -46,7 +46,7 @@ The development server defaults to `http://localhost:8080`.
 
 ```bash
 cd examples/jaspr_example_gallery
-~/.pub-cache/bin/jaspr build
+fvm dart run jaspr_cli:jaspr build
 ```
 
 ## Notes

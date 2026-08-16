@@ -45,19 +45,23 @@ so a single class (`bg-paper`, `text-ink`) adapts to light/dark.
 
 ```sh
 # from this directory (website/)
-tool/styles.sh --watch          # terminal 1: rebuild CSS on change
-fvm dart pub global run jaspr_cli:jaspr serve   # terminal 2: dev server on :8080
+tool/styles.sh --watch                # terminal 1: rebuild CSS on change
+fvm dart run jaspr_cli:jaspr serve    # terminal 2: dev server on :8080
 ```
 
 (If `tailwindcss` is already on your PATH you can use that instead of
 `tool/styles.sh`.)
 
+`jaspr_cli` is a dev dependency rather than a global activation, so it and
+`build_runner` resolve to the same `build_daemon`. A globally activated CLI
+resolves its own and the build daemon refuses the handshake once they drift.
+
 ## Build (static site)
 
 ```sh
-tool/styles.sh --minify         # compile web/styles.css
-fvm dart pub global run jaspr_cli:jaspr build   # outputs static files to build/jaspr
-tool/gallery.sh                 # build + bundle the Flutter gallery to build/jaspr/flutter
+tool/styles.sh --minify               # compile web/styles.css
+fvm dart run jaspr_cli:jaspr build    # outputs static files to build/jaspr
+tool/gallery.sh                       # build + bundle the Flutter gallery
 ```
 
 `tool/gallery.sh` is what makes the showcase page's "The same demos, on Flutter"

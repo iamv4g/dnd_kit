@@ -48,19 +48,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Pinned to match the project's jaspr ^0.23.1, and run under the
-      # Flutter-pinned Dart so the build daemon snapshots match the SDK (a
-      # mismatched Dart crashes the daemon with "Invalid kernel binary format").
-      - name: Install Jaspr CLI
-        run: dart pub global activate jaspr_cli 0.23.1
-
       - name: Build Tailwind CSS
         working-directory: website
         run: tool/styles.sh --minify
 
+      # The CLI is a dev dependency, so it and the build_runner that starts the
+      # build daemon resolve to one build_daemon through pubspec.lock. A
+      # globally activated CLI resolves its own, unpinned, and the daemon
+      # handshake breaks whenever pub publishes a newer one. Run under the
+      # Flutter-pinned Dart so the daemon snapshots match the SDK (a mismatched
+      # Dart crashes the daemon with "Invalid kernel binary format").
       - name: Build website
         working-directory: website
-        run: dart pub global run jaspr_cli:jaspr build --verbose
+        run: dart run jaspr_cli:jaspr build --verbose
 
       - name: Verify build output
         working-directory: website/build/jaspr
