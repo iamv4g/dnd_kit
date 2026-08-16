@@ -4,10 +4,8 @@ import 'package:universal_web/web.dart' as web;
 
 import 'drag_bus.dart';
 
-/// The page's signature element: a quiet fixed mono strip that reads live drag
-/// telemetry from the shared [dragBus]. Idle it sits muted; the moment the
-/// visitor grabs anything on the page it warms to coral and streams the
-/// engine's state.
+/// A fixed mono strip that streams live drag telemetry from the shared
+/// [dragBus]. Muted while idle, highlighted while a drag is in flight.
 @client
 class TelemetryHud extends StatefulComponent {
   const TelemetryHud({super.key});
@@ -50,15 +48,13 @@ class _TelemetryHudState extends State<TelemetryHud> {
     // background avoids the iOS Safari backdrop-filter-on-fixed bug where the
     // bar only paints after a scroll.
     final shell = s.active
-        ? 'border-accent text-ink'
-        : 'border-line text-muted';
+        ? 'text-ink shadow-lift-hi'
+        : 'text-muted shadow-lift';
 
-    // Anchor to the bottom-left on mobile and centre on >= sm. Centring a
-    // fixed element resolves against the initial containing block, which a
-    // device emulator can size to the window (wider than the viewport) and push
-    // the bar off-screen; a left edge anchor stays put. No vw/% widths (those
-    // can also resolve to the window), and fewer fields on mobile keep the bar
-    // narrow enough to never need them.
+    // Anchored to the bottom-left on mobile: centring a fixed element resolves
+    // against the initial containing block, which a device emulator can size
+    // wider than the viewport and push the bar off-screen. Same reason there
+    // are no vw/% widths here.
     return div(
       classes:
           'pointer-events-none fixed bottom-3 left-3 z-40 '
@@ -67,7 +63,7 @@ class _TelemetryHudState extends State<TelemetryHud> {
         div(
           classes:
               'pointer-events-auto flex min-w-0 items-center gap-3 '
-              'overflow-x-auto rounded-full border bg-surface/95 px-4 py-2 '
+              'overflow-x-auto rounded-full bg-surface/95 px-5 py-2.5 '
               'font-mono text-xs shadow-lift transition-colors $shell',
           attributes: const {'role': 'status', 'aria-live': 'off'},
           [
@@ -77,7 +73,7 @@ class _TelemetryHudState extends State<TelemetryHud> {
                   : 'h-2 w-2 shrink-0 rounded-full bg-muted/50',
               const [],
             ),
-            // Hidden on mobile to keep the bar compact; shown from >= sm.
+            // `always: false` fields are hidden on mobile to keep the bar compact.
             _field('source', s.source, always: false),
             _field('active', s.activeId ?? '—'),
             _field('over', s.overId ?? '—'),

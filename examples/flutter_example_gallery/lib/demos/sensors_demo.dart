@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `sensors` catalog demo: a [DndSensorActivationConstraint] decides how
 /// deliberate a gesture must be before a drag begins, so a tap is never
 /// mistaken for a drag.
@@ -62,7 +64,6 @@ class _SensorsDemoState extends State<SensorsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final dragging = _controller.isDragging;
 
     return DndScope(
@@ -113,22 +114,10 @@ class _SensorsDemoState extends State<SensorsDemo> {
             ),
             DndDragOverlay(
               controller: _controller,
-              builder: (context, details) => Container(
+              builder: (context, details) => demoCard(
                 width: 200,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 18, horizontal: 22),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Dragging',
-                  style: TextStyle(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                lifted: true,
+                child: const Text('Dragging'),
               ),
             ),
           ],
@@ -145,23 +134,6 @@ class _SensorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 22),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: colorScheme.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
+    return demoCard(width: 200, child: Text(label));
   }
 }

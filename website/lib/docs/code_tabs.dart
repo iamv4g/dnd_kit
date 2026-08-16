@@ -33,40 +33,39 @@ class _CodeTabsState extends State<CodeTabs> {
     final file = _tab == 0 ? component.flutterFile : component.jasprFile;
     return div(
       classes:
-          'overflow-hidden rounded-2xl border border-line bg-surface shadow-lift',
+          'overflow-hidden rounded-[2rem] squircle bg-[#0C1420] '
+          'dark:bg-surface shadow-lift',
       [
-        div(
-          classes:
-              'flex items-center gap-3 border-b border-line bg-raised px-4 py-2.5',
-          [
-            div(
-              classes: 'flex items-center gap-1',
-              attributes: const {'role': 'tablist'},
-              [
-                for (var i = 0; i < tabs.length; i++)
-                  button(
-                    classes:
-                        'rounded-full px-3 py-1 font-mono text-xs transition-colors '
-                        '${i == _tab ? 'bg-accent text-white' : 'text-muted hover:text-ink'}',
-                    attributes: {
-                      'type': 'button',
-                      'role': 'tab',
-                      'aria-selected': (i == _tab).toString(),
-                    },
-                    onClick: () => setState(() => _tab = i),
-                    [.text(tabs[i])],
-                  ),
-              ],
-            ),
-            span(classes: 'ml-auto font-mono text-xs text-muted', [
-              .text(file),
-            ]),
-          ],
-        ),
+        div(classes: 'flex flex-wrap items-center gap-2 px-5 pt-5', [
+          div(
+            classes: 'flex items-center gap-1',
+            attributes: const {'role': 'tablist'},
+            [
+              for (var i = 0; i < tabs.length; i++)
+                button(
+                  classes:
+                      'rounded-full px-4 py-1.5 font-mono text-xs font-bold '
+                      'transition-colors duration-200 '
+                      '${i == _tab ? 'bg-white/10 text-white' : 'text-[#8FA3BC] hover:text-white'}',
+                  attributes: {
+                    'type': 'button',
+                    'role': 'tab',
+                    'aria-selected': (i == _tab).toString(),
+                  },
+                  onClick: () => setState(() => _tab = i),
+                  [.text(tabs[i])],
+                ),
+            ],
+          ),
+          span(classes: 'ml-auto font-mono text-xs text-[#5A6B84]', [
+            .text(file),
+          ]),
+        ]),
         Component.element(
           tag: 'pre',
           classes:
-              'overflow-x-auto p-5 font-mono text-sm leading-relaxed text-ink',
+              'overflow-x-auto px-6 pb-6 pt-3 font-mono text-sm leading-relaxed '
+              'text-[#D9E2EF]',
           children: [.text(code)],
         ),
       ],

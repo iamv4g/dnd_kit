@@ -171,19 +171,17 @@ class _Lane extends StatelessComponent {
             final over = dropDetails.isOver;
             return section(
               id: 'lane-${lane.id.value}',
-              styles: Styles(
-                display: .flex,
-                minHeight: 250.px,
-                padding: .all(18.px),
-                border: .all(
-                  color: over ? cAccentBright : cBorder,
-                  width: over ? 2.px : 1.px,
+              classes: kSquircle,
+              styles: Styles.combine(<Styles>[
+                dropZoneStyles(isOver: over, radius: 26),
+                Styles(
+                  display: .flex,
+                  minHeight: 250.px,
+                  padding: .all(18.px),
+                  flexDirection: .column,
+                  gap: .all(16.px),
                 ),
-                radius: .circular(24.px),
-                flexDirection: .column,
-                gap: .all(16.px),
-                backgroundColor: over ? cAccentSoft : cPanelAlt,
-              ),
+              ]),
               attributes: <String, String>{
                 'data-lane-id': lane.id.value,
                 'data-is-over': over.toString(),
@@ -291,16 +289,21 @@ class _TaskCard extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
+    // A dragged card leans and grows its shadow; it is the same object picked
+    // up, not a differently-coloured one.
     return article(
+      classes: kSquircle,
       styles: Styles(
         display: .flex,
         padding: .all(18.px),
-        border: .all(color: cCardBorder, width: 1.px),
         radius: .circular(22.px),
+        shadow: isDragging ? kLiftHigh : kLift,
         cursor: isDragging ? .grabbing : .defaultCursor,
         flexDirection: .column,
         gap: .all(14.px),
         backgroundColor: cCardBg,
+        transform: isDragging ? .rotate(2.deg) : null,
+        transition: kSettle,
       ),
       attributes: attributes,
       [
@@ -361,19 +364,20 @@ class _EmptyLaneState extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
+    // An empty slot is a deeper recess, not a dashed rectangle.
     return div(
+      classes: kSquircle,
       styles: Styles(
         display: .flex,
         minHeight: 132.px,
         padding: .all(16.px),
-        border: .all(color: cBorderSoft, width: 1.px),
         radius: .circular(20.px),
         justifyContent: .center,
         alignItems: .center,
         color: cEmptyText,
         textAlign: .center,
         lineHeight: 1.5.em,
-        backgroundColor: cEmptyBg,
+        backgroundColor: cPageBg,
       ),
       const [.text('Drop the task here to move app-owned state.')],
     );

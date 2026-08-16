@@ -4,13 +4,12 @@ import 'package:jaspr/jaspr.dart';
 
 import '../drag/drag_bus.dart';
 import '../drag/grip.dart';
+import '../drag/sortable_offsets.dart';
 
-/// The centerpiece: an interactive multi-column board.
-///
-/// The board now demonstrates the supported multi-container sortable surface
-/// for Jaspr: [SortableMultiScope], [SortableMultiContainerArea], and
+/// An interactive multi-column board built on the multi-container sortable
+/// surface: [SortableMultiScope], [SortableMultiContainerArea], and
 /// [SortableMultiItem]. The site keeps its own visual language and state, while
-/// the library owns default cross-container collision and insertion semantics.
+/// the library owns cross-container collision and insertion semantics.
 @client
 class KanbanShowcase extends StatefulComponent {
   const KanbanShowcase({super.key});
@@ -39,8 +38,6 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
       ..dispose();
     super.dispose();
   }
-
-  // --- move logic ----------------------------------------------------------
 
   static Map<String, List<DndId>> _initialBoard() {
     return {
@@ -183,10 +180,8 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
     return SortableMultiScope(
       controller: _controller,
       containers: _containers,
+      offsetResolver: SortableMultiOffsets.verticalLists,
       onMove: _handleMove,
-      // The board's stacked rows: status bar, the horizontal column rail, the
-      // drag overlay and the a11y live region. (How the rail is kept from
-      // widening the page on mobile is explained on the wrapper below.)
       child: div(classes: 'space-y-6', [
         _statusBar(),
         // Keep the page width locked to the viewport on mobile by separating
@@ -194,8 +189,6 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
         // browsers can still let wide drag columns expand the page when the
         // scrollable element is also the direct parent of those columns.
         div(classes: 'max-w-full overflow-hidden', [
-          // Columns stay side by side and scroll horizontally; the board
-          // auto-scrolls horizontally while a card is dragged near an edge.
           DndAutoScroll(
             axis: DndScrollAxis.horizontal,
             controller: _controller,
@@ -232,9 +225,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
       classes: 'flex flex-wrap items-center gap-2 font-mono text-xs text-muted',
       [
         for (final c in counts)
-          span(classes: 'rounded-full border border-line bg-raised px-3 py-1', [
-            .text(c),
-          ]),
+          span(classes: 'rounded-full bg-raised px-3 py-1', [.text(c)]),
         span(
           classes:
               'rounded-full border border-accent/40 bg-accent/10 '
@@ -247,10 +238,8 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
 
   Component _column(({String id, String title}) col) {
     final cards = _board[col.id]!;
-    // The outer div owns the column width (DndDroppable renders an unstyled
-    // wrapper, so sizing lives here). On mobile each column is a fixed-width
-    // flex item in the horizontal rail; on >= sm the columns become equal
-    // flex children that share the available width.
+    // The outer div owns the column width: DndDroppable renders an unstyled
+    // wrapper, so sizing lives here.
     return div(
       classes:
           'w-[17rem] min-w-0 shrink-0 flex-none sm:w-auto sm:flex-1 sm:basis-0',
@@ -260,11 +249,10 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
           itemIds: cards,
           builder: (context, droppableState, child) {
             final isOver = _columnIsOver(DndId(col.id), droppableState);
+            // Fixed height, so opening a gap scrolls the cards inside a
+            // column instead of resizing the row of columns.
             return div(
-              classes:
-                  'flex w-full flex-col gap-3 rounded-2xl border bg-raised/60 '
-                  'p-3 transition-colors duration-200 '
-                  '${isOver ? 'border-accent bg-accent/10' : 'border-line'}',
+              classes: 'drop-zone flex h-[26rem] w-full flex-col gap-3 p-4',
               attributes: {'data-over': isOver.toString()},
               [child],
             );
@@ -279,20 +267,19 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
                 span(classes: 'text-accent', [.text('${cards.length}')]),
               ],
             ),
-            // Cards scroll vertically inside a bounded column; the column
-            // auto-scrolls vertically while a card is dragged past its edge.
+            // `min-h-0` lets this flex child shrink below its content, which is
+            // what makes `overflow-y: auto` scroll inside the fixed column.
             DndAutoScroll(
               axis: DndScrollAxis.vertical,
               controller: _controller,
               classes:
-                  'flex min-h-[120px] max-h-[55vh] flex-col gap-3 overflow-y-auto '
-                  'pr-0.5',
+                  'flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-0.5',
               child: .fragment([
                 if (cards.isEmpty)
                   div(
                     classes:
-                        'flex flex-1 items-center justify-center rounded-xl '
-                        'border border-dashed border-line py-6 text-xs text-muted',
+                        'flex flex-1 items-center justify-center rounded-2xl '
+                        'squircle bg-surface/50 py-6 text-xs text-faint',
                     const [.text('drop here')],
                   ),
                 for (final id in cards) _card(id),
@@ -314,15 +301,7 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
           'Press space to pick up, arrow keys to move between cards, '
           'space to drop, escape to cancel.',
       builder: (context, sortableState, child) {
-        final stateClasses = sortableState.isActive
-            ? 'opacity-40'
-            : sortableState.isOver
-            ? 'ring-2 ring-accent ring-offset-2 ring-offset-raised'
-            : '';
-        return div(
-          classes: 'transition-[opacity,box-shadow] duration-150 $stateClasses',
-          [child],
-        );
+        return div(styles: slotStyles(sortableState), [child]);
       },
       child: _cardFace(card),
     );
@@ -331,8 +310,8 @@ class _KanbanShowcaseState extends State<KanbanShowcase> {
   Component _cardFace(_Card card, {bool dragging = false}) {
     return div(
       classes:
-          'flex items-start gap-2 rounded-xl border border-line bg-surface p-3 '
-          '${dragging ? 'rotate-2 shadow-lift-accent' : 'shadow-sm'}',
+          'flex items-start gap-2 rounded-2xl squircle bg-surface p-3.5 '
+          '${dragging ? 'rotate-2 shadow-lift-hi' : 'shadow-lift'}',
       [
         Grip(label: 'Reorder ${card.title}'),
         div(classes: 'flex flex-1 flex-col gap-1', [

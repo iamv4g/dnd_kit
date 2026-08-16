@@ -15,6 +15,8 @@ import 'package:dnd_kit_website/sections/code_sample.dart'
     deferred as _code_sample;
 import 'package:dnd_kit_website/sections/features.dart' deferred as _features;
 import 'package:dnd_kit_website/sections/hero.dart' deferred as _hero;
+import 'package:dnd_kit_website/sections/install_pill.dart'
+    deferred as _install_pill;
 import 'package:dnd_kit_website/sections/kanban_showcase.dart'
     deferred as _kanban_showcase;
 import 'package:dnd_kit_website/sections/playground.dart'
@@ -70,6 +72,10 @@ ClientOptions get defaultClientOptions => ClientOptions(
       loader: _features.loadLibrary,
     ),
     'hero': ClientLoader((p) => _hero.HeroStack(), loader: _hero.loadLibrary),
+    'install_pill': ClientLoader(
+      (p) => _install_pill.InstallPill(),
+      loader: _install_pill.loadLibrary,
+    ),
     'kanban_showcase': ClientLoader(
       (p) => _kanban_showcase.KanbanShowcase(),
       loader: _kanban_showcase.loadLibrary,

@@ -4,24 +4,42 @@
 
 @layer base {
   :root {
-    --color-paper: 250 249 245; /* #FAF9F5 */
+    --color-paper: 251 250 247; /* #FBFAF7 */
     --color-surface: 255 255 255; /* #FFFFFF */
-    --color-raised: 240 238 230; /* #F0EEE6 */
-    --color-ink: 31 30 29; /* #1F1E1D */
-    --color-muted: 107 104 98; /* #6B6862 */
-    --color-line: 232 228 218; /* #E8E4DA */
-    --color-accent: 217 119 87; /* #D97757 */
-    --color-accent-deep: 189 93 58; /* #BD5D3A */
+    --color-raised: 241 242 246; /* #F1F2F6 */
+    --color-ink: 22 24 29; /* #16181D */
+    --color-muted: 86 92 107; /* #565C6B */
+    --color-faint: 138 144 160; /* #8A90A0 */
+    --color-line: 228 231 238; /* #E4E7EE */
+    --color-accent: 1 117 194; /* #0175C2 Dart */
+    --color-accent-deep: 2 86 155; /* #02569B Flutter */
+    --color-sky: 56 189 248; /* #38BDF8 */
+    --color-apricot: 255 174 126; /* #FFAE7E */
+    --color-mint: 95 214 176; /* #5FD6B0 */
+
+    --lift: 0 1px 2px rgb(22 24 29 / 0.04), 0 8px 20px -8px rgb(22 24 29 / 0.1),
+      0 28px 56px -24px rgb(2 86 155 / 0.16);
+    --lift-hi: 0 2px 4px rgb(22 24 29 / 0.05),
+      0 16px 32px -10px rgb(22 24 29 / 0.14),
+      0 48px 80px -32px rgb(2 86 155 / 0.24);
     color-scheme: light;
   }
 
   .dark {
-    --color-paper: 31 30 29; /* #1F1E1D */
-    --color-surface: 38 38 36; /* #262624 */
-    --color-raised: 48 48 45; /* #30302D */
-    --color-ink: 240 238 230; /* #F0EEE6 */
-    --color-muted: 168 163 154; /* #A8A39A */
-    --color-line: 58 56 51; /* #3A3833 */
+    --color-paper: 10 16 23; /* #0A1017 */
+    --color-surface: 17 26 35; /* #111A23 */
+    --color-raised: 22 33 44; /* #16212C */
+    --color-ink: 234 239 244; /* #EAEFF4 */
+    --color-muted: 154 167 181; /* #9AA7B5 */
+    --color-faint: 118 132 148; /* #768494 */
+    --color-line: 34 48 61; /* #22303D */
+    --color-accent: 56 189 248; /* #38BDF8 */
+    --color-accent-deep: 14 165 233; /* #0EA5E9 */
+
+    --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -10px rgb(0 0 0 / 0.55),
+      0 30px 60px -28px rgb(0 0 0 / 0.7);
+    --lift-hi: 0 2px 6px rgb(0 0 0 / 0.45),
+      0 18px 36px -12px rgb(0 0 0 / 0.6), 0 52px 88px -34px rgb(0 0 0 / 0.8);
     color-scheme: dark;
   }
 
@@ -41,7 +59,15 @@
   }
 
   ::selection {
-    @apply bg-accent/25;
+    @apply bg-sky/30;
+  }
+
+  /* The docs menu draws its own marker. */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
   }
 
   /* Draggable affordances: a handle-less draggable is grabbable as a whole;
@@ -90,13 +116,109 @@
 }
 
 @layer components {
+  /* `corner-shape` is progressive: browsers without it fall back to the
+     plain radius. */
   .card {
-    @apply rounded-2xl border border-line bg-surface;
+    @apply rounded-3xl bg-surface shadow-lift;
+    corner-shape: squircle;
+  }
+  .card-lg {
+    @apply rounded-[2.5rem] bg-surface shadow-lift;
+    corner-shape: squircle;
+  }
+  .card-hover {
+    @apply transition-[transform,box-shadow] duration-300;
+  }
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lift-hi;
   }
 
-  /* Recurring grip-dot handle affordance (rendered with the ⠿ glyph). */
+  .band {
+    @apply rounded-[60px/34px];
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgb(var(--color-raised)) 16%,
+      rgb(var(--color-raised)) 84%,
+      transparent
+    );
+  }
+
+  .sweep {
+    background:
+      radial-gradient(
+        60% 70% at 12% 20%,
+        rgb(var(--color-accent) / 0.55),
+        transparent 62%
+      ),
+      radial-gradient(
+        52% 62% at 78% 12%,
+        rgb(var(--color-sky) / 0.5),
+        transparent 60%
+      ),
+      radial-gradient(
+        46% 58% at 62% 74%,
+        rgb(var(--color-apricot) / 0.55),
+        transparent 62%
+      ),
+      radial-gradient(
+        40% 52% at 24% 86%,
+        rgb(var(--color-mint) / 0.4),
+        transparent 60%
+      ),
+      linear-gradient(160deg, rgb(var(--color-sky) / 0.12), rgb(var(--color-paper)) 60%);
+    transform: skewY(-7deg);
+    filter: blur(6px);
+    animation: sweep-drift 22s ease-in-out infinite alternate;
+  }
+  /* Dark ground needs the hues carried further down, or the sweep disappears. */
+  .dark .sweep {
+    background:
+      radial-gradient(
+        60% 70% at 12% 20%,
+        rgb(var(--color-accent-deep) / 0.42),
+        transparent 62%
+      ),
+      radial-gradient(
+        52% 62% at 78% 12%,
+        rgb(var(--color-sky) / 0.3),
+        transparent 60%
+      ),
+      radial-gradient(
+        46% 58% at 62% 74%,
+        rgb(var(--color-apricot) / 0.24),
+        transparent 62%
+      ),
+      radial-gradient(
+        40% 52% at 24% 86%,
+        rgb(var(--color-mint) / 0.2),
+        transparent 60%
+      ),
+      linear-gradient(160deg, #0E1B27, rgb(var(--color-paper)) 62%);
+  }
+
+  .hero-close {
+    background: rgb(var(--color-paper));
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+
+  /* The sweep's pastel hues fall under 4.5:1 as text, so display type uses
+     the deep end of the same ramp. */
+  .ink-sweep {
+    background: linear-gradient(100deg, #02569b, #0175c2 42%, #b8501c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .dark .ink-sweep {
+    background: linear-gradient(100deg, #7dd3fc, #38bdf8 42%, #ffae7e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .grip {
-    @apply inline-grid h-7 w-7 cursor-grab select-none place-items-center rounded-lg text-lg leading-none text-muted/60 transition-colors;
+    @apply inline-grid h-7 w-7 cursor-grab select-none place-items-center rounded-xl text-lg leading-none text-faint transition-colors;
   }
   .grip:hover {
     @apply bg-accent/10 text-accent;
@@ -105,29 +227,51 @@
     @apply cursor-grabbing;
   }
 
-  /* Valid drop target — soft coral wash + dashed outline when hovered. */
   .drop-zone {
-    @apply rounded-2xl border-2 border-dashed border-line transition-colors duration-200;
+    @apply rounded-3xl bg-raised/60 transition-all duration-300;
+    corner-shape: squircle;
+    box-shadow: inset 0 0 0 1.5px rgb(var(--color-accent) / 0.1);
   }
   .drop-zone[data-over="true"] {
-    @apply border-accent bg-accent/10;
+    @apply bg-sky/10;
+    box-shadow:
+      inset 0 0 0 2px rgb(var(--color-accent) / 0.45),
+      0 18px 40px -16px rgb(var(--color-accent) / 0.4);
   }
 
   .pill-link {
-    @apply rounded-full px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:text-ink;
+    @apply rounded-full px-4 py-2 text-sm font-semibold text-muted transition-colors duration-200;
+  }
+  .pill-link:hover {
+    @apply bg-accent/10 text-accent;
   }
 }
 
 @layer utilities {
-  .reveal {
+  .squircle {
+    corner-shape: squircle;
+  }
+
+  /* The hidden state is scoped to `.js` (set by the no-flash head script), so
+     content stays visible if that script or the observer never runs. */
+  .js .reveal {
     opacity: 0;
     transform: translateY(18px);
     transition:
       opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
       transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .reveal[data-shown="true"] {
+  .js .reveal[data-shown="true"] {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes sweep-drift {
+  from {
+    transform: skewY(-7deg) translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: skewY(-5.5deg) translate3d(-2%, -1.5%, 0) scale(1.06);
   }
 }

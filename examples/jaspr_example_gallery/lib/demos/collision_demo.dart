@@ -101,9 +101,15 @@ class _CollisionDemoState extends State<CollisionDemo> {
             styles: Styles(
               display: .flex,
               gap: .all(16.px),
-              justifyContent: .spaceBetween,
+              alignItems: .stretch,
             ),
-            [for (final id in _zoneIds) _zone(id)],
+            [
+              for (final id in _zoneIds)
+                div(
+                  styles: Styles(flex: Flex(grow: 1, shrink: 1, basis: 0.px)),
+                  [_zone(id)],
+                ),
+            ],
           ),
           div(
             styles: Styles(
@@ -139,18 +145,18 @@ class _CollisionDemoState extends State<CollisionDemo> {
       builder: (context, dropState, child) {
         final isOver = dropState.isOver;
         return div(
-          styles: Styles(
-            display: .flex,
-            flex: Flex(grow: 1, shrink: 1, basis: .auto),
-            height: 120.px,
-            border: .all(color: isOver ? cAccent : cBorder, width: 2.px),
-            radius: .circular(18.px),
-            justifyContent: .center,
-            alignItems: .center,
-            fontWeight: .w600,
-            color: isOver ? cAccent : cMuted,
-            backgroundColor: isOver ? cAccentSoft : cPanelAlt,
-          ),
+          classes: kSquircle,
+          styles: Styles.combine(<Styles>[
+            dropZoneStyles(isOver: isOver, radius: 20),
+            Styles(
+              display: .flex,
+              height: 120.px,
+              justifyContent: .center,
+              alignItems: .center,
+              fontWeight: .w700,
+              color: isOver ? cAccent : cMuted,
+            ),
+          ]),
           [child],
         );
       },
@@ -163,7 +169,7 @@ class _CollisionDemoState extends State<CollisionDemo> {
       styles: Styles(
         maxWidth: 220.px,
         padding: .symmetric(vertical: 16.px, horizontal: 20.px),
-        border: .all(color: cCardBorder, width: 1.px),
+        shadow: kLift,
         radius: .circular(16.px),
         cursor: .grab,
         userSelect: .none,
@@ -181,13 +187,16 @@ class _CollisionDemoState extends State<CollisionDemo> {
     return button(
       styles: Styles(
         padding: .symmetric(vertical: 10.px, horizontal: 16.px),
-        border: .all(color: active ? cAccent : cBorder, width: 1.px),
+        border: .none,
         radius: .circular(999.px),
+        shadow: kLift,
         cursor: .pointer,
         fontFamily: kFontFamily,
         fontSize: 14.px,
-        color: active ? cWhiteWarm : cText,
-        backgroundColor: active ? cAccent : cPillBg,
+        fontWeight: .w700,
+        color: active ? cWhiteWarm : cMuted,
+        backgroundColor: active ? cAccentBright : cPillBg,
+        transition: kSettle,
       ),
       onClick: () => _select(detector),
       [.text(label)],

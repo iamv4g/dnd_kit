@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `collision` catalog demo: the active [DndCollisionDetector] decides which
 /// zone wins when the dragged card overlaps several targets. The detector is
 /// fixed per controller, so switching one rebuilds the controller.
@@ -135,30 +137,25 @@ class _Zone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return DndDroppable(
       id: DndId(id),
       builder: (context, details, child) {
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: GalleryTokens.settle,
+          curve: Curves.easeOutCubic,
           height: 120,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: details.isOver
-                  ? colorScheme.primary
-                  : colorScheme.outline.withValues(alpha: 0.4),
-              width: details.isOver ? 2 : 1,
-            ),
-            color: details.isOver
-                ? colorScheme.primaryContainer.withValues(alpha: 0.25)
-                : colorScheme.surface,
-          ),
+          decoration: dropZoneDecoration(isOver: details.isOver),
           child: child,
         );
       },
-      child: Text(id),
+      child: Text(
+        id,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          color: GalleryTokens.muted,
+        ),
+      ),
     );
   }
 }
@@ -171,26 +168,30 @@ class _CollisionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final card = Container(
       width: 180,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: overlay ? colorScheme.primary : colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(14),
+      decoration: ShapeDecoration(
+        color: GalleryTokens.surface,
+        shape: squircle(20),
+        shadows: overlay ? GalleryTokens.liftHigh : GalleryTokens.lift,
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: overlay
-              ? colorScheme.onPrimary
-              : colorScheme.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
+        style: const TextStyle(
+          color: GalleryTokens.ink,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
-    if (overlay) return card;
+    // The lifted copy leans; the resting one does not.
+    if (overlay) {
+      return Transform.rotate(
+        angle: 0.035,
+        child: Transform.scale(scale: 1.04, child: card),
+      );
+    }
     return DndDraggable(
       id: const DndId('collision-card'),
       builder: (context, details, child) =>

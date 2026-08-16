@@ -110,20 +110,16 @@ class _SortableDemoState extends State<SortableDemo> {
           DndDragOverlay(
             builder: (context, overlayDetails) {
               final track = _trackFor(overlayDetails.activeId);
-              // Mirror the in-list row's box exactly — _TrackContent already
-              // carries the padding, and the border stays 1px — so the floating
-              // copy matches the source size. The accent border colour and the
-              // shadow lift it without enlarging it.
+              // Mirror the in-list row's box exactly — _TrackContent carries
+              // the padding — so the floating copy matches the source size.
+              // The deeper shadow and the lean are what lift it; neither
+              // changes its footprint.
               return div(
+                classes: kSquircle,
                 styles: Styles(
-                  border: .all(color: cAccentBright, width: 1.px),
                   radius: .circular(18.px),
-                  shadow: BoxShadow(
-                    offsetX: 0.px,
-                    offsetY: 18.px,
-                    blur: 36.px,
-                    color: .rgba(154, 52, 18, 0.22),
-                  ),
+                  shadow: kLiftHigh,
+                  transform: .rotate(1.5.deg),
                   backgroundColor: cCardBg,
                 ),
                 [_TrackContent(track: track, dragging: true)],
@@ -160,7 +156,7 @@ class _SortableDemoState extends State<SortableDemo> {
         // The live gap already shows where the row will land, so the per-row
         // over border is redundant. Keeping the border constant also avoids a
         // width change that would perturb the item's measured size mid-drag.
-        border: .all(color: cBorder, width: 1.px),
+        shadow: kLift,
         radius: .circular(18.px),
         opacity: isActive ? 0 : 1,
         backgroundColor: background,

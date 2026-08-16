@@ -9,6 +9,7 @@ import 'demos/multi_container/multi_container_demo.dart';
 import 'demos/planner/planner_demo.dart';
 import 'demos/sensors_demo.dart';
 import 'demos/sortable_demo.dart';
+import 'theme.dart';
 
 void main() => runApp(const ExampleGalleryApp());
 
@@ -108,10 +109,7 @@ class ExampleGalleryApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'dnd_kit Examples',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff2563eb)),
-        useMaterial3: true,
-      ),
+      theme: galleryTheme(),
       home: const ExampleGalleryShell(),
     );
   }
@@ -146,15 +144,27 @@ class _ExampleGalleryShellState extends State<ExampleGalleryShell> {
         );
 
         if (useWideLayout) {
+          // No rule between rail and stage: the demo sits on a raised surface
+          // and the paper ground behind the rail is what separates them.
           return Scaffold(
             body: Row(
-              children: [
+              children: <Widget>[
                 _GalleryRail(
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: _selectDemo,
                 ),
-                const VerticalDivider(width: 1),
-                Expanded(child: demo),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+                    child: DecoratedBox(
+                      decoration: cardDecoration(radius: 28),
+                      child: ClipPath(
+                        clipper: ShapeBorderClipper(shape: squircle(28)),
+                        child: demo,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           );
@@ -190,39 +200,126 @@ class _GalleryRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 232,
       child: NavigationRail(
         selectedIndex: selectedIndex,
         onDestinationSelected: onDestinationSelected,
         extended: true,
-        leading: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+        leading: const Padding(
+          padding: EdgeInsets.fromLTRB(16, 24, 20, 28),
           child: Row(
-            children: [
-              Icon(Icons.open_with, color: colorScheme.primary),
-              const SizedBox(width: 12),
+            children: <Widget>[
+              _GalleryMark(size: 30),
+              SizedBox(width: 10),
               Flexible(
                 child: Text(
                   'dnd_kit',
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: GalleryTokens.ink,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        destinations: [
+        destinations: <NavigationRailDestination>[
           for (final demo in _demos)
             NavigationRailDestination(
-              icon: Icon(demo.icon),
+              icon: Icon(demo.icon, size: 20),
               label: Text(demo.label),
             ),
         ],
       ),
     );
   }
+}
+
+/// The dnd_kit mark: the grip lattice with one dot dragged out of it, and the
+/// slot it left behind. The same drawing as `website/web/favicon.svg` — the
+/// gallery is embedded a few hundred pixels from the site's own nav, so a
+/// second, different mark would read as a different product.
+class _GalleryMark extends StatelessWidget {
+  const _GalleryMark({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(painter: _MarkPainter()),
+    );
+  }
+}
+
+class _MarkPainter extends CustomPainter {
+  // Laid out on the favicon's 32x32 grid, then scaled.
+  static const _lattice = <Offset>[
+    Offset(11.5, 10.5),
+    Offset(11.5, 16.5),
+    Offset(19.5, 16.5),
+    Offset(11.5, 22.5),
+    Offset(19.5, 22.5),
+  ];
+  static const _vacated = Offset(19.5, 10.5);
+  static const _loose = Offset(25.4, 6.6);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 32;
+    final rect = Offset.zero & size;
+
+    // The tile runs Dart → Flutter so the corner holding the apricot dot is the
+    // deepest blue available to carry it.
+    final tile = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: <Color>[GalleryTokens.accent, GalleryTokens.accentDeep],
+      ).createShader(rect);
+    canvas.drawPath(
+      squircle(size.width * 0.28).getOuterPath(rect),
+      tile,
+    );
+
+    final dot = Paint()..color = GalleryTokens.paper.withValues(alpha: 0.94);
+    for (final p in _lattice) {
+      canvas.drawCircle(p * s, 2 * s, dot);
+    }
+
+    // The vacated slot, drawn hollow: below ~28px the trace stops resolving and
+    // this ring is what keeps "one of these moved" readable.
+    canvas.drawCircle(
+      _vacated * s,
+      1.9 * s,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3 * s
+        ..color = GalleryTokens.paper.withValues(alpha: 0.34),
+    );
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(21 * s, 9.4 * s)
+        ..cubicTo(22 * s, 9 * s, 22.7 * s, 8.5 * s, 23.4 * s, 7.7 * s),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5 * s
+        ..strokeCap = StrokeCap.round
+        ..color = GalleryTokens.apricot.withValues(alpha: 0.9),
+    );
+    canvas.drawCircle(
+      _loose * s,
+      2.4 * s,
+      Paint()..color = GalleryTokens.apricot,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MarkPainter oldDelegate) => false;
 }

@@ -1,7 +1,10 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-import '../components/ui.dart';
+// Aliased: `_section` takes an `eyebrow` parameter that would otherwise shadow
+// the component of the same name.
+import '../components/ui.dart' as ui;
+import '../components/ui.dart' show ctaGhost;
 import '../data/site_data.dart';
 import '../layout/footer.dart';
 import '../layout/nav_bar.dart';
@@ -37,9 +40,9 @@ class ShowcasePage extends StatelessComponent {
             eyebrow: 'Live · Jaspr',
             title: 'Drop zones with live collision',
             desc:
-                'Drag the tokens from the pool into any bucket. Pure generic '
-                'droppables with live collision feedback — the same engine, a '
-                'different shape.',
+                'Drag the tokens from the pool into any bucket. The zones '
+                'open a gap where the token will land — the same engine as the '
+                'board, a different shape.',
             child: const Playground(),
           ),
           _flutterSection(),
@@ -50,12 +53,15 @@ class ShowcasePage extends StatelessComponent {
   }
 
   Component _header() {
-    return section(classes: 'border-b border-line', [
+    return section(classes: 'band', [
       div(classes: 'mx-auto max-w-6xl px-6 py-16', [
-        eyebrow('Showcase'),
-        h1(classes: 'mt-3 max-w-3xl font-serif text-4xl text-ink sm:text-5xl', [
-          .text('See it run — on Flutter and the web'),
-        ]),
+        ui.eyebrow('Showcase'),
+        h1(
+          classes:
+              'mt-3 max-w-3xl font-display text-4xl font-extrabold '
+              'tracking-[-0.04em] text-ink sm:text-5xl',
+          [.text('See it run — on Flutter and the web')],
+        ),
         p(classes: 'mt-4 max-w-2xl text-lg leading-relaxed text-muted', const [
           .text(
             'One drag-and-drop engine, two adapters. The demos below run live '
@@ -74,17 +80,16 @@ class ShowcasePage extends StatelessComponent {
     required String desc,
     required Component child,
   }) {
-    return section(classes: 'border-b border-line', [
+    return section(classes: 'band', [
       div(classes: 'mx-auto max-w-6xl px-6 py-16', [
-        div(classes: 'mb-10 flex flex-col gap-3', [
-          span(
+        div(classes: 'mb-10 flex flex-col items-start gap-3', [
+          ui.eyebrow(eyebrow),
+          h2(
             classes:
-                'font-mono text-xs uppercase tracking-[0.22em] text-accent',
-            [.text(eyebrow)],
+                'max-w-2xl font-display text-3xl font-extrabold '
+                'tracking-[-0.035em] text-ink sm:text-4xl',
+            [.text(title)],
           ),
-          h2(classes: 'max-w-2xl font-serif text-3xl text-ink sm:text-4xl', [
-            .text(title),
-          ]),
           p(classes: 'max-w-2xl leading-relaxed text-muted', [.text(desc)]),
         ]),
         child,
@@ -93,17 +98,16 @@ class ShowcasePage extends StatelessComponent {
   }
 
   Component _flutterSection() {
-    return section(classes: 'border-b border-line', [
+    return section(classes: 'band', [
       div(classes: 'mx-auto max-w-6xl px-6 py-16', [
-        div(classes: 'mb-8 flex flex-col gap-3', [
-          span(
+        div(classes: 'mb-8 flex flex-col items-start gap-3', [
+          ui.eyebrow('Live · Flutter'),
+          h2(
             classes:
-                'font-mono text-xs uppercase tracking-[0.22em] text-accent',
-            const [.text('Live · Flutter')],
+                'max-w-2xl font-display text-3xl font-extrabold '
+                'tracking-[-0.035em] text-ink sm:text-4xl',
+            const [.text('The same demos, on Flutter')],
           ),
-          h2(classes: 'max-w-2xl font-serif text-3xl text-ink sm:text-4xl', [
-            .text('The same demos, on Flutter'),
-          ]),
           p(classes: 'max-w-2xl leading-relaxed text-muted', const [
             .text(
               'This is the dnd_kit_flutter example gallery compiled to the web '
@@ -114,8 +118,7 @@ class ShowcasePage extends StatelessComponent {
         ]),
         div(
           classes:
-              'overflow-hidden rounded-2xl border border-line bg-surface '
-              'shadow-lift',
+              'overflow-hidden rounded-[2.5rem] squircle bg-surface shadow-lift',
           [
             Component.element(
               tag: 'iframe',

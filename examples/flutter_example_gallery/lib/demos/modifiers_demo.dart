@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `modifiers` catalog demo: [DndModifiers] reshape the active drag
 /// transform before collision. Modifiers are fixed per controller, so switching
 /// one rebuilds the controller.
@@ -60,7 +62,6 @@ class _ModifiersDemoState extends State<ModifiersDemo> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final controller = _activeController;
 
     return DndScope(
@@ -109,22 +110,10 @@ class _ModifiersDemoState extends State<ModifiersDemo> {
             ),
             DndDragOverlay(
               controller: controller,
-              builder: (context, details) => Container(
+              builder: (context, details) => demoCard(
                 width: 200,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  'Following the modifier',
-                  style: TextStyle(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                lifted: true,
+                child: const Text('Following the modifier'),
               ),
             ),
           ],
@@ -141,24 +130,20 @@ class _ModifierCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
+    return demoCard(
       width: 200,
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 22),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Text('Drag me', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Drag me'),
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-                color: colorScheme.onSecondaryContainer, fontSize: 12),
+            style: const TextStyle(
+              color: GalleryTokens.muted,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

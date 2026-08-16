@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `sortable` catalog demo: SortableScope + SortableItem turn a list into a
 /// reorderable one. dnd_kit reports from/to indices; the list owns its order.
 ///
@@ -71,11 +73,14 @@ class _SortableDemoState extends State<SortableDemo> {
                 return const SizedBox.shrink();
               }
 
-              return Material(
-                color: Colors.transparent,
-                elevation: 6,
-                borderRadius: BorderRadius.circular(12),
-                child: _TrackRow(label: track.label),
+              // The row already carries its own lift; the overlay copy just
+              // leans, so a picked-up row reads as the same object.
+              return Transform.rotate(
+                angle: 0.02,
+                child: Transform.scale(
+                  scale: 1.02,
+                  child: _TrackRow(label: track.label),
+                ),
               );
             },
           ),
@@ -170,19 +175,26 @@ class _TrackRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
-      ),
+      decoration: cardDecoration(radius: 18),
       child: Row(
         children: <Widget>[
-          Icon(Icons.drag_indicator, color: colorScheme.outline),
+          const Icon(
+            Icons.drag_indicator,
+            color: GalleryTokens.faint,
+            size: 20,
+          ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: GalleryTokens.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -19,7 +19,7 @@ class Site extends StatelessComponent {
   Component build(BuildContext context) {
     return .fragment([
       div(id: 'top', const []),
-      const NavBar(),
+      const NavBar(overlap: true),
       Component.element(
         tag: 'main',
         children: [
@@ -32,6 +32,7 @@ class Site extends StatelessComponent {
                 'Wrap an area in a DndScope, mark a draggable and a drop target, '
                 'then react when they meet. You own the data; dnd_kit reports the '
                 'move — the same API on Flutter and the web.',
+            washed: true,
             child: const CodeSample(),
           ),
           _section(
@@ -51,6 +52,7 @@ class Site extends StatelessComponent {
                 'dnd_kit is the framework-neutral core. dnd_kit_flutter and '
                 'dnd_kit_jaspr are peer adapters over it — the same drag logic on '
                 'Flutter and the web.',
+            washed: true,
             child: const Packages(),
           ),
           _section(
@@ -58,8 +60,8 @@ class Site extends StatelessComponent {
             tag: 'Playground',
             title: 'Try it yourself',
             desc:
-                'Drag the tokens from the pool into any bucket. Pure generic '
-                'droppables with live collision feedback.',
+                'Drag the tokens from the pool into any bucket. The zones '
+                'open a gap where the token will land.',
             child: const Playground(),
           ),
         ],
@@ -76,16 +78,22 @@ class Site extends StatelessComponent {
     required String title,
     required String desc,
     required Component child,
+    bool washed = false,
   }) {
-    return section(id: id, classes: 'scroll-mt-20', [
-      div(classes: 'mx-auto max-w-6xl px-6 py-20', [
+    return section(id: id, classes: 'scroll-mt-20${washed ? ' band' : ''}', [
+      div(classes: 'mx-auto max-w-6xl px-6 py-24', [
         Reveal(
-          child: div(classes: 'mb-10 flex flex-col gap-3', [
+          child: div(classes: 'mb-12 flex flex-col gap-4', [
             eyebrow(tag),
-            h2(classes: 'max-w-2xl font-serif text-3xl text-ink sm:text-4xl', [
-              .text(title),
+            h2(
+              classes:
+                  'max-w-2xl font-display text-3xl font-extrabold '
+                  'tracking-[-0.035em] text-ink sm:text-4xl',
+              [.text(title)],
+            ),
+            p(classes: 'max-w-2xl text-lg leading-relaxed text-muted', [
+              .text(desc),
             ]),
-            p(classes: 'max-w-2xl leading-relaxed text-muted', [.text(desc)]),
           ]),
         ),
         Reveal(delayMs: 80, child: child),

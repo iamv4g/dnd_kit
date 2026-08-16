@@ -101,14 +101,14 @@ class _AutoScrollDemoState extends State<AutoScrollDemo> {
             styles: _horizontal
                 ? Styles(
                     height: 150.px,
-                    border: .all(color: cBorder, width: 1.px),
+                    shadow: kLift,
                     radius: .circular(22.px),
                     overflow: .only(x: .auto, y: .hidden),
                     backgroundColor: cPanelAlt,
                   )
                 : Styles(
                     height: 340.px,
-                    border: .all(color: cBorder, width: 1.px),
+                    shadow: kLift,
                     radius: .circular(22.px),
                     overflow: .only(x: .hidden, y: .auto),
                     backgroundColor: cPanelAlt,
@@ -146,12 +146,8 @@ class _AutoScrollDemoState extends State<AutoScrollDemo> {
                 styles: Styles(
                   padding: .symmetric(vertical: 10.px, horizontal: 16.px),
                   radius: .circular(999.px),
-                  shadow: BoxShadow(
-                    offsetX: 0.px,
-                    offsetY: 16.px,
-                    blur: 30.px,
-                    color: .rgba(154, 52, 18, 0.3),
-                  ),
+                  shadow: kLiftHigh,
+                  transform: .rotate(2.deg),
                   color: cWhiteWarm,
                   fontWeight: .w600,
                   backgroundColor: cAccent,
@@ -170,13 +166,16 @@ class _AutoScrollDemoState extends State<AutoScrollDemo> {
     return button(
       styles: Styles(
         padding: .symmetric(vertical: 10.px, horizontal: 16.px),
-        border: .all(color: active ? cAccent : cBorder, width: 1.px),
+        border: .none,
         radius: .circular(999.px),
+        shadow: kLift,
         cursor: .pointer,
         fontFamily: kFontFamily,
         fontSize: 14.px,
-        color: active ? cWhiteWarm : cText,
-        backgroundColor: active ? cAccent : cPillBg,
+        fontWeight: .w700,
+        color: active ? cWhiteWarm : cMuted,
+        backgroundColor: active ? cAccentBright : cPillBg,
+        transition: kSettle,
       ),
       onClick: () => _selectAxis(axis),
       [.text(label)],
@@ -198,37 +197,35 @@ class _Slot extends StatelessComponent {
       id: id,
       builder: (context, dragState, child) {
         final over = dragState.isOver;
-        final border = Border.all(
-          color: over ? cAccentBright : cBorderSoft,
-          width: over ? 2.px : 1.px,
-        );
-        final background = over ? cAccentSoft : cCardBg;
+        // A slot is a resting surface until a drag is over it, when it becomes
+        // a lit recess — the same two states every drop target here uses.
+        final zone = dropZoneStyles(isOver: over, radius: 16);
+        final background = over ? null : cCardBg;
         return div(
-          styles: horizontal
-              ? Styles(
-                  display: .flex,
-                  minWidth: 150.px,
-                  minHeight: 90.px,
-                  padding: .symmetric(vertical: 12.px, horizontal: 14.px),
-                  border: border,
-                  radius: .circular(14.px),
-                  flexDirection: .column,
-                  justifyContent: .spaceBetween,
-                  gap: .all(8.px),
-                  flex: .none,
-                  backgroundColor: background,
-                )
-              : Styles(
-                  display: .flex,
-                  minHeight: 54.px,
-                  padding: .symmetric(vertical: 0.px, horizontal: 16.px),
-                  border: border,
-                  radius: .circular(14.px),
-                  justifyContent: .spaceBetween,
-                  alignItems: .center,
-                  gap: .all(12.px),
-                  backgroundColor: background,
-                ),
+          classes: kSquircle,
+          styles: Styles.combine(<Styles>[
+            zone,
+            if (!over) Styles(shadow: kLift, backgroundColor: background),
+            horizontal
+                ? Styles(
+                    display: .flex,
+                    minWidth: 150.px,
+                    minHeight: 90.px,
+                    padding: .symmetric(vertical: 12.px, horizontal: 14.px),
+                    flexDirection: .column,
+                    justifyContent: .spaceBetween,
+                    gap: .all(8.px),
+                    flex: .none,
+                  )
+                : Styles(
+                    display: .flex,
+                    minHeight: 54.px,
+                    padding: .symmetric(vertical: 0.px, horizontal: 16.px),
+                    justifyContent: .spaceBetween,
+                    alignItems: .center,
+                    gap: .all(12.px),
+                  ),
+          ]),
           attributes: <String, String>{'data-slot-id': id.value},
           [
             span(styles: Styles(color: cLabel, fontSize: 14.px), [
@@ -240,10 +237,9 @@ class _Slot extends StatelessComponent {
       },
       child:
           token ??
-          span(
-            styles: Styles(fontSize: 13.px, color: const Color('#b3a489')),
-            const [.text('empty')],
-          ),
+          span(styles: Styles(fontSize: 13.px, color: cEmptyText), const [
+            .text('empty'),
+          ]),
     );
   }
 }

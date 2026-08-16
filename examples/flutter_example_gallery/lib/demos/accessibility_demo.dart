@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `accessibility` catalog demo: every draggable is operable from the
 /// keyboard, and the adapter emits semantics announcements as the drag
 /// progresses — accessibility is built in, not bolted on.
@@ -78,19 +80,22 @@ class _Instructions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // An aside is a recess in the reading surface, not a bordered box.
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        color: GalleryTokens.raised.withValues(alpha: 0.7),
+        shape: squircle(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const <Widget>[
           Text(
             'Operate the card without a mouse:',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: GalleryTokens.ink,
+            ),
           ),
           SizedBox(height: 6),
           Text('• Tab to focus the card, then Space or Enter to pick it up.'),
@@ -116,38 +121,22 @@ class _Lane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return DndDroppable(
       id: DndId(id),
       builder: (context, details, child) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: details.isOver
-                  ? colorScheme.primary
-                  : colorScheme.outline.withValues(alpha: 0.3),
-              width: details.isOver ? 2 : 1,
-            ),
-            color: details.isOver
-                ? colorScheme.primaryContainer.withValues(alpha: 0.25)
-                : colorScheme.surface,
-          ),
+        return AnimatedContainer(
+          duration: GalleryTokens.settle,
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.all(14),
+          decoration: dropZoneDecoration(isOver: details.isOver),
           child: child,
         );
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            _laneLabels[id]!,
-            style: TextStyle(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
+          galleryEyebrow(_laneLabels[id]!),
+          const SizedBox(height: 10),
           if (hasCard)
             DndDraggable(
               id: const DndId('a11y-card'),
@@ -155,13 +144,14 @@ class _Lane extends StatelessWidget {
               hint: 'Drag or use the keyboard to move between lanes',
               onDragEnd: onDragEnd,
               builder: (context, details, child) =>
-                  Opacity(opacity: details.isDragging ? 0.4 : 1, child: child),
-              child: Card(
-                color: colorScheme.secondaryContainer,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  child: Text('Release task'),
+                  Opacity(opacity: details.isDragging ? 0.3 : 1, child: child),
+              child: demoCard(
+                radius: 16,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
                 ),
+                child: const Text('Release task'),
               ),
             ),
         ],

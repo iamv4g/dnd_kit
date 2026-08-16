@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../../theme.dart';
+
 import 'planner_model.dart';
 
 /// A nested-sortable planner: days with sticky headers, sections that reorder
@@ -264,8 +266,6 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return SortableItem(
       id: DndId(PlannerIds.section(section.id)),
       builder: (context, details, child) {
@@ -280,10 +280,9 @@ class _SectionCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Container(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.outlineVariant),
+          decoration: ShapeDecoration(
+            color: GalleryTokens.raised.withValues(alpha: 0.7),
+            shape: squircle(20),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -300,12 +299,14 @@ class _SectionCard extends StatelessWidget {
                 strategy: SortableStrategies.dropOnOver,
                 builder: (context, details, child) {
                   return DecoratedBox(
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: details.isOver
-                          ? scheme.primary.withValues(alpha: 0.06)
+                          ? GalleryTokens.sky.withValues(alpha: 0.12)
                           : Colors.transparent,
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(12),
+                      shape: const RoundedSuperellipseBorder(
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(20),
+                        ),
                       ),
                     ),
                     child: child,
@@ -320,10 +321,11 @@ class _SectionCard extends StatelessWidget {
                           padding: const EdgeInsets.all(12),
                           child: Text(
                             'Drop an item here',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
+                            style: const TextStyle(
+                              color: GalleryTokens.faint,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       for (final itemId in section.itemIds)
@@ -404,16 +406,9 @@ class _SectionHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
-      decoration: elevated
-          ? BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: scheme.primary),
-            )
-          : null,
+      decoration: elevated ? cardDecoration(radius: 20) : null,
       child: Row(
         children: [
           DndDragHandle(
@@ -421,16 +416,21 @@ class _SectionHeaderCard extends StatelessWidget {
             label: 'Reorder section $title',
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Icon(Icons.drag_indicator,
-                  size: 18, color: scheme.onSurfaceVariant),
+              child: const Icon(
+                Icons.drag_indicator,
+                size: 18,
+                color: GalleryTokens.faint,
+              ),
             ),
           ),
           Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              letterSpacing: -0.1,
+              color: GalleryTokens.ink,
+            ),
           ),
         ],
       ),
@@ -474,24 +474,12 @@ class _ItemFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 8, 12, 8),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: elevated ? scheme.primary : scheme.outlineVariant,
-        ),
-        boxShadow: elevated
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : null,
+      decoration: ShapeDecoration(
+        color: GalleryTokens.surface,
+        shape: squircle(16),
+        shadows: elevated ? GalleryTokens.liftHigh : GalleryTokens.lift,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -22,3 +22,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # The gallery is embedded in the website's showcase page, so it carries the
+  # site's display face. CanvasKit cannot use a font that is only declared in
+  # CSS, so the weights are bundled as assets rather than linked.
+  fonts:
+    - family: HankenGrotesk
+      fonts:
+        - asset: assets/fonts/HankenGrotesk-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/HankenGrotesk-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/HankenGrotesk-ExtraBold.ttf
+          weight: 800

@@ -16,22 +16,19 @@ Component docLead(String text) {
 
 /// A short outcomes callout shown near the top of a page.
 Component youWillLearn(List<String> items) {
-  return div(
-    classes: 'max-w-3xl rounded-2xl border border-line bg-surface p-5',
-    [
-      span(
-        classes: 'font-mono text-xs uppercase tracking-[0.18em] text-accent',
-        const [.text("You'll learn")],
-      ),
-      ul(classes: 'mt-3 flex flex-col gap-1.5 text-muted', [
-        for (final item in items)
-          li(classes: 'flex gap-2', [
-            span(classes: 'text-accent', const [.text('—')]),
-            span([.text(item)]),
-          ]),
-      ]),
-    ],
-  );
+  return div(classes: 'max-w-3xl rounded-3xl squircle bg-raised/70 p-5', [
+    span(
+      classes: 'font-mono text-xs uppercase tracking-[0.18em] text-accent',
+      const [.text("You'll learn")],
+    ),
+    ul(classes: 'mt-3 flex flex-col gap-1.5 text-muted', [
+      for (final item in items)
+        li(classes: 'flex gap-2', [
+          span(classes: 'text-accent', const [.text('—')]),
+          span([.text(item)]),
+        ]),
+    ]),
+  ]);
 }
 
 /// A page section with an anchored `<h2>` heading.
@@ -41,7 +38,12 @@ Component docSection({
   required List<Component> children,
 }) {
   return section(id: id, classes: 'scroll-mt-24', [
-    h2(classes: 'font-serif text-2xl text-ink sm:text-3xl', [.text(title)]),
+    h2(
+      classes:
+          'font-display text-2xl font-extrabold tracking-[-0.03em] text-ink '
+          'sm:text-3xl',
+      [.text(title)],
+    ),
     div(classes: 'mt-4 flex flex-col gap-4', children),
   ]);
 }
@@ -77,26 +79,19 @@ Component inlineCode(String text) {
 Component docCodeBlock(String filename, String code) {
   return div(
     classes:
-        'overflow-hidden rounded-2xl border border-line bg-surface shadow-lift',
+        'overflow-hidden rounded-[2rem] squircle bg-[#0C1420] '
+        'dark:bg-surface shadow-lift',
     [
-      div(
-        classes:
-            'flex items-center gap-3 border-b border-line bg-raised px-4 py-2.5',
-        [
-          div(classes: 'flex items-center gap-2', [
-            span(classes: 'h-2.5 w-2.5 rounded-full bg-accent/70', const []),
-            span(classes: 'h-2.5 w-2.5 rounded-full bg-muted/40', const []),
-            span(classes: 'h-2.5 w-2.5 rounded-full bg-muted/40', const []),
-          ]),
-          span(classes: 'ml-auto font-mono text-xs text-muted', [
-            .text(filename),
-          ]),
-        ],
-      ),
+      div(classes: 'flex items-center px-6 pt-5', [
+        span(classes: 'ml-auto font-mono text-xs text-[#5A6B84]', [
+          .text(filename),
+        ]),
+      ]),
       Component.element(
         tag: 'pre',
         classes:
-            'overflow-x-auto p-5 font-mono text-sm leading-relaxed text-ink',
+            'overflow-x-auto px-6 pb-6 pt-3 font-mono text-sm leading-relaxed '
+            'text-[#D9E2EF]',
         children: [.text(code)],
       ),
     ],
@@ -137,9 +132,7 @@ Component nextSteps(List<NextStep> steps) {
         href: step.href,
         target: step.external ? Target.blank : null,
         attributes: step.external ? const {'rel': 'noreferrer'} : null,
-        classes:
-            'flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4 '
-            'transition-colors hover:border-accent',
+        classes: 'card card-hover flex flex-col gap-1 p-5',
         [
           span(classes: 'font-semibold text-ink', [
             .text(step.external ? '${step.label} ↗' : step.label),

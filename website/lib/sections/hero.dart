@@ -5,6 +5,8 @@ import 'package:jaspr/jaspr.dart';
 import '../components/ui.dart';
 import '../data/site_data.dart';
 import '../drag/drag_bus.dart';
+import '../drag/sortable_offsets.dart';
+import 'install_pill.dart';
 
 /// The hero: a thesis headline plus a live "drag me" moment so the very first
 /// thing a visitor can do is grab something.
@@ -14,39 +16,55 @@ class Hero extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return header(classes: 'relative overflow-hidden', [
-      // Soft ambient backdrop.
       div(
         classes:
-            'pointer-events-none absolute -top-32 right-0 h-[420px] w-[420px] '
-            'rounded-full bg-accent/20 blur-3xl',
+            'sweep pointer-events-none absolute -left-[12%] -right-[12%] '
+            '-top-[30%] h-[132%]',
         const [],
       ),
       div(
         classes:
-            'mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 '
-            'lg:grid-cols-[1.1fr_0.9fr] lg:py-28',
+            'hero-close pointer-events-none absolute -left-[6%] -right-[6%] '
+            'bottom-0 h-[120px]',
+        const [],
+      ),
+      div(
+        classes:
+            // pt clears the overlaid nav capsule (see NavBar's negative margin).
+            'relative mx-auto grid max-w-6xl items-center gap-12 px-6 pb-32 '
+            'pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:pb-40 lg:pt-44',
         [
           div(classes: 'flex flex-col items-start gap-6', [
-            eyebrow('Drag-and-drop · Flutter & Web'),
+            eyebrow('Stable 0.4.0 · one engine, two adapters'),
             h1(
               classes:
-                  'font-serif text-5xl leading-[1.05] text-ink sm:text-6xl',
+                  'max-w-[15ch] font-display text-5xl font-extrabold '
+                  'leading-[1.02] tracking-[-0.045em] text-ink sm:text-6xl',
               [
-                .text('Pick up the '),
-                span(classes: 'text-accent', [.text('whole page')]),
-                .text('.'),
+                .text('Drag is a '),
+                span(classes: 'ink-sweep', [.text('continuous')]),
+                .text(' thing. So is this engine.'),
               ],
             ),
-            p(classes: 'max-w-xl text-lg leading-relaxed text-muted', const [
+            p(classes: 'max-w-xl text-lg leading-relaxed text-muted', [
               .text(
-                'dnd_kit is one drag engine for Flutter and the browser. '
-                'This page is built with it — every handle, card and chip '
-                'you can grab below runs on the same runtime.',
+                'dnd_kit keeps the whole gesture in one pure-Dart runtime '
+                '— activation, geometry, collision, modifiers, sortable math '
+                '— and lets ',
               ),
+              strong(classes: 'font-semibold text-ink', const [
+                .text('Flutter'),
+              ]),
+              .text(' and '),
+              strong(classes: 'font-semibold text-ink', const [.text('Jaspr')]),
+              const .text(' render it. Same curve, same answer, both sides.'),
             ]),
-            div(classes: 'flex flex-wrap items-center gap-3', [
-              ctaPrimary('View on GitHub', SiteLinks.github, external: true),
-              ctaGhost('Read the docs', SiteLinks.docs),
+            div(classes: 'flex flex-col items-start gap-4', [
+              div(classes: 'flex flex-wrap items-center gap-3', [
+                ctaPrimary('View the source', SiteLinks.github, external: true),
+                ctaGhost('Read the docs', SiteLinks.docs),
+              ]),
+              const InstallPill(),
             ]),
           ]),
           // The entrance animation lives on this static wrapper, not inside
@@ -72,34 +90,43 @@ class _HeroStackState extends State<HeroStack> {
   late final DndController _controller = DndController()
     ..addListener(_onChanged);
 
-  final List<DndId> _tray = [
-    const DndId('chip-sortable'),
-    const DndId('chip-keyboard'),
-    const DndId('chip-modifiers'),
-    const DndId('chip-scroll'),
-    const DndId('chip-overlay'),
-  ];
-  final List<DndId> _stack = [];
+  Map<String, List<DndId>> _board = {
+    'zone-tray': [
+      const DndId('chip-sortable'),
+      const DndId('chip-keyboard'),
+      const DndId('chip-modifiers'),
+      const DndId('chip-scroll'),
+      const DndId('chip-overlay'),
+    ],
+    'zone-stack': [],
+  };
 
   void _onChanged() {
     dragBus.report(_controller, source: 'hero');
     if (mounted) setState(() {});
   }
 
-  void _handleEnd(DndDragEndEvent event) {
-    final over = event.overId;
-    if (over == null) return;
-    final active = event.activeId;
-    if (over.value == 'zone-stack') {
-      _tray.remove(active);
-      if (!_stack.contains(active)) _stack.add(active);
-    } else if (over.value == 'zone-tray') {
-      _stack.remove(active);
-      if (!_tray.contains(active)) _tray.add(active);
-    } else {
+  void _handleMove(SortableMoveDetails move) {
+    final fromId = move.fromContainerId?.value;
+    final toId = move.toContainerId?.value;
+    if (fromId == null || toId == null) return;
+
+    final next = <String, List<DndId>>{
+      for (final entry in _board.entries)
+        entry.key: List<DndId>.of(entry.value),
+    };
+    final from = next[fromId];
+    final to = next[toId];
+    if (from == null ||
+        to == null ||
+        move.fromIndex < 0 ||
+        move.fromIndex >= from.length) {
       return;
     }
-    setState(() {});
+
+    from.removeAt(move.fromIndex);
+    to.insert(move.toIndex.clamp(0, to.length), move.activeId);
+    setState(() => _board = next);
   }
 
   @override
@@ -112,76 +139,94 @@ class _HeroStackState extends State<HeroStack> {
 
   @override
   Component build(BuildContext context) {
-    return DndScope(
+    return SortableMultiScope(
       controller: _controller,
-      child: div(classes: 'card flex flex-col gap-4 p-5 shadow-lift', [
+      containers: [
+        for (final entry in _board.entries)
+          SortableContainer(id: DndId(entry.key), itemIds: entry.value),
+      ],
+      offsetResolver: flowOffsets,
+      onMove: _handleMove,
+      child: div(classes: 'card-lg flex flex-col gap-4 p-6', [
         div(classes: 'flex items-center justify-between', [
           span(
-            classes: 'font-mono text-xs uppercase tracking-wider text-muted',
-            const [.text('drag a capability →')],
+            classes: 'font-mono text-xs uppercase tracking-wider text-faint',
+            const [.text('drag a capability \u2192')],
           ),
-          span(classes: 'font-mono text-xs text-accent', [
-            .text('${_stack.length} in stack'),
-          ]),
+          span(
+            classes:
+                'rounded-full bg-accent/10 px-3 py-1 font-mono text-xs '
+                'text-accent-deep dark:text-accent',
+            [.text('${_board['zone-stack']!.length} in stack')],
+          ),
         ]),
-        _zone('zone-tray', _tray, 'Capabilities'),
-        _zone('zone-stack', _stack, 'Your stack', emptyHint: 'drop here'),
+        _zone('zone-tray', 'Capabilities'),
+        _zone('zone-stack', 'Your stack', emptyHint: 'drop here'),
         DndDragOverlay(
           controller: _controller,
           builder: (context, overlay) => _chipFace(overlay.activeId, true),
         ),
+        const DndLiveRegion(),
       ]),
     );
   }
 
-  Component _zone(
-    String zoneId,
-    List<DndId> chips,
-    String title, {
-    String? emptyHint,
-  }) {
-    final isOver = _controller.overId?.value == zoneId;
-    return DndDroppable(
+  Component _zone(String zoneId, String title, {String? emptyHint}) {
+    final chips = _board[zoneId]!;
+    return SortableMultiContainerArea(
       id: DndId(zoneId),
-      child: div(
-        classes:
-            'drop-zone flex min-h-[72px] flex-wrap content-start gap-2 p-3',
-        attributes: {'data-over': isOver.toString()},
-        [
-          span(
-            classes:
-                'w-full font-mono text-[10px] uppercase tracking-wider '
-                'text-muted',
-            [.text(title)],
-          ),
-          if (chips.isEmpty && emptyHint != null)
-            span(classes: 'text-xs text-muted', [.text(emptyHint)]),
-          for (final id in chips) _chip(id),
-        ],
+      itemIds: chips,
+      // Sized for every chip in one zone, so the card never resizes and a
+      // chip displaced on to a new line stays inside its zone.
+      builder: (context, dropState, child) => div(
+        classes: 'drop-zone flex h-[11.5rem] flex-wrap content-start gap-2 p-4',
+        attributes: {'data-over': dropState.isOver.toString()},
+        [child],
       ),
+      child: .fragment([
+        span(
+          classes:
+              'w-full font-mono text-[10px] uppercase tracking-wider '
+              'text-faint',
+          [.text(title)],
+        ),
+        if (chips.isEmpty && emptyHint != null)
+          span(classes: 'text-xs text-faint', [.text(emptyHint)]),
+        for (final id in chips) _chip(id),
+      ]),
     );
   }
 
   Component _chip(DndId id) {
-    final isActive = _controller.activeId == id;
-    return DndDraggable(
+    return SortableMultiItem(
       id: id,
       constraint: const DndSensorActivationConstraint(distance: 4),
       label: 'Drag ${_chipLabels[id.value]}',
-      onDragEnd: _handleEnd,
-      child: div(classes: isActive ? 'opacity-30' : '', [_chipFace(id, false)]),
+      description:
+          'Press space to pick up, arrow keys to move between chips and zones, '
+          'space to drop, escape to cancel.',
+      builder: (context, itemState, child) =>
+          div(styles: slotStyles(itemState), [child]),
+      child: _chipFace(id, false),
     );
   }
 
   Component _chipFace(DndId id, bool dragging) {
+    // One width for every chip, so a displaced chip lands exactly on its
+    // neighbour's slot however the row wraps.
     return span(
       classes:
-          'inline-flex cursor-grab select-none items-center gap-1.5 rounded-full '
-          'border bg-surface px-3 py-1.5 text-sm font-medium text-ink '
-          'transition active:cursor-grabbing '
-          '${dragging ? 'border-accent shadow-lift-accent rotate-2' : 'border-line hover:border-accent'}',
+          'inline-flex w-[8.5rem] cursor-grab select-none items-center gap-2 '
+          'rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink '
+          'active:cursor-grabbing '
+          '${dragging ? 'rotate-2 shadow-lift-hi' : 'shadow-lift'}',
       [
-        span(classes: 'text-accent', const [.text('⠿')]),
+        span(
+          classes:
+              'h-2 w-2 shrink-0 rounded-full bg-gradient-to-br '
+              'from-accent-deep to-sky',
+          const [],
+        ),
         .text(_chipLabels[id.value] ?? id.value),
       ],
     );

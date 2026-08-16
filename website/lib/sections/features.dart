@@ -5,6 +5,7 @@ import 'package:jaspr/jaspr.dart';
 import '../data/site_data.dart';
 import '../drag/drag_bus.dart';
 import '../drag/grip.dart';
+import '../drag/sortable_offsets.dart';
 
 /// The feature grid — itself reorderable. The marketing cards are wired through
 /// the single-container [SortableScope] preset, so the page proves the sortable
@@ -53,7 +54,10 @@ class _FeaturesState extends State<Features> {
   Component build(BuildContext context) {
     return SortableScope(
       controller: _controller,
-      strategy: SortableStrategies.grid,
+      // dropOnOver lands the move where the gap is; the geometric strategies
+      // resolve from the dragged rect center and can disagree with it.
+      strategy: SortableStrategies.dropOnOver,
+      offsetResolver: gridOffsets,
       itemIds: _order,
       onMove: _onMove,
       child: div([
@@ -64,46 +68,51 @@ class _FeaturesState extends State<Features> {
               constraint: const DndSensorActivationConstraint(distance: 8),
               label: 'Reorder ${_featureFor(id).title}',
               builder: (context, itemState, child) {
-                final lifted = itemState.isActive || itemState.isDragging;
-                final over = itemState.isOver;
-                return div(
-                  classes:
-                      'h-full transition-[opacity,transform] duration-150 '
-                      '${lifted ? 'opacity-40' : ''} '
-                      '${over ? 'scale-[1.02]' : ''}',
-                  [child],
-                );
+                return div(classes: 'h-full', styles: slotStyles(itemState), [
+                  child,
+                ]);
               },
               child: _featureCard(_featureFor(id)),
             ),
         ]),
         DndDragOverlay(
           controller: _controller,
-          builder: (context, overlay) => div(
-            classes: 'rotate-2 shadow-lift-accent',
-            [_featureCard(_featureFor(overlay.activeId))],
-          ),
+          builder: (context, overlay) => div(classes: 'rotate-2', [
+            _featureCard(_featureFor(overlay.activeId), lifted: true),
+          ]),
         ),
       ]),
     );
   }
 
-  Component _featureCard(Feature feature) {
+  Component _featureCard(Feature feature, {bool lifted = false}) {
+    const orbs = <String>[
+      'from-accent-deep to-accent',
+      'from-accent to-sky',
+      'from-sky to-mint',
+      'from-mint to-apricot',
+      'from-apricot to-accent',
+      'from-accent to-accent-deep',
+    ];
+    final orb = orbs[features.indexOf(feature) % orbs.length];
     return div(
       classes:
-          'group flex h-full flex-col gap-3 rounded-2xl border border-line '
-          'bg-surface p-5 transition-colors hover:border-accent/50',
+          'card card-hover group flex h-full flex-col gap-4 p-6 '
+          '${lifted ? 'shadow-lift-hi' : ''}',
       [
         div(classes: 'flex items-center justify-between', [
           span(
             classes:
-                'inline-grid h-10 w-10 place-items-center rounded-xl '
-                'bg-accent/10 text-lg text-accent',
+                'inline-grid h-11 w-11 place-items-center rounded-2xl '
+                'squircle bg-gradient-to-br $orb text-lg text-white',
             [.text(feature.glyph)],
           ),
           Grip(label: 'Reorder ${feature.title}'),
         ]),
-        h3(classes: 'font-serif text-xl text-ink', [.text(feature.title)]),
+        h3(
+          classes: 'font-display text-xl font-bold tracking-[-0.02em] text-ink',
+          [.text(feature.title)],
+        ),
         p(classes: 'text-sm leading-relaxed text-muted', [.text(feature.body)]),
       ],
     );

@@ -21,46 +21,42 @@ class _CodeSampleState extends State<CodeSample> {
   @override
   Component build(BuildContext context) {
     return div(
+      // On dark ground #0C1420 sits almost on top of the paper, so the slab
+      // steps up to the raised surface instead and keeps its separation.
       classes:
-          'overflow-hidden rounded-2xl border border-line bg-surface shadow-lift',
+          'overflow-hidden rounded-[2.5rem] squircle bg-[#0C1420] '
+          'dark:bg-surface shadow-lift-hi',
       [
-        div(
-          classes:
-              'flex items-center gap-3 border-b border-line bg-raised px-4 py-3',
-          [
-            div(classes: 'flex items-center gap-2', [
-              span(classes: 'h-3 w-3 rounded-full bg-accent/70', const []),
-              span(classes: 'h-3 w-3 rounded-full bg-muted/40', const []),
-              span(classes: 'h-3 w-3 rounded-full bg-muted/40', const []),
-            ]),
-            div(
-              classes: 'ml-1 flex items-center gap-1',
-              attributes: const {'role': 'tablist'},
-              [
-                for (var i = 0; i < _tabs.length; i++)
-                  button(
-                    classes:
-                        'rounded-full px-3 py-1 font-mono text-xs transition-colors '
-                        '${i == _tab ? 'bg-accent text-white' : 'text-muted hover:text-ink'}',
-                    attributes: {
-                      'type': 'button',
-                      'role': 'tab',
-                      'aria-selected': (i == _tab).toString(),
-                    },
-                    onClick: () => setState(() => _tab = i),
-                    [.text(_tabs[i])],
-                  ),
-              ],
-            ),
-            span(classes: 'ml-auto font-mono text-xs text-muted', const [
-              .text('main.dart'),
-            ]),
-          ],
-        ),
+        div(classes: 'flex flex-wrap items-center gap-2 px-5 pt-5', [
+          div(
+            classes: 'flex items-center gap-1',
+            attributes: const {'role': 'tablist'},
+            [
+              for (var i = 0; i < _tabs.length; i++)
+                button(
+                  classes:
+                      'rounded-full px-4 py-2 font-mono text-xs font-bold '
+                      'transition-colors duration-200 '
+                      '${i == _tab ? 'bg-white/10 text-white' : 'text-[#8FA3BC] hover:text-white'}',
+                  attributes: {
+                    'type': 'button',
+                    'role': 'tab',
+                    'aria-selected': (i == _tab).toString(),
+                  },
+                  onClick: () => setState(() => _tab = i),
+                  [.text(_tabs[i])],
+                ),
+            ],
+          ),
+          span(classes: 'ml-auto font-mono text-xs text-[#5A6B84]', const [
+            .text('main.dart'),
+          ]),
+        ]),
         Component.element(
           tag: 'pre',
           classes:
-              'overflow-x-auto p-5 font-mono text-sm leading-relaxed text-ink',
+              'overflow-x-auto px-6 pb-7 pt-4 font-mono text-sm '
+              'leading-relaxed text-[#D9E2EF]',
           children: [.text(_code)],
         ),
       ],

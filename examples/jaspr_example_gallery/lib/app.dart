@@ -96,7 +96,13 @@ class _Masthead extends StatelessComponent {
       styles: Styles(display: .flex, flexDirection: .column, gap: .all(8.px)),
       [
         h1(
-          styles: Styles(margin: .zero, fontSize: 38.px, lineHeight: 1.1.em),
+          styles: Styles(
+            margin: .zero,
+            fontSize: 38.px,
+            fontWeight: .w800,
+            letterSpacing: (-1.4).px,
+            lineHeight: 1.1.em,
+          ),
           const [.text('dnd_kit_jaspr feature gallery')],
         ),
         p(
@@ -147,19 +153,24 @@ class _TabBar extends StatelessComponent {
   }
 
   Component _tab(_Demo demo, bool active, void Function() onTap) {
+    // The selected tab is a raised surface; the rest sit flat in the wash.
+    // Selection is weight and tint, never an outline.
     return button(
+      classes: kSquircle,
       styles: Styles(
         display: .flex,
-        padding: .symmetric(vertical: 10.px, horizontal: 16.px),
-        border: .all(color: active ? cAccent : cBorder, width: 1.px),
-        radius: .circular(16.px),
+        padding: .symmetric(vertical: 11.px, horizontal: 18.px),
+        border: .none,
+        radius: .circular(18.px),
+        shadow: active ? kLift : BoxShadow.none,
         cursor: .pointer,
         flexDirection: .column,
         gap: .all(2.px),
-        color: active ? cText : cTabText,
+        color: active ? cAccent : cTabText,
         textAlign: .left,
         fontFamily: kFontFamily,
         backgroundColor: active ? cPanelBg : cTabBg,
+        transition: kSettle,
       ),
       attributes: <String, String>{
         'role': 'tab',
@@ -167,7 +178,9 @@ class _TabBar extends StatelessComponent {
       },
       onClick: onTap,
       [
-        strong(styles: Styles(fontSize: 15.px), [.text(demo.label)]),
+        strong(styles: Styles(fontSize: 15.px, fontWeight: .w700), [
+          .text(demo.label),
+        ]),
         span(styles: Styles(fontSize: 12.px, color: cMuted), [
           .text(demo.hint),
         ]),

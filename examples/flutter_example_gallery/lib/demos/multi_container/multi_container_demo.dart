@@ -128,9 +128,13 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
                 final task = tasks[details.activeId.value];
                 if (task == null) return const SizedBox.shrink();
 
-                return Material(
-                  color: Colors.transparent,
-                  child: TaskCardContent(task: task, isDraggingOverlay: true),
+                // Leans while lifted, like every other picked-up object here.
+                return Transform.rotate(
+                  angle: 0.025,
+                  child: Transform.scale(
+                    scale: 1.03,
+                    child: TaskCardContent(task: task, isDraggingOverlay: true),
+                  ),
                 );
               },
             ),
