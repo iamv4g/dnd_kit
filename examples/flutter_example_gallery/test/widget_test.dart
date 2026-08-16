@@ -77,27 +77,31 @@ void main() {
     await tester.pumpWidget(const ExampleGalleryApp());
     await tester.pumpAndSettle();
 
-    final redCard = find.text('Red');
-    final initialTextTopLeft = tester.getTopLeft(redCard);
+    // Measured at the centre, not the top-left: the lifted copy leans and
+    // scales, and both transforms pivot on Alignment.center, so the centre is
+    // the point that stays exact. Comparing corners here would only measure the
+    // decoration, not the alignment this test exists to protect.
+    final card = find.text('Flutter');
+    final initialCentre = tester.getCenter(card);
     final gesture = await tester.startGesture(
-      tester.getCenter(redCard),
+      initialCentre,
       kind: PointerDeviceKind.mouse,
     );
     await tester.pump();
     await gesture.moveBy(const Offset(40, 20));
     await tester.pump();
 
-    final expectedTextTopLeft = initialTextTopLeft.translate(40, 20);
-    final redTextPositions = tester
-        .widgetList<Text>(redCard)
-        .map((widget) => tester.getTopLeft(find.byWidget(widget)))
+    final expectedCentre = initialCentre.translate(40, 20);
+    final centres = tester
+        .widgetList<Text>(card)
+        .map((widget) => tester.getCenter(find.byWidget(widget)))
         .toList();
 
     expect(
-      redTextPositions.any(
+      centres.any(
         (offset) =>
-            (offset.dx - expectedTextTopLeft.dx).abs() < 1 &&
-            (offset.dy - expectedTextTopLeft.dy).abs() < 1,
+            (offset.dx - expectedCentre.dx).abs() < 1 &&
+            (offset.dy - expectedCentre.dy).abs() < 1,
       ),
       isTrue,
       reason: 'overlay should follow the dragged card without sidebar offset',

@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../../theme.dart';
+
 import 'draggable_card.dart';
 import 'task_item.dart';
 
@@ -40,39 +42,33 @@ class BoardColumnWidget extends StatelessWidget {
     }
   }
 
+  /// On the gallery ramp, not Material's stock swatches — three columns of
+  /// unrelated primaries is what made the old board read as a wireframe.
   Color get _accent {
     switch (container.id.value) {
       case 'backlog':
-        return Colors.orange;
+        return GalleryTokens.apricot;
       case 'in_progress':
-        return Colors.cyan;
+        return GalleryTokens.accent;
       case 'completed':
-        return Colors.green;
+        return GalleryTokens.mint;
       default:
-        return Colors.blueGrey;
+        return GalleryTokens.faint;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return SortableMultiContainerArea(
       id: container.id,
       itemIds: container.itemIds,
       builder: (context, details, child) {
-        final isOver = details.isOver;
+        // A column is a recess the cards rest in, not an outlined box.
         return AnimatedContainer(
           key: ValueKey('column-drop:${container.id.value}'),
-          duration: const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isOver ? scheme.primary : scheme.outlineVariant,
-              width: isOver ? 1.5 : 1,
-            ),
-          ),
+          duration: GalleryTokens.settle,
+          curve: Curves.easeOutCubic,
+          decoration: dropZoneDecoration(isOver: details.isOver),
           child: child,
         );
       },
@@ -87,26 +83,29 @@ class BoardColumnWidget extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    _title.toUpperCase(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      letterSpacing: 1.2,
+                      color: GalleryTokens.muted,
+                    ),
                   ),
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: BorderRadius.circular(10),
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: ShapeDecoration(
+                    color: GalleryTokens.accent.withValues(alpha: 0.1),
+                    shape: const StadiumBorder(),
                   ),
                   child: Text(
                     '${container.itemIds.length}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: const TextStyle(
+                      color: GalleryTokens.accentDeep,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],

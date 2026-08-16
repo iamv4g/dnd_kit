@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme.dart';
+
 @immutable
 class TaskItem {
   const TaskItem({
@@ -27,7 +29,7 @@ final Map<String, TaskItem> tasks = {
         'Create premium dark-themed wireframes with nice glassmorphism gradients.',
     priority: 'High',
     owner: 'Mina',
-    color: Color(0xffa88beb),
+    color: GalleryTokens.accentDeep,
   ),
   'task-2': const TaskItem(
     id: 'task-2',
@@ -36,7 +38,7 @@ final Map<String, TaskItem> tasks = {
         'Integrate the new SortableContainer model and compute move details.',
     priority: 'Medium',
     owner: 'Kai',
-    color: Color(0xfff3a683),
+    color: GalleryTokens.apricot,
   ),
   'task-3': const TaskItem(
     id: 'task-3',
@@ -44,7 +46,7 @@ final Map<String, TaskItem> tasks = {
     description: 'Cover cross-container sorting scenarios in automated tests.',
     priority: 'Medium',
     owner: 'Sora',
-    color: Color(0xff574b90),
+    color: GalleryTokens.accent,
   ),
   'task-4': const TaskItem(
     id: 'task-4',
@@ -53,7 +55,7 @@ final Map<String, TaskItem> tasks = {
         'Ship stable version with all benchmarks and telemetry checks.',
     priority: 'Low',
     owner: 'An',
-    color: Color(0xff3dc1d3),
+    color: GalleryTokens.sky,
   ),
   'task-5': const TaskItem(
     id: 'task-5',
@@ -61,6 +63,6 @@ final Map<String, TaskItem> tasks = {
     description: 'Ensure drag operations take less than 16ms per frame on web.',
     priority: 'High',
     owner: 'Tuan',
-    color: Color(0xfff78fb3),
+    color: GalleryTokens.mint,
   ),
 };

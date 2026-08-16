@@ -1,6 +1,8 @@
 import 'package:dnd_kit_flutter/dnd_kit_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// The `basic` catalog demo: pick up, drop on a target, drag handle, and a
 /// floating drag overlay.
 @immutable
@@ -16,11 +18,12 @@ final class _Item {
   final Color color;
 }
 
+// Named for the palette they now sit on, not for stock Material swatches.
 const _items = <_Item>[
-  _Item(id: 'red', label: 'Red', color: Color(0xffe57373)),
-  _Item(id: 'blue', label: 'Blue', color: Color(0xff64b5f6)),
-  _Item(id: 'green', label: 'Green', color: Color(0xff81c784)),
-  _Item(id: 'yellow', label: 'Yellow', color: Color(0xffffd54f)),
+  _Item(id: 'flutter', label: 'Flutter', color: GalleryTokens.accentDeep),
+  _Item(id: 'dart', label: 'Dart', color: GalleryTokens.accent),
+  _Item(id: 'sky', label: 'Sky', color: GalleryTokens.sky),
+  _Item(id: 'apricot', label: 'Apricot', color: GalleryTokens.apricot),
 ];
 
 const _zoneIds = <String>['unassigned', 'zone_a', 'zone_b'];
@@ -124,7 +127,15 @@ class _BasicDemoState extends State<BasicDemo> {
                   (i) => i.id == itemId,
                   orElse: () => _items.first,
                 );
-                return _CardContent(item: item);
+                // A lifted card leans and grows its shadow — weight, not an
+                // outline. Same gesture language as the website's chips.
+                return Transform.rotate(
+                  angle: 0.035,
+                  child: Transform.scale(
+                    scale: 1.04,
+                    child: _CardContent(item: item),
+                  ),
+                );
               },
             ),
           ],
@@ -149,39 +160,23 @@ class _ZoneWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return DndDroppable(
       id: DndId(zoneId),
       builder: (context, details, child) {
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: details.isOver
-                  ? colorScheme.primary
-                  : colorScheme.outline.withValues(alpha: 0.4),
-              width: details.isOver ? 2 : 1,
-            ),
-            color: details.isOver
-                ? colorScheme.primaryContainer.withValues(alpha: 0.25)
-                : colorScheme.surface,
-          ),
+          duration: GalleryTokens.settle,
+          curve: Curves.easeOutCubic,
+          decoration: dropZoneDecoration(isOver: details.isOver),
           child: child,
         );
       },
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-            ),
-            const SizedBox(height: 8),
+            galleryEyebrow(label),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -215,7 +210,7 @@ class _DraggableCard extends StatelessWidget {
       onDragEnd: onDragEnd,
       builder: (context, details, child) {
         return Opacity(
-          opacity: details.isDragging ? 0.4 : 1.0,
+          opacity: details.isDragging ? 0.3 : 1.0,
           child: child,
         );
       },
@@ -231,27 +226,35 @@ class _CardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Apricot is light enough that white text on it fails to read, so the label
+    // takes ink there instead of assuming every swatch is dark.
+    final onColor =
+        ThemeData.estimateBrightnessForColor(item.color) == Brightness.dark
+            ? Colors.white
+            : GalleryTokens.ink;
     return Container(
-      width: 80,
-      height: 56,
-      decoration: BoxDecoration(
+      width: 92,
+      height: 58,
+      decoration: ShapeDecoration(
         color: item.color,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: <BoxShadow>[
+        shape: squircle(18),
+        shadows: <BoxShadow>[
           BoxShadow(
-            color: item.color.withValues(alpha: 0.4),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: item.color.withValues(alpha: 0.38),
+            blurRadius: 24,
+            spreadRadius: -6,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       alignment: Alignment.center,
       child: Text(
         item.label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+        style: TextStyle(
+          color: onColor,
+          fontWeight: FontWeight.w800,
           fontSize: 13,
+          letterSpacing: -0.2,
         ),
       ),
     );
