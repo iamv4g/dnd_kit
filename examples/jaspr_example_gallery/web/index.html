@@ -4,8 +4,45 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="scaffolded-by" content="https://github.com/schultek/jaspr">
+    <meta name="theme-color" content="#FBFAF7">
 
     <title>dnd_kit_jaspr feature gallery</title>
+
+    <!-- The dnd_kit mark. Copied from website/web/favicon.svg by tool/icons.sh
+         — do not hand-edit. -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- The site's display face, so the gallery and the website read as one
+         product. Unlike the Flutter gallery (CanvasKit cannot use a font that
+         is only declared in CSS), a plain web page can just link it. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+    >
+
+    <style>
+      /* Everything else is styled through Jaspr's type-safe Styles API. These
+         two rules cannot be: `corner-shape` has no typed property, and the body
+         reset has no component to hang off. */
+      html { color-scheme: light; }
+      body {
+        margin: 0;
+        background: #fbfaf7;
+        -webkit-font-smoothing: antialiased;
+      }
+      /* Real continuous-curvature corners, the counterpart of the Flutter
+         gallery's RoundedSuperellipseBorder. Progressive: browsers without it
+         fall back to the plain radius, which is still round. */
+      .sq { corner-shape: squircle; }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          transition-duration: 0.001ms !important;
+          animation-duration: 0.001ms !important;
+        }
+      }
+    </style>
 
     <script defer src="main.client.dart.js"></script>
   </head>

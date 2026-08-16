@@ -190,19 +190,17 @@ class _Column extends StatelessComponent {
           builder: (context, dragState, child) {
             final over = dragState.isOver;
             return section(
-              styles: Styles(
-                display: .flex,
-                minHeight: 220.px,
-                padding: .all(18.px),
-                border: .all(
-                  color: over ? cAccentBright : cBorder,
-                  width: over ? 2.px : 1.px,
+              classes: kSquircle,
+              styles: Styles.combine(<Styles>[
+                dropZoneStyles(isOver: over, radius: 26),
+                Styles(
+                  display: .flex,
+                  minHeight: 220.px,
+                  padding: .all(18.px),
+                  flexDirection: .column,
+                  gap: .all(14.px),
                 ),
-                radius: .circular(24.px),
-                flexDirection: .column,
-                gap: .all(14.px),
-                backgroundColor: over ? cAccentSoft : cPanelAlt,
-              ),
+              ]),
               [
                 div(
                   styles: Styles(
@@ -272,16 +270,10 @@ class _CardChrome extends StatelessComponent {
       styles: Styles(
         display: .flex,
         padding: .symmetric(vertical: 14.px, horizontal: 16.px),
-        border: .all(color: cCardBorder, width: 1.px),
         radius: .circular(16.px),
-        shadow: dragging
-            ? BoxShadow(
-                offsetX: 0.px,
-                offsetY: 16.px,
-                blur: 30.px,
-                color: .rgba(154, 52, 18, 0.24),
-              )
-            : .none,
+        shadow: dragging ? kLiftHigh : kLift,
+        transform: dragging ? .rotate(2.deg) : null,
+        transition: kSettle,
         cursor: dragging ? .grabbing : .grab,
         flexDirection: .column,
         gap: .all(6.px),
@@ -311,7 +303,7 @@ class _AnnouncementLog extends StatelessComponent {
       styles: Styles(
         display: .flex,
         padding: .symmetric(vertical: 16.px, horizontal: 18.px),
-        border: .all(style: .dashed, color: cBorder, width: 1.px),
+        shadow: kLift,
         radius: .circular(18.px),
         flexDirection: .column,
         gap: .all(8.px),

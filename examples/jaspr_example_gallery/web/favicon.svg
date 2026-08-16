@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="dnd_kit">
+  <!-- The mark: the grip lattice that recurs across the site (the ⠿ handle),
+       with one dot dragged out of the grid, the slot it vacated, and the trace
+       between them.
+
+       The vacated slot is drawn as a hollow ring rather than left empty: below
+       ~28px the thin trace stops resolving, and the ring is what keeps the
+       "one of these moved" reading alive at favicon size.
+
+       The tile runs Dart #0175C2 (bottom-left) → Flutter #02569B (top-right) so
+       the corner the loose dot occupies is the deepest blue on the tile, which
+       is what lets apricot hold against it. Corners are a real superellipse,
+       matching `corner-shape: squircle` used everywhere else on the site. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0175C2"/>
+      <stop offset="1" stop-color="#02569B"/>
+    </linearGradient>
+    <!-- The trace fades out toward the slot the dot came from. -->
+    <linearGradient id="trace" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFAE7E" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFAE7E" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <path fill="url(#tile)" d="M16 0c8.86 0 12.42 1.18 13.63 2.37C30.82 3.58 32 7.14 32 16s-1.18 12.42-2.37 13.63C28.42 30.82 24.86 32 16 32S3.58 30.82 2.37 29.63C1.18 28.42 0 24.86 0 16S1.18 3.58 2.37 2.37C3.58 1.18 7.14 0 16 0Z"/>
+
+  <!-- Five dots hold the lattice. -->
+  <g fill="#FBFAF7" fill-opacity="0.94">
+    <circle cx="11.5" cy="10.5" r="2"/>
+    <circle cx="11.5" cy="16.5" r="2"/>
+    <circle cx="19.5" cy="16.5" r="2"/>
+    <circle cx="11.5" cy="22.5" r="2"/>
+    <circle cx="19.5" cy="22.5" r="2"/>
+  </g>
+
+  <!-- The sixth slot, now vacated. -->
+  <circle cx="19.5" cy="10.5" r="1.9" fill="none" stroke="#FBFAF7" stroke-opacity="0.34" stroke-width="1.3"/>
+
+  <!-- The path it took, and where it is now. The dot is held far enough off the
+       vacated slot that the trace has room to read: any closer and the stroke
+       disappears under the dot itself. -->
+  <path d="M21 9.4C22 9 22.7 8.5 23.4 7.7" stroke="url(#trace)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <circle cx="25.4" cy="6.6" r="2.4" fill="#FFAE7E"/>
+</svg>

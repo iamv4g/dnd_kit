@@ -150,18 +150,19 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
         builder: (context, dropState, child) {
           final isOver = dropState.isOver;
           return div(
-            styles: Styles(
-              display: .flex,
-              padding: .all(12.px),
-              border: .all(color: isOver ? cAccent : cBorder, width: 1.px),
-              radius: .circular(18.px),
-              // Fixed column height so each column scrolls its own cards,
-              // matching the Flutter board.
-              height: 360.px,
-              flexDirection: .column,
-              gap: .all(10.px),
-              backgroundColor: isOver ? cAccentSoft : cPanelAlt,
-            ),
+            classes: kSquircle,
+            styles: Styles.combine(<Styles>[
+              dropZoneStyles(isOver: isOver, radius: 22),
+              Styles(
+                display: .flex,
+                padding: .all(12.px),
+                // Fixed column height so each column scrolls its own cards,
+                // matching the Flutter board.
+                height: 360.px,
+                flexDirection: .column,
+                gap: .all(10.px),
+              ),
+            ]),
             [child],
           );
         },
@@ -194,7 +195,6 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
                 div(
                   styles: Styles(
                     padding: .symmetric(vertical: 18.px, horizontal: 12.px),
-                    border: .all(color: cBorderSoft, width: 1.px),
                     radius: .circular(12.px),
                     textAlign: .center,
                     color: cMuted,
@@ -244,21 +244,15 @@ class _MultiContainerDemoState extends State<MultiContainerDemo> {
       styles: Styles(
         display: .flex,
         padding: .symmetric(vertical: 12.px, horizontal: 14.px),
-        border: .all(color: cCardBorder, width: 1.px),
-        radius: .circular(14.px),
+        radius: .circular(16.px),
+        shadow: dragging ? kLiftHigh : kLift,
         cursor: .grab,
         userSelect: .none,
         flexDirection: .column,
         gap: .all(6.px),
         backgroundColor: cCardBg,
-        shadow: dragging
-            ? BoxShadow(
-                offsetX: 0.px,
-                offsetY: 16.px,
-                blur: 30.px,
-                color: .rgba(154, 52, 18, 0.3),
-              )
-            : null,
+        transform: dragging ? .rotate(2.deg) : null,
+        transition: kSettle,
       ),
       [
         span(styles: Styles(fontSize: 14.px, fontWeight: .w600), [
