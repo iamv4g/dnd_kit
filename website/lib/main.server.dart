@@ -2,6 +2,7 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/server.dart';
 
 import 'app.dart';
+import 'data/site_data.dart';
 import 'main.server.options.dart';
 
 /// Google Fonts: Hanken Grotesk carries both display and body, Geist Mono
@@ -33,6 +34,9 @@ const _description =
     'dnd_kit is one drag-and-drop engine for Flutter and the web. Interactive '
     'Kanban, sortable lists, keyboard accessibility and modifiers — this whole '
     'page is built with it.';
+const _shareDescription = 'One drag engine for Flutter and the web.';
+const _shareImageAlt =
+    'The dnd_kit mark beside the tagline: one drag engine for Flutter and the web.';
 
 void main() {
   Jaspr.initializeApp(options: defaultServerOptions);
@@ -41,7 +45,15 @@ void main() {
     Document(
       title: _title,
       lang: 'en',
-      meta: const {'description': _description, 'theme-color': '#FBFAF7'},
+      meta: const {
+        'description': _description,
+        'theme-color': '#FBFAF7',
+        'twitter:card': 'summary_large_image',
+        'twitter:title': _title,
+        'twitter:description': _shareDescription,
+        'twitter:image': SiteLinks.shareImage,
+        'twitter:image:alt': _shareImageAlt,
+      },
       head: [
         Component.element(
           tag: 'link',
@@ -82,13 +94,25 @@ void main() {
           tag: 'meta',
           attributes: const {
             'property': 'og:description',
-            'content': 'One drag engine for Flutter and the web.',
+            'content': _shareDescription,
           },
         ),
         Component.element(
           tag: 'meta',
           attributes: const {'property': 'og:type', 'content': 'website'},
         ),
+        // og:url is per page; each route adds its own (see app.dart).
+        for (final (property, content) in const [
+          ('og:image', SiteLinks.shareImage),
+          ('og:image:type', 'image/png'),
+          ('og:image:width', '1200'),
+          ('og:image:height', '630'),
+          ('og:image:alt', _shareImageAlt),
+        ])
+          Component.element(
+            tag: 'meta',
+            attributes: {'property': property, 'content': content},
+          ),
         Component.element(
           tag: 'script',
           children: const [RawText(_noFlashScript)],

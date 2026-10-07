@@ -1,6 +1,7 @@
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_router/jaspr_router.dart';
 
+import 'data/site_data.dart';
 import 'docs/pages/accessibility_page.dart';
 import 'docs/pages/autoscroll_page.dart';
 import 'docs/pages/collision_page.dart';
@@ -29,88 +30,113 @@ class App extends StatelessComponent {
   Component build(BuildContext context) {
     return Router(
       routes: [
-        Route(path: '/', builder: (context, state) => const Site()),
-        Route(
-          path: '/showcase',
+        _page('/', page: const Site()),
+        _page(
+          '/showcase',
           title: 'Showcase · dnd_kit',
-          builder: (context, state) => const ShowcasePage(),
+          page: const ShowcasePage(),
         ),
-        Route(
-          path: '/docs',
+        _page(
+          '/docs',
           title: 'Documentation · dnd_kit',
-          builder: (context, state) => const OverviewPage(),
+          page: const OverviewPage(),
         ),
-        Route(
-          path: '/docs/install',
+        _page(
+          '/docs/install',
           title: 'Installation · dnd_kit',
-          builder: (context, state) => const InstallPage(),
+          page: const InstallPage(),
         ),
-        Route(
-          path: '/docs/quickstart',
+        _page(
+          '/docs/quickstart',
           title: 'Quickstart · dnd_kit',
-          builder: (context, state) => const QuickstartPage(),
+          page: const QuickstartPage(),
         ),
-        Route(
-          path: '/docs/draggable',
+        _page(
+          '/docs/draggable',
           title: 'Draggable · dnd_kit',
-          builder: (context, state) => const DraggablePage(),
+          page: const DraggablePage(),
         ),
-        Route(
-          path: '/docs/droppable',
+        _page(
+          '/docs/droppable',
           title: 'Droppable · dnd_kit',
-          builder: (context, state) => const DroppablePage(),
+          page: const DroppablePage(),
         ),
-        Route(
-          path: '/docs/overlay',
+        _page(
+          '/docs/overlay',
           title: 'Drag overlay · dnd_kit',
-          builder: (context, state) => const OverlayPage(),
+          page: const OverlayPage(),
         ),
-        Route(
-          path: '/docs/collision',
+        _page(
+          '/docs/collision',
           title: 'Collision detection · dnd_kit',
-          builder: (context, state) => const CollisionPage(),
+          page: const CollisionPage(),
         ),
-        Route(
-          path: '/docs/sensors',
+        _page(
+          '/docs/sensors',
           title: 'Sensors & activation · dnd_kit',
-          builder: (context, state) => const SensorsPage(),
+          page: const SensorsPage(),
         ),
-        Route(
-          path: '/docs/modifiers',
+        _page(
+          '/docs/modifiers',
           title: 'Modifiers · dnd_kit',
-          builder: (context, state) => const ModifiersPage(),
+          page: const ModifiersPage(),
         ),
-        Route(
-          path: '/docs/auto-scroll',
+        _page(
+          '/docs/auto-scroll',
           title: 'Auto-scroll · dnd_kit',
-          builder: (context, state) => const AutoscrollPage(),
+          page: const AutoscrollPage(),
         ),
-        Route(
-          path: '/docs/sortable',
+        _page(
+          '/docs/sortable',
           title: 'Sortable lists · dnd_kit',
-          builder: (context, state) => const SortablePage(),
+          page: const SortablePage(),
         ),
-        Route(
-          path: '/docs/multi-container',
+        _page(
+          '/docs/multi-container',
           title: 'Multi-container sortable · dnd_kit',
-          builder: (context, state) => const MultiContainerPage(),
+          page: const MultiContainerPage(),
         ),
-        Route(
-          path: '/docs/recipes',
+        _page(
+          '/docs/recipes',
           title: 'Recipes · dnd_kit',
-          builder: (context, state) => const RecipesPage(),
+          page: const RecipesPage(),
         ),
-        Route(
-          path: '/docs/accessibility',
+        _page(
+          '/docs/accessibility',
           title: 'Accessibility · dnd_kit',
-          builder: (context, state) => const AccessibilityPage(),
+          page: const AccessibilityPage(),
         ),
-        Route(
-          path: '/docs/reference',
+        _page(
+          '/docs/reference',
           title: 'API reference · dnd_kit',
-          builder: (context, state) => const ReferencePage(),
+          page: const ReferencePage(),
         ),
       ],
     );
   }
+}
+
+/// A route whose page declares its own absolute `og:url`, so a shared docs link
+/// previews as that page rather than collapsing to the home page. Static pages
+/// are emitted as `<path>/index.html`, so the URL keeps the trailing slash that
+/// Pages would otherwise redirect to.
+Route _page(String path, {String? title, required Component page}) {
+  final url = path == '/'
+      ? SiteLinks.site
+      : '${SiteLinks.site}${path.substring(1)}/';
+  return Route(
+    path: path,
+    title: title,
+    builder: (context, state) => Component.fragment([
+      Document.head(
+        children: [
+          Component.element(
+            tag: 'meta',
+            attributes: {'property': 'og:url', 'content': url},
+          ),
+        ],
+      ),
+      page,
+    ]),
+  );
 }
