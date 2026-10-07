@@ -8,8 +8,8 @@
 # in step with the equivalent steps in .github/workflows/deploy-website.yml.
 #
 # Usage:
-#   tool/gallery.sh                    # for a site served from /
-#   tool/gallery.sh /dnd_kit/flutter/  # for the project Pages subpath
+#   tool/gallery.sh                          # for a site served from / (as deployed)
+#   tool/gallery.sh /some/subpath/flutter/   # for a site served below a subpath
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

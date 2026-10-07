@@ -5,6 +5,13 @@ library;
 class SiteLinks {
   const SiteLinks._();
 
+  /// The deployed site, served from the root of its custom domain. Share
+  /// metadata (`og:url`, `og:image`) needs absolute URLs, so it builds on this.
+  static const site = 'https://dnd-kit.v4g.space/';
+
+  /// The 1200×630 link-preview image, copied from `web/og-image.png`.
+  static const shareImage = '${site}og-image.png';
+
   static const github = 'https://github.com/iamv4g/dnd_kit';
 
   static const pubKit = 'https://pub.dev/packages/dnd_kit';
@@ -12,8 +19,8 @@ class SiteLinks {
   static const pubJaspr = 'https://pub.dev/packages/dnd_kit_jaspr';
 
   /// The on-site Getting Started docs page (`/docs` route). Written relative so
-  /// it resolves against the document `<base href>` on both the project Pages
-  /// subpath (`/dnd_kit/docs/`) and a local server root (`/docs/`).
+  /// it resolves against the document `<base href>` wherever the site is
+  /// served from, not only the domain root.
   static const docs = 'docs/';
 
   /// The showcase page (`/showcase` route): live Jaspr demos plus the embedded

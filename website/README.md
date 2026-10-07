@@ -66,15 +66,22 @@ tool/gallery.sh                       # build + bundle the Flutter gallery
 
 `tool/gallery.sh` is what makes the showcase page's "The same demos, on Flutter"
 section work. Skip it and that iframe 404s — which is all the deploy workflow
-was doing for us before, so the section only ever worked on CI. Pass the base
-path when the site is not served from the root, e.g. `tool/gallery.sh
-/dnd_kit/flutter/` for the project Pages subpath.
+was doing for us before, so the section only ever worked on CI. Its default
+`/flutter/` base matches the deployed site, which is served from the root of
+https://dnd-kit.v4g.space/; pass another base only when serving below a
+subpath, e.g. `tool/gallery.sh /some/subpath/flutter/`.
 
 The contents of `build/jaspr` are plain static files — deploy them to any
-static host (GitHub Pages, Netlify, Cloudflare Pages, …).
+static host (GitHub Pages, Netlify, Cloudflare Pages, …). CI deploys them to
+GitHub Pages under the custom domain `dnd-kit.v4g.space`, which is configured
+in the repository's Pages settings rather than by a `CNAME` file (a Pages site
+deployed from Actions ignores one). Link-preview metadata (`og:url`,
+`og:image`) is built from `SiteLinks.site` in `lib/data/site_data.dart`, so
+change it there if the domain moves.
 
 ## Links
 
+- Site: https://dnd-kit.v4g.space/
 - GitHub: https://github.com/iamv4g/dnd_kit
 - pub.dev: https://pub.dev/packages/dnd_kit_jaspr
 - Docs: the multi-page documentation section under the `/docs` routes

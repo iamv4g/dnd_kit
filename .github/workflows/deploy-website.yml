@@ -4,9 +4,21 @@ name: Deploy Website
 # manual trigger. Deploying from main is required because the github-pages
 # environment only allows deployments from the default branch — a PR-context
 # run (refs/pull/*/merge) is blocked by environment protection rules.
+#
+# Only paths that feed the published site trigger a redeploy: the site itself,
+# the packages it depends on, the embedded Flutter gallery, and the workspace
+# resolution and SDK pin. Anything else can still redeploy by hand.
 on:
   push:
     branches: [main]
+    paths:
+      - website/**
+      - packages/**
+      - examples/flutter_example_gallery/**
+      - pubspec.yaml
+      - pubspec.lock
+      - .fvmrc
+      - .github/workflows/deploy-website.yml
   workflow_dispatch:
 
 permissions:
@@ -25,8 +37,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -71,29 +81,26 @@ jobs:
           test -f docs/index.html || { echo "ERROR: docs page not found"; exit 1; }
           test -f showcase/index.html || { echo "ERROR: showcase page not found"; exit 1; }
           test -f main.client.dart.js || { echo "ERROR: client bundle not found"; exit 1; }
+          test -f og-image.png || { echo "ERROR: share image not found"; exit 1; }
+          # The site is served from the root of its custom domain, which is the
+          # <base href="/"/> Document emits; relative asset and cross-page URLs
+          # resolve against it.
+          grep -q '<base href="/"/>' index.html || { echo "ERROR: base href must target the custom-domain root"; exit 1; }
+          grep -q '<base href="/"/>' docs/index.html || { echo "ERROR: base href must target the custom-domain root"; exit 1; }
+          grep -q '<meta property="og:image" content="https://dnd-kit.v4g.space/og-image.png"' index.html || { echo "ERROR: og:image must be an absolute URL"; exit 1; }
+          grep -q '<meta property="og:url" content="https://dnd-kit.v4g.space/docs/install/"' docs/install/index.html || { echo "ERROR: og:url must name the page being shared"; exit 1; }
           echo "Build output OK"
 
-      # The project Pages site lives at the /dnd_kit/ subpath. jaspr build has no
-      # --base-href flag and Document emits <base href="/"/>, so rewrite it here
-      # on every generated page (relative asset and cross-page URLs resolve
-      # against this base).
-      - name: Set base href for the project subpath
-        working-directory: website/build/jaspr
-        run: |
-          set -e
-          find . -name '*.html' -exec \
-            sed -i 's|<base href="/"/>|<base href="/dnd_kit/"/>|' {} +
-          grep -q '<base href="/dnd_kit/"/>' index.html
-          grep -q '<base href="/dnd_kit/"/>' docs/index.html
-          touch .nojekyll
+      - name: Disable Jekyll processing
+        run: touch website/build/jaspr/.nojekyll
 
       # The showcase page embeds the Flutter example gallery in an iframe. Build
-      # it for the web under the same /dnd_kit/ Pages subpath and bundle it into
-      # the artifact at flutter/, so the iframe's relative `flutter/` src
-      # resolves against the site base href.
+      # it for the web under the site root and bundle it into the artifact at
+      # flutter/, so the iframe's relative `flutter/` src resolves against the
+      # site base href.
       - name: Build Flutter example gallery for web
         working-directory: examples/flutter_example_gallery
-        run: flutter build web --release --base-href /dnd_kit/flutter/
+        run: flutter build web --release --base-href /flutter/
 
       - name: Bundle the Flutter gallery into the Pages output
         run: |
